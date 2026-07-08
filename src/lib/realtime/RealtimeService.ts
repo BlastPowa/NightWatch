@@ -8,6 +8,17 @@ import type {
 import { supabase } from '@/lib/supabase';
 import type { ConnectionStatus, ConnectionStatusListener } from '@/lib/realtime/types';
 
+export interface JoinOptions {
+  /** Stable key identifying this client in the channel's Presence state. */
+  presenceKey?: string;
+  /**
+   * Fired whenever the channel's presence state syncs. Must be provided at
+   * join time — Supabase requires presence listeners to be registered
+   * before subscribe().
+   */
+  onPresenceSync?: () => void;
+}
+
 /**
  * A joined realtime channel. Obtained from RealtimeService.join and valid
  * until leave() is called.
@@ -22,6 +33,10 @@ export interface ChannelHandle {
   ): Promise<void>;
   /** Listen for a typed event broadcast by other channel members. */
   on<E extends RealtimeEventName>(event: E, listener: EventListener<E>): void;
+  /** Publish this client's presence metadata to the channel. */
+  track(meta: Record<string, unknown>): Promise<void>;
+  /** Current presence state, keyed by presence key. */
+  presenceState<TMeta>(): Record<string, TMeta[]>;
   /** Unsubscribe and release the channel. The handle must not be used after. */
   leave(): Promise<void>;
 }
@@ -42,8 +57,8 @@ function toConnectionStatus(
 
 /**
  * Thin, typed wrapper over Supabase Realtime channels. All channel
- * join/leave/broadcast traffic in the app goes through this service so the
- * Supabase SDK never leaks into feature code.
+ * join/leave/broadcast/presence traffic in the app goes through this
+ * service so the Supabase SDK never leaks into feature code.
  */
 export class RealtimeService {
   private readonly channels = new Map<string, RealtimeChannel>();
@@ -54,16 +69,27 @@ export class RealtimeService {
    * Join (or re-join) a channel by topic. Joining a topic that is already
    * joined returns a handle to the existing channel.
    */
-  public join(topic: string, onStatusChange?: ConnectionStatusListener): ChannelHandle {
+  public join(
+    topic: string,
+    onStatusChange?: ConnectionStatusListener,
+    options?: JoinOptions,
+  ): ChannelHandle {
     const existing = this.channels.get(topic);
     const channel =
       existing ??
       this.client.channel(topic, {
-        config: { broadcast: { self: false, ack: true } },
+        config: {
+          broadcast: { self: false, ack: true },
+          presence: { key: options?.presenceKey ?? '' },
+        },
       });
 
     if (!existing) {
       this.channels.set(topic, channel);
+      // Presence listeners must be attached before subscribe().
+      if (options?.onPresenceSync) {
+        channel.on('presence', { event: 'sync' }, options.onPresenceSync);
+      }
       onStatusChange?.('connecting');
       channel.subscribe((status) => {
         onStatusChange?.(toConnectionStatus(status));
@@ -95,6 +121,15 @@ export class RealtimeService {
         channel.on('broadcast', { event }, (message) => {
           listener(message['payload'] as EventEnvelope<EventPayload<E>>);
         });
+      },
+      track: async (meta: Record<string, unknown>): Promise<void> => {
+        const result = await channel.track(meta);
+        if (result !== 'ok') {
+          throw new Error(`Presence track on "${topic}" failed: ${result}`);
+        }
+      },
+      presenceState: <TMeta>(): Record<string, TMeta[]> => {
+        return channel.presenceState() as unknown as Record<string, TMeta[]>;
       },
       leave: async (): Promise<void> => {
         this.channels.delete(topic);

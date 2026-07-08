@@ -1,23 +1,23 @@
 # Current Status
 
 Current Phase:
-Phase 2 — Backend Foundation (Supabase Realtime, per ADR-004)
+Phase 3 — Room System
 
 Completed:
 ✅ Phase 0 — documentation & planning
-✅ Phase 1 — desktop foundation (verified: dev window runs, IPC round-trip works)
-✅ Supabase client singleton with env validation (src/lib/supabase.ts)
-✅ Typed realtime event architecture (shared/events.ts — EventEnvelope + extensible RealtimeEventMap)
-✅ RealtimeService channel wrapper (join/leave, typed broadcast send/on)
-✅ Channel naming scheme (src/lib/realtime/types.ts)
-✅ useConnectionStatus hook + connection indicator in app shell
-✅ Production CSP extended for Supabase (https/wss)
+✅ Phase 1 — desktop foundation (verified)
+✅ Phase 2 — realtime foundation (verified: live "Connected" indicator)
+✅ Room codes (crypto-random, unambiguous alphabet, validation) — shared/room.ts
+✅ Guest identity with localStorage persistence (src/lib/identity.ts, ADR-005 fallback)
+✅ RealtimeService extended with Presence (track / sync / state)
+✅ RoomService: join/leave, presence-derived member list, deterministic host assignment (earliest joinedAt), host migration on leave, reconnection status
+✅ useRoom hook + HomeScreen (create/join) + RoomScreen (members, host badge, copy code, leave)
 
 Current Work:
-Awaiting local verification (`npm install` && `npm run dev` → footer shows "Connected")
+Awaiting local verification (two clients: create + join, host migration on host leave)
 
 Blocked:
 None
 
 Next:
-Phase 3 — Room System (create/join/leave, host assignment, presence, reconnection)
+Phase 4 — YouTube Player Integration (IFrame API, URL parsing, player abstraction)

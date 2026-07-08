@@ -2,29 +2,27 @@
 
 ## Current Phase
 
-Phase 2 — Backend Foundation
+Phase 3 — Room System
 
 
 ## Backlog
 
-- Phase 3: room create/join/leave
-- Phase 3: presence and host assignment, reconnection handling
-- Phase 4: YouTube IFrame player abstraction
+- Phase 4: YouTube IFrame API loader + player abstraction
+- Phase 4: URL parsing + video loading
+- Phase 5: playback sync engine
 
 
 ## Completed
 
-- Phase 1: full desktop foundation (verified working)
-- Phase 2: Supabase client singleton + env validation
-- Phase 2: typed event architecture (shared/events.ts)
-- Phase 2: RealtimeService channel wrapper + channel naming scheme
-- Phase 2: useConnectionStatus hook + shell connection indicator
-- Phase 2: CSP updated for Supabase endpoints
+- Phase 1: full desktop foundation (verified)
+- Phase 2: realtime foundation (verified)
+- Phase 3: room codes, guest identity, presence, RoomService with host assignment/migration
+- Phase 3: useRoom hook, HomeScreen, RoomScreen
 
 
 ## In Progress
 
-- Phase 2: local verification (footer shows "Connected")
+- Phase 3: local verification (two clients, host migration)
 
 
 ## Blocked
