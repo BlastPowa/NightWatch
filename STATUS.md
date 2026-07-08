@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 5 — Playback Synchronization
+Phase 6 — Social Features
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -20,13 +20,16 @@ Completed:
 ✅ Playback event contract (load/play/pause + sync request/state) in shared/events.ts
 ✅ Pre-subscribe broadcast bindings + RoomService typed send/on event registry
 ✅ SyncEngine: host broadcasts native-control changes; viewers apply with latency compensation, drift correction (5s check, 1.5s tolerance), late-join/reconnect snapshot sync
-✅ Host-only controls in UI (ADR-006): viewers see "host controls playback"
+✅ Phase 5 — playback synchronization (verified: mirror, late join, host migration)
+✅ Ephemeral chat (chat:message event, ChatService with rate limit + capped log)
+✅ System notices from presence diffs (joined / left / new host)
+✅ ChatPanel with smart auto-scroll; two-column room layout (player + chat/members)
 
 Current Work:
-Awaiting local verification (two clients: load/play/pause/scrub mirror; late join snaps to position)
+Awaiting local verification (two clients chat; join/leave/host notices)
 
 Blocked:
 None
 
 Next:
-Phase 6 — Social Features (chat, join notifications)
+Phase 7 — Reaction System (timestamp reactions, emoji stamps, timeline markers)

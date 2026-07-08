@@ -26,6 +26,9 @@ export interface RealtimeEventMap {
   'playback:play': { positionSeconds: number; hostClockMs: number };
   /** Host paused playback. Position doubles as seek-while-paused sync. */
   'playback:pause': { positionSeconds: number };
+  /** A chat message. senderName travels in the payload so messages from
+   *  members who have since left still render correctly. */
+  'chat:message': { text: string; senderName: string };
   /** A member (late joiner / reconnector) asks the host for current state. */
   'sync:request': Record<string, never>;
   /** Host's authoritative snapshot of playback state. */
@@ -46,6 +49,7 @@ export const ROOM_EVENTS: readonly (keyof RealtimeEventMap & string)[] = [
   'playback:load',
   'playback:play',
   'playback:pause',
+  'chat:message',
   'sync:request',
   'sync:state',
 ];

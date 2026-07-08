@@ -2,13 +2,13 @@
 
 ## Current Phase
 
-Phase 5 — Playback Synchronization
+Phase 6 — Social Features
 
 
 ## Backlog
 
-- Phase 6: chat + join notifications
-- Phase 7: timestamp reactions
+- Phase 7: timestamp reactions, emoji stamps, timeline markers
+- Phase 8: themes + local preferences
 
 
 ## Completed
@@ -17,12 +17,13 @@ Phase 5 — Playback Synchronization
 - Phase 2: realtime foundation (verified)
 - Phase 3: room system (verified)
 - Phase 4: player integration (verified)
-- Phase 5: playback events, SyncEngine (host broadcast, viewer apply, drift correction, late-join sync), host-only UI
+- Phase 5: playback synchronization (verified)
+- Phase 6: ChatService, system notices, ChatPanel, room layout
 
 
 ## In Progress
 
-- Phase 5: local verification (two clients mirror playback; late join)
+- Phase 6: local verification (chat + notices between two clients)
 
 
 ## Blocked

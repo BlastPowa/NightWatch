@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 
@@ -19,7 +20,8 @@ const STATUS_TEXT: Record<RoomState['status'], string> = {
 
 export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
-  const selfIsHost = room.members.some((member) => member.id === selfId && member.isHost);
+  const self = room.members.find((member) => member.id === selfId);
+  const selfIsHost = self?.isHost ?? false;
 
   function copyCode(): void {
     navigator.clipboard
@@ -43,24 +45,34 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
         <span className="room-status">{STATUS_TEXT[room.status]}</span>
       </header>
 
-      <PlayerPanel service={service} isHost={selfIsHost} />
+      <div className="room-body">
+        <div className="room-main">
+          <PlayerPanel service={service} isHost={selfIsHost} />
+        </div>
 
-      <ul className="member-list">
-        {room.members.map((member) => (
-          <li key={member.id} className="member">
-            <span className="member-name">
-              {member.displayName}
-              {member.id === selfId && <span className="member-you"> (you)</span>}
-            </span>
-            {member.isHost && <span className="member-host">HOST</span>}
-          </li>
-        ))}
-        {room.members.length === 0 && <li className="member member-empty">Waiting for presence…</li>}
-      </ul>
+        <aside className="room-aside">
+          <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
 
-      <button type="button" className="button" onClick={onLeave}>
-        Leave Room
-      </button>
+          <ul className="member-list">
+            {room.members.map((member) => (
+              <li key={member.id} className="member">
+                <span className="member-name">
+                  {member.displayName}
+                  {member.id === selfId && <span className="member-you"> (you)</span>}
+                </span>
+                {member.isHost && <span className="member-host">HOST</span>}
+              </li>
+            ))}
+            {room.members.length === 0 && (
+              <li className="member member-empty">Waiting for presence…</li>
+            )}
+          </ul>
+
+          <button type="button" className="button" onClick={onLeave}>
+            Leave Room
+          </button>
+        </aside>
+      </div>
     </section>
   );
 }
