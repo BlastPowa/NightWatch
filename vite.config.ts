@@ -11,7 +11,8 @@ import electron from 'vite-plugin-electron/simple';
 function productionCsp(): PluginOption {
   const csp =
     "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data:; connect-src 'self'";
+    "img-src 'self' data:; " +
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co";
   return {
     name: 'nightwatch-production-csp',
     apply: 'build',

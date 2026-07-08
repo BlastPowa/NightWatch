@@ -65,3 +65,28 @@ body {
   font-size: 0.8rem;
   color: var(--nw-text-muted);
 }
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-right: 1rem;
+  font-size: 0.8rem;
+  color: var(--nw-text-muted);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--nw-text-muted);
+}
+
+.status-connected .status-dot {
+  background: var(--nw-accent);
+}
+
+.status-error .status-dot,
+.status-disconnected .status-dot {
+  background: #f87171;
+}

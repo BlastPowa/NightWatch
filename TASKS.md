@@ -2,28 +2,29 @@
 
 ## Current Phase
 
-Phase 1 — Desktop Foundation
+Phase 2 — Backend Foundation
 
 
 ## Backlog
 
-- Phase 3: Supabase client setup + room create/join/leave
-- Phase 3: Presence and host assignment
+- Phase 3: room create/join/leave
+- Phase 3: presence and host assignment, reconnection handling
 - Phase 4: YouTube IFrame player abstraction
 
 
 ## Completed
 
-- Phase 1: project scaffolding (package.json, tsconfig, vite.config.ts)
-- Phase 1: Electron main process with secure defaults
-- Phase 1: preload bridge + typed IPC contract (shared/ipc.ts)
-- Phase 1: React renderer shell
-- Phase 1: electron-builder Windows config, .gitignore, .env.example
+- Phase 1: full desktop foundation (verified working)
+- Phase 2: Supabase client singleton + env validation
+- Phase 2: typed event architecture (shared/events.ts)
+- Phase 2: RealtimeService channel wrapper + channel naming scheme
+- Phase 2: useConnectionStatus hook + shell connection indicator
+- Phase 2: CSP updated for Supabase endpoints
 
 
 ## In Progress
 
-- Phase 1: local verification (`npm install` && `npm run dev`)
+- Phase 2: local verification (footer shows "Connected")
 
 
 ## Blocked
