@@ -1,0 +1,13 @@
+appId: com.blastpowa.nightwatch
+productName: NightWatch
+directories:
+  output: release
+files:
+  - dist/**
+  - dist-electron/**
+win:
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
