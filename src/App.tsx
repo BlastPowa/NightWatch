@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AppInfo } from '@shared/ipc';
 import { HomeScreen } from '@/components/HomeScreen';
 import { RoomScreen } from '@/components/RoomScreen';
+import { SettingsPanel } from '@/components/SettingsPanel';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
+import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
 import {
   createIdentity,
@@ -26,6 +28,12 @@ export function App(): JSX.Element {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const connectionStatus = useConnectionStatus();
   const session = useRoom(roomCode, identity);
+  const settings = useSettings();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.dataset['theme'] = settings.theme;
+  }, [settings.theme]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +79,16 @@ export function App(): JSX.Element {
 
   return (
     <main className="shell">
+      <button
+        type="button"
+        className="button settings-toggle"
+        title="Settings"
+        onClick={() => setSettingsOpen((open) => !open)}
+      >
+        ⚙
+      </button>
+      {settingsOpen && <SettingsPanel />}
+
       <h1 className="shell-title">NightWatch</h1>
       <p className="shell-subtitle">Watch together. Perfectly in sync.</p>
 

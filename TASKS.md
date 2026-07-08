@@ -2,13 +2,13 @@
 
 ## Current Phase
 
-Phase 7 — Reaction System
+Phase 8 — Personalization
 
 
 ## Backlog
 
-- Phase 8: themes + local preferences (volume, CSS filters)
-- Phase 9: UI/UX polish
+- Phase 9: UI/UX polish — design references chosen by owner: https://uiverse.io/ , https://shadesbyjay.site/ , https://flowbite.com/ , https://daisyui.com/
+- Phase 10: production prep (packaging, installer, security review)
 
 
 ## Completed
@@ -19,12 +19,13 @@ Phase 7 — Reaction System
 - Phase 4: player integration (verified)
 - Phase 5: playback synchronization (verified)
 - Phase 6: chat + notifications (verified)
-- Phase 7: reaction palette, ReactionService, overlay animation, timeline markers, ReactionBar
+- Phase 7: reactions (verified)
+- Phase 8: settings store, themes, volume, video filters, settings panel
 
 
 ## In Progress
 
-- Phase 7: local verification (reactions on both clients)
+- Phase 8: local verification (settings persist across restart)
 
 
 ## Blocked

@@ -76,6 +76,13 @@ export class YouTubePlayer {
     this.player?.seekTo(seconds, true);
   }
 
+  /** Set playback volume (0–100) via the official API. */
+  public setVolume(percent: number): void {
+    if (this.isReady) {
+      this.player?.setVolume(Math.min(100, Math.max(0, percent)));
+    }
+  }
+
   public getCurrentTime(): number {
     return this.player?.getCurrentTime() ?? 0;
   }

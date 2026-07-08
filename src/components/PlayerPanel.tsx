@@ -4,8 +4,10 @@ import { ReactionBar } from '@/components/ReactionBar';
 import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
 import { useReactions } from '@/hooks/useReactions';
+import { useSettings } from '@/hooks/useSettings';
 import { YouTubePlayer } from '@/lib/player/YouTubePlayer';
 import type { RoomService } from '@/lib/room/RoomService';
+import { settingsStore } from '@/lib/settings';
 import { SyncEngine } from '@/lib/sync/SyncEngine';
 
 interface PlayerPanelProps {
@@ -32,6 +34,7 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
   const [durationSeconds, setDurationSeconds] = useState(0);
   const videoIdRef = useRef<string | null>(null);
   videoIdRef.current = videoId;
+  const settings = useSettings();
 
   const { bursts, markers, send, removeBurst } = useReactions(
     service,
@@ -52,6 +55,7 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
     container.appendChild(mountPoint);
 
     const player = new YouTubePlayer({
+      onReady: () => player.setVolume(settingsStore.get().volumePercent),
       onStateChange: (state) => engineRef.current?.handleLocalStateChange(state),
       onError: (message) => setError(message),
     });
@@ -90,6 +94,11 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
       setDurationSeconds(0);
     };
   }, [service]);
+
+  // Apply persisted/changed volume through the official API.
+  useEffect(() => {
+    playerRef.current?.setVolume(settings.volumePercent);
+  }, [settings.volumePercent]);
 
   // Track duration for the timeline strip (0 until a video is loaded).
   useEffect(() => {
@@ -138,7 +147,15 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
 
       {error !== null && <p className="form-error">{error}</p>}
 
-      <div className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}>
+      <div
+        className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
+        style={{
+          filter:
+            `brightness(${settings.videoFilters.brightness}%) ` +
+            `contrast(${settings.videoFilters.contrast}%) ` +
+            `saturate(${settings.videoFilters.saturation}%)`,
+        }}
+      >
         <div ref={containerRef} className="player-mount" />
         <ReactionOverlay bursts={bursts} onDone={removeBurst} />
         {!hasVideo && (

@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 7 — Reaction System
+Phase 8 — Personalization
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -28,13 +28,18 @@ Completed:
 ✅ ReactionService (rate-limited send, validated receive) on room channel
 ✅ Floating emoji animation overlay (pointer-events: none over the player)
 ✅ Timeline marker strip below the player (own strip — never drawn over YouTube's UI)
-✅ ReactionBar for all members (not host-gated)
+✅ Phase 7 — reactions (verified)
+✅ Local settings store with sanitized persistence (src/lib/settings.ts, ADR-009)
+✅ Three themes via CSS variable sets + data-theme switch (ADR-010: all free)
+✅ Volume slider applied through official player API, persisted
+✅ Video filter sliders (brightness/contrast/saturation) + reset — CSS-only, local-only
+✅ Settings panel (⚙ toggle in shell)
 
 Current Work:
-Awaiting local verification (reactions animate + mark timeline on both clients)
+Awaiting local verification (theme/volume/filters persist across restart)
 
 Blocked:
 None
 
 Next:
-Phase 8 — Personalization (themes, local preferences, volume, CSS filters)
+Phase 9 — UI/UX Polish (design refs: uiverse.io, shadesbyjay.site, flowbite.com, daisyui.com)
