@@ -18,18 +18,37 @@ export interface EventEnvelope<TData> {
   data: TData;
 }
 
+/** Central registry mapping event names to their payload types. */
+export interface RealtimeEventMap {
+  /** Host loaded a new video. */
+  'playback:load': { videoId: string };
+  /** Host started playback. hostClockMs allows latency compensation. */
+  'playback:play': { positionSeconds: number; hostClockMs: number };
+  /** Host paused playback. Position doubles as seek-while-paused sync. */
+  'playback:pause': { positionSeconds: number };
+  /** A member (late joiner / reconnector) asks the host for current state. */
+  'sync:request': Record<string, never>;
+  /** Host's authoritative snapshot of playback state. */
+  'sync:state': {
+    videoId: string | null;
+    positionSeconds: number;
+    isPlaying: boolean;
+    hostClockMs: number;
+  };
+}
+
 /**
- * Central registry mapping event names to their payload types.
- * Later phases extend this via declaration merging, e.g.:
- *
- *   declare module '@shared/events' {
- *     interface RealtimeEventMap {
- *       'playback:play': { positionSeconds: number };
- *     }
- *   }
+ * All events carried on a room channel. Broadcast bindings must be
+ * registered before channel subscribe (Supabase requirement), so the room
+ * layer registers every known event up front and dispatches internally.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface RealtimeEventMap {}
+export const ROOM_EVENTS: readonly (keyof RealtimeEventMap & string)[] = [
+  'playback:load',
+  'playback:play',
+  'playback:pause',
+  'sync:request',
+  'sync:state',
+];
 
 export type RealtimeEventName = keyof RealtimeEventMap & string;
 

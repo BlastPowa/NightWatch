@@ -1,3 +1,9 @@
+import {
+  ROOM_EVENTS,
+  type EventListener,
+  type EventPayload,
+  type RealtimeEventName,
+} from '@shared/events';
 import type { PresenceMeta, RoomMember } from '@shared/room';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';
@@ -48,6 +54,7 @@ export class RoomService {
   private state: RoomState;
   private hasJoinedOnce = false;
   private readonly joinedAt = Date.now();
+  private readonly eventListeners = new Map<string, Set<(envelope: unknown) => void>>();
 
   public constructor(
     private readonly realtime: RealtimeService,
@@ -64,6 +71,12 @@ export class RoomService {
       (status) => this.handleConnectionStatus(status),
       {
         presenceKey: this.identity.id,
+        broadcastListeners: ROOM_EVENTS.map((event) => ({
+          event,
+          callback: (envelope: unknown) => {
+            this.eventListeners.get(event)?.forEach((listener) => listener(envelope));
+          },
+        })),
         onPresenceSync: () => {
           if (this.handle === null) {
             return;
@@ -76,6 +89,39 @@ export class RoomService {
         },
       },
     );
+  }
+
+  /**
+   * Listen for a typed room event. Safe to call at any time (the underlying
+   * channel bindings are registered at join). Returns an unsubscribe fn.
+   */
+  public on<E extends RealtimeEventName>(event: E, listener: EventListener<E>): () => void {
+    let listeners = this.eventListeners.get(event);
+    if (listeners === undefined) {
+      listeners = new Set();
+      this.eventListeners.set(event, listeners);
+    }
+    const wrapped = listener as (envelope: unknown) => void;
+    listeners.add(wrapped);
+    return () => {
+      listeners.delete(wrapped);
+    };
+  }
+
+  /** Broadcast a typed room event to other members. */
+  public async send<E extends RealtimeEventName>(
+    event: E,
+    data: EventPayload<E>,
+  ): Promise<void> {
+    if (this.handle === null) {
+      throw new Error('Not connected to a room.');
+    }
+    await this.handle.send(event, this.identity.id, data);
+  }
+
+  /** Envelope helper so consumers can identify their own id. */
+  public get selfId(): string {
+    return this.identity.id;
   }
 
   public async leave(): Promise<void> {

@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import type { RoomState } from '@/lib/room/RoomService';
+import { PlayerPanel } from '@/components/PlayerPanel';
+import type { RoomService, RoomState } from '@/lib/room/RoomService';
 
 interface RoomScreenProps {
   room: RoomState;
+  service: RoomService;
   selfId: string;
   onLeave(): void;
 }
@@ -15,8 +17,9 @@ const STATUS_TEXT: Record<RoomState['status'], string> = {
   left: 'Left room',
 };
 
-export function RoomScreen({ room, selfId, onLeave }: RoomScreenProps): JSX.Element {
+export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
+  const selfIsHost = room.members.some((member) => member.id === selfId && member.isHost);
 
   function copyCode(): void {
     navigator.clipboard
@@ -39,6 +42,8 @@ export function RoomScreen({ room, selfId, onLeave }: RoomScreenProps): JSX.Elem
         </button>
         <span className="room-status">{STATUS_TEXT[room.status]}</span>
       </header>
+
+      <PlayerPanel service={service} isHost={selfIsHost} />
 
       <ul className="member-list">
         {room.members.map((member) => (

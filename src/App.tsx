@@ -25,7 +25,7 @@ export function App(): JSX.Element {
   const [identity, setIdentity] = useState<GuestIdentity | null>(() => loadIdentity());
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const connectionStatus = useConnectionStatus();
-  const room = useRoom(roomCode, identity);
+  const session = useRoom(roomCode, identity);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,10 +74,15 @@ export function App(): JSX.Element {
       <h1 className="shell-title">NightWatch</h1>
       <p className="shell-subtitle">Watch together. Perfectly in sync.</p>
 
-      {roomCode === null || room === null || identity === null ? (
+      {roomCode === null || session === null || identity === null ? (
         <HomeScreen initialName={identity?.displayName ?? ''} onEnterRoom={handleEnterRoom} />
       ) : (
-        <RoomScreen room={room} selfId={identity.id} onLeave={handleLeaveRoom} />
+        <RoomScreen
+          room={session.state}
+          service={session.service}
+          selfId={identity.id}
+          onLeave={handleLeaveRoom}
+        />
       )}
 
       <footer className="shell-footer">

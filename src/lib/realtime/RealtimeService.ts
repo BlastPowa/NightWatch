@@ -1,10 +1,5 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
-import type {
-  EventEnvelope,
-  EventListener,
-  EventPayload,
-  RealtimeEventName,
-} from '@shared/events';
+import type { EventEnvelope, EventPayload, RealtimeEventName } from '@shared/events';
 import { supabase } from '@/lib/supabase';
 import type { ConnectionStatus, ConnectionStatusListener } from '@/lib/realtime/types';
 
@@ -17,6 +12,14 @@ export interface JoinOptions {
    * before subscribe().
    */
   onPresenceSync?: () => void;
+  /**
+   * Broadcast bindings, also required at join time for the same reason.
+   * Each callback receives the raw envelope for its event.
+   */
+  broadcastListeners?: ReadonlyArray<{
+    event: string;
+    callback: (envelope: unknown) => void;
+  }>;
 }
 
 /**
@@ -31,8 +34,6 @@ export interface ChannelHandle {
     senderId: string,
     data: EventPayload<E>,
   ): Promise<void>;
-  /** Listen for a typed event broadcast by other channel members. */
-  on<E extends RealtimeEventName>(event: E, listener: EventListener<E>): void;
   /** Publish this client's presence metadata to the channel. */
   track(meta: Record<string, unknown>): Promise<void>;
   /** Current presence state, keyed by presence key. */
@@ -86,9 +87,14 @@ export class RealtimeService {
 
     if (!existing) {
       this.channels.set(topic, channel);
-      // Presence listeners must be attached before subscribe().
+      // Presence and broadcast listeners must be attached before subscribe().
       if (options?.onPresenceSync) {
         channel.on('presence', { event: 'sync' }, options.onPresenceSync);
+      }
+      for (const { event, callback } of options?.broadcastListeners ?? []) {
+        channel.on('broadcast', { event }, (message) => {
+          callback(message['payload']);
+        });
       }
       onStatusChange?.('connecting');
       channel.subscribe((status) => {
@@ -116,11 +122,6 @@ export class RealtimeService {
         if (result !== 'ok') {
           throw new Error(`Broadcast of "${event}" on "${topic}" failed: ${result}`);
         }
-      },
-      on: <E extends RealtimeEventName>(event: E, listener: EventListener<E>): void => {
-        channel.on('broadcast', { event }, (message) => {
-          listener(message['payload'] as EventEnvelope<EventPayload<E>>);
-        });
       },
       track: async (meta: Record<string, unknown>): Promise<void> => {
         const result = await channel.track(meta);

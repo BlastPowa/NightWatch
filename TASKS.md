@@ -2,27 +2,27 @@
 
 ## Current Phase
 
-Phase 3 — Room System
+Phase 5 — Playback Synchronization
 
 
 ## Backlog
 
-- Phase 4: YouTube IFrame API loader + player abstraction
-- Phase 4: URL parsing + video loading
-- Phase 5: playback sync engine
+- Phase 6: chat + join notifications
+- Phase 7: timestamp reactions
 
 
 ## Completed
 
 - Phase 1: full desktop foundation (verified)
 - Phase 2: realtime foundation (verified)
-- Phase 3: room codes, guest identity, presence, RoomService with host assignment/migration
-- Phase 3: useRoom hook, HomeScreen, RoomScreen
+- Phase 3: room system (verified)
+- Phase 4: player integration (verified)
+- Phase 5: playback events, SyncEngine (host broadcast, viewer apply, drift correction, late-join sync), host-only UI
 
 
 ## In Progress
 
-- Phase 3: local verification (two clients, host migration)
+- Phase 5: local verification (two clients mirror playback; late join)
 
 
 ## Blocked
