@@ -137,8 +137,8 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
               setError(null);
             }}
           />
-          <button type="submit" className="button button-primary">
-            Load
+          <button type="submit" className="button button-glow">
+            Load video
           </button>
         </form>
       ) : (

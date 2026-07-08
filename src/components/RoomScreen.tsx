@@ -36,8 +36,8 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
   }
 
   return (
-    <section className="panel panel-wide">
-      <header className="room-header">
+    <section className="room-view fade-up">
+      <header className="room-header card">
         <button type="button" className="room-code" onClick={copyCode} title="Click to copy">
           {room.code}
           <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
@@ -46,11 +46,11 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
       </header>
 
       <div className="room-body">
-        <div className="room-main">
+        <div className="room-main card">
           <PlayerPanel service={service} isHost={selfIsHost} />
         </div>
 
-        <aside className="room-aside">
+        <aside className="room-aside card">
           <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
 
           <ul className="member-list">

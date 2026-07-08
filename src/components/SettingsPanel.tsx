@@ -1,29 +1,62 @@
-import { NEUTRAL_FILTERS, THEMES, settingsStore } from '@/lib/settings';
+import {
+  ACCENT_COLORS,
+  DEFAULT_SETTINGS,
+  NEUTRAL_FILTERS,
+  THEMES,
+  settingsStore,
+} from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
 
-/** Local personalization: theme, volume, video filters (ADR-009/010). */
+/** Theme swatch background preview per theme id. */
+const THEME_PREVIEW: Record<string, string> = {
+  'electric-teal': '#0b0e14',
+  'shiny-gold': '#0f0c06',
+  legacy: '#1b1e24',
+};
+
+/** Local personalization page: accent, background theme, volume, filters. */
 export function SettingsPanel(): JSX.Element {
   const settings = useSettings();
 
   return (
-    <div className="settings-panel">
-      <section className="settings-section">
-        <h2 className="settings-heading">Theme</h2>
-        <div className="theme-options">
+    <div className="settings-page fade-up">
+      <h1 className="page-title">Settings</h1>
+
+      <section className="card settings-card">
+        <h2 className="settings-heading">Accent color</h2>
+        <div className="swatch-row">
+          {ACCENT_COLORS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              className={`swatch${settings.accent === color ? ' swatch-active' : ''}`}
+              style={{ background: color }}
+              title={color}
+              onClick={() => settingsStore.update({ accent: color })}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="card settings-card">
+        <h2 className="settings-heading">Background</h2>
+        <div className="swatch-row">
           {THEMES.map((theme) => (
             <button
               key={theme.id}
               type="button"
-              className={`button theme-option${settings.theme === theme.id ? ' theme-option-active' : ''}`}
+              className={`swatch swatch-wide${settings.theme === theme.id ? ' swatch-active' : ''}`}
+              style={{ background: THEME_PREVIEW[theme.id] }}
+              title={theme.label}
               onClick={() => settingsStore.update({ theme: theme.id })}
             >
-              {theme.label}
+              <span className="swatch-label">{theme.label}</span>
             </button>
           ))}
         </div>
       </section>
 
-      <section className="settings-section">
+      <section className="card settings-card">
         <h2 className="settings-heading">Volume — {settings.volumePercent}%</h2>
         <input
           type="range"
@@ -34,7 +67,7 @@ export function SettingsPanel(): JSX.Element {
         />
       </section>
 
-      <section className="settings-section">
+      <section className="card settings-card">
         <h2 className="settings-heading">Video filters</h2>
         <label className="filter-row">
           <span>Brightness {settings.videoFilters.brightness}%</span>
@@ -80,6 +113,14 @@ export function SettingsPanel(): JSX.Element {
           Reset filters
         </button>
       </section>
+
+      <button
+        type="button"
+        className="button button-danger"
+        onClick={() => settingsStore.update(DEFAULT_SETTINGS)}
+      >
+        ↺ Reset to NightWatch default
+      </button>
     </div>
   );
 }

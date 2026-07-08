@@ -12,6 +12,7 @@
 - Renderer shell showing app/Electron version via IPC round-trip
 - Build tooling: dev/build/typecheck scripts, electron-builder Windows NSIS config
 - Phase 2 realtime foundation: Supabase client singleton (`@supabase/supabase-js`), typed event envelope + extensible RealtimeEventMap (shared/events.ts), RealtimeService channel wrapper with typed broadcast send/on, channel naming scheme, useConnectionStatus hook, connection indicator in shell, Supabase endpoints allowed in production CSP
+- Phase 9 UI/UX: sidebar app shell, mac-style cards, glossy/gradient-border buttons, accent color picker (8 swatches), shimmer hero title + entrance/pop animations, player skeleton shimmer, responsive layout
 - Phase 8 personalization: local settings store (localStorage, sanitized), Electric Teal / Shiny Gold / Legacy themes via CSS variables, persisted volume through official player API, brightness/contrast/saturation video filters with reset, settings panel
 - Phase 7 reactions: emoji palette with wire validation, rate-limited ReactionService, floating reaction animations over the player, timestamp timeline marker strip, reaction bar for all members
 - Phase 6 social features: ephemeral chat over room channel (rate-limited, 200-entry cap), join/leave/host-change system notices derived from presence diffs, ChatPanel with smart auto-scroll, two-column room layout

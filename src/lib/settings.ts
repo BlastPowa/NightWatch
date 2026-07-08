@@ -18,8 +18,23 @@ export interface VideoFilters {
   saturation: number;
 }
 
+/** Accent palette (inspired by the NightPlay-style accent picker). */
+export const ACCENT_COLORS = [
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#2dd4bf',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+] as const;
+
+export type AccentColor = (typeof ACCENT_COLORS)[number];
+
 export interface Settings {
   theme: ThemeId;
+  accent: AccentColor;
   volumePercent: number;
   videoFilters: VideoFilters;
 }
@@ -28,6 +43,7 @@ export const NEUTRAL_FILTERS: VideoFilters = { brightness: 100, contrast: 100, s
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'electric-teal',
+  accent: '#2dd4bf',
   volumePercent: 100,
   videoFilters: NEUTRAL_FILTERS,
 };
@@ -44,8 +60,12 @@ function sanitize(raw: unknown): Settings {
   const theme = THEMES.some((t) => t.id === partial.theme)
     ? (partial.theme as ThemeId)
     : DEFAULT_SETTINGS.theme;
+  const accent = (ACCENT_COLORS as readonly string[]).includes(partial.accent as string)
+    ? (partial.accent as AccentColor)
+    : DEFAULT_SETTINGS.accent;
   return {
     theme,
+    accent,
     volumePercent: clamp(Number(partial.volumePercent ?? 100) || 100, 0, 100),
     videoFilters: {
       brightness: clamp(Number(filters.brightness ?? 100) || 100, 50, 150),

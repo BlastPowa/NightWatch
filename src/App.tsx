@@ -21,25 +21,27 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
+type View = 'main' | 'settings';
+
 export function App(): JSX.Element {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [bridgeError, setBridgeError] = useState<string | null>(null);
   const [identity, setIdentity] = useState<GuestIdentity | null>(() => loadIdentity());
   const [roomCode, setRoomCode] = useState<string | null>(null);
+  const [view, setView] = useState<View>('main');
   const connectionStatus = useConnectionStatus();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.dataset['theme'] = settings.theme;
-  }, [settings.theme]);
+    document.documentElement.style.setProperty('--nw-accent', settings.accent);
+  }, [settings.theme, settings.accent]);
 
   useEffect(() => {
     let cancelled = false;
 
     // window.nightwatch only exists inside Electron (injected by preload).
-    // In a plain browser tab (dev-only scenario) skip IPC gracefully.
     if (typeof window.nightwatch === 'undefined') {
       setBridgeError('Running outside Electron');
       return;
@@ -63,58 +65,84 @@ export function App(): JSX.Element {
     };
   }, []);
 
-  const handleEnterRoom = useCallback(
-    (displayName: string, code: string): void => {
-      setIdentity((current) =>
-        current === null ? createIdentity(displayName) : updateDisplayName(current, displayName),
-      );
-      setRoomCode(code);
-    },
-    [],
-  );
+  const handleEnterRoom = useCallback((displayName: string, code: string): void => {
+    setIdentity((current) =>
+      current === null ? createIdentity(displayName) : updateDisplayName(current, displayName),
+    );
+    setRoomCode(code);
+    setView('main');
+  }, []);
 
   const handleLeaveRoom = useCallback((): void => {
     setRoomCode(null);
   }, []);
 
+  const inRoom = roomCode !== null && session !== null && identity !== null;
+
   return (
-    <main className="shell">
-      <button
-        type="button"
-        className="button settings-toggle"
-        title="Settings"
-        onClick={() => setSettingsOpen((open) => !open)}
-      >
-        ⚙
-      </button>
-      {settingsOpen && <SettingsPanel />}
+    <div className="app">
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brand-mark">◗</span>
+          <span className="brand-name">NightWatch</span>
+        </div>
 
-      <h1 className="shell-title">NightWatch</h1>
-      <p className="shell-subtitle">Watch together. Perfectly in sync.</p>
+        <nav className="side-nav">
+          <button
+            type="button"
+            className={`nav-item${view === 'main' ? ' nav-item-active' : ''}`}
+            onClick={() => setView('main')}
+          >
+            {inRoom ? 'Room' : 'Home'}
+          </button>
+          <button
+            type="button"
+            className={`nav-item${view === 'settings' ? ' nav-item-active' : ''}`}
+            onClick={() => setView('settings')}
+          >
+            Settings
+          </button>
+        </nav>
 
-      {roomCode === null || session === null || identity === null ? (
-        <HomeScreen initialName={identity?.displayName ?? ''} onEnterRoom={handleEnterRoom} />
-      ) : (
-        <RoomScreen
-          room={session.state}
-          service={session.service}
-          selfId={identity.id}
-          onLeave={handleLeaveRoom}
-        />
-      )}
-
-      <footer className="shell-footer">
-        <span className={`status-indicator status-${connectionStatus}`}>
-          <span className="status-dot" />
-          {STATUS_LABEL[connectionStatus]}
-        </span>
-        {bridgeError !== null && <span className="shell-meta">{bridgeError}</span>}
-        {appInfo !== null && (
-          <span className="shell-meta">
-            v{appInfo.version} · Electron {appInfo.electronVersion} · {appInfo.platform}
-          </span>
+        {inRoom && (
+          <div className="side-room">
+            <span className="side-label">Current room</span>
+            <span className="side-code">{session.state.code}</span>
+            <span className="side-members">
+              {session.state.members.length}{' '}
+              {session.state.members.length === 1 ? 'person' : 'people'} watching
+            </span>
+          </div>
         )}
-      </footer>
-    </main>
+
+        <div className="side-footer">
+          <span className={`status-indicator status-${connectionStatus}`}>
+            <span className="status-dot" />
+            {STATUS_LABEL[connectionStatus]}
+          </span>
+          {bridgeError !== null && <span className="side-meta">{bridgeError}</span>}
+          {appInfo !== null && (
+            <span className="side-meta">
+              v{appInfo.version} · Electron {appInfo.electronVersion}
+            </span>
+          )}
+        </div>
+      </aside>
+
+      <main className="content">
+        {view === 'settings' ? (
+          <SettingsPanel />
+        ) : inRoom ? (
+          <RoomScreen
+            room={session.state}
+            service={session.service}
+            selfId={identity.id}
+            onLeave={handleLeaveRoom}
+          />
+        ) : (
+          <HomeScreen initialName={identity?.displayName ?? ''} onEnterRoom={handleEnterRoom} />
+        )}
+      </main>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 8 — Personalization
+Phase 9 — UI/UX Polish
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -33,13 +33,19 @@ Completed:
 ✅ Three themes via CSS variable sets + data-theme switch (ADR-010: all free)
 ✅ Volume slider applied through official player API, persisted
 ✅ Video filter sliders (brightness/contrast/saturation) + reset — CSS-only, local-only
-✅ Settings panel (⚙ toggle in shell)
+✅ Phase 8 — personalization (verified)
+✅ Sidebar app shell (Stow-inspired): brand, nav, current-room card, status footer
+✅ Mac-style cards, glossy buttons, animated gradient-border Load button
+✅ Accent color picker (8 swatches, runtime CSS variable) + background/theme swatches
+✅ Fluid text: shimmering hero title, fade-up entrances, chat pop-in, reaction button springs
+✅ Loading states: skeleton shimmer on empty player, pulsing connect dot
+✅ Responsive: sidebar collapses, chat stacks below player under 900px
 
 Current Work:
-Awaiting local verification (theme/volume/filters persist across restart)
+Awaiting visual verification in all three themes + accent colors
 
 Blocked:
 None
 
 Next:
-Phase 9 — UI/UX Polish (design refs: uiverse.io, shadesbyjay.site, flowbite.com, daisyui.com)
+Phase 10 — Production Preparation (packaging, installer, security review, error handling, logging)

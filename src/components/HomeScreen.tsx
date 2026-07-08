@@ -43,44 +43,49 @@ export function HomeScreen({ initialName, onEnterRoom }: HomeScreenProps): JSX.E
   }
 
   return (
-    <section className="panel">
-      <label className="field">
-        <span className="field-label">Display name</span>
-        <input
-          className="input"
-          value={name}
-          maxLength={24}
-          placeholder="Your name"
-          onChange={(e) => {
-            setName(e.target.value);
-            setFormError(null);
-          }}
-        />
-      </label>
+    <section className="hero fade-up">
+      <h1 className="hero-title">NightWatch</h1>
+      <p className="hero-tagline">Watch together. Perfectly in sync.</p>
 
-      <button type="button" className="button button-primary" onClick={handleCreate}>
-        Create Room
-      </button>
+      <div className="card home-card">
+        <label className="field">
+          <span className="field-label">Display name</span>
+          <input
+            className="input"
+            value={name}
+            maxLength={24}
+            placeholder="Your name"
+            onChange={(e) => {
+              setName(e.target.value);
+              setFormError(null);
+            }}
+          />
+        </label>
 
-      <div className="divider">or</div>
-
-      <form className="join-form" onSubmit={handleJoin}>
-        <input
-          className="input input-code"
-          value={joinCode}
-          maxLength={6}
-          placeholder="ROOM CODE"
-          onChange={(e) => {
-            setJoinCode(e.target.value.toUpperCase());
-            setFormError(null);
-          }}
-        />
-        <button type="submit" className="button">
-          Join Room
+        <button type="button" className="button button-primary button-lg" onClick={handleCreate}>
+          Create Room
         </button>
-      </form>
 
-      {formError !== null && <p className="form-error">{formError}</p>}
+        <div className="divider">or join with a code</div>
+
+        <form className="join-form" onSubmit={handleJoin}>
+          <input
+            className="input input-code"
+            value={joinCode}
+            maxLength={6}
+            placeholder="ROOM CODE"
+            onChange={(e) => {
+              setJoinCode(e.target.value.toUpperCase());
+              setFormError(null);
+            }}
+          />
+          <button type="submit" className="button">
+            Join
+          </button>
+        </form>
+
+        {formError !== null && <p className="form-error">{formError}</p>}
+      </div>
     </section>
   );
 }
