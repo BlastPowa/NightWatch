@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
+import { ReactionBar } from '@/components/ReactionBar';
+import { ReactionOverlay } from '@/components/ReactionOverlay';
+import { TimelineMarkers } from '@/components/TimelineMarkers';
+import { useReactions } from '@/hooks/useReactions';
 import { YouTubePlayer } from '@/lib/player/YouTubePlayer';
 import type { RoomService } from '@/lib/room/RoomService';
 import { SyncEngine } from '@/lib/sync/SyncEngine';
@@ -10,19 +14,33 @@ interface PlayerPanelProps {
 }
 
 /**
- * Embedded YouTube player wired to the room's SyncEngine. The host loads
- * videos and drives playback with the player's native controls; viewers
- * follow automatically (ADR-006).
+ * Embedded YouTube player wired to the room's SyncEngine, with the
+ * reaction overlay/bar/timeline. The host loads videos and drives playback
+ * with the player's native controls; viewers follow (ADR-006). Reactions
+ * are open to everyone.
  */
 export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const playerRef = useRef<YouTubePlayer | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [hasVideo, setHasVideo] = useState(false);
+  const [videoId, setVideoId] = useState<string | null>(null);
+  const [durationSeconds, setDurationSeconds] = useState(0);
+  const videoIdRef = useRef<string | null>(null);
+  videoIdRef.current = videoId;
+
+  const { bursts, markers, send, removeBurst } = useReactions(
+    service,
+    () => ({
+      videoId: videoIdRef.current,
+      positionSeconds: playerRef.current?.getCurrentTime() ?? 0,
+    }),
+    videoId,
+  );
 
   useEffect(() => {
     const container = containerRef.current;
@@ -37,10 +55,11 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
       onStateChange: (state) => engineRef.current?.handleLocalStateChange(state),
       onError: (message) => setError(message),
     });
+    playerRef.current = player;
 
     const engine = new SyncEngine(service, player, () => isHostRef.current, {
-      onVideoChanged: () => {
-        setHasVideo(true);
+      onVideoChanged: (id) => {
+        setVideoId(id);
         setError(null);
       },
     });
@@ -63,23 +82,38 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
     return () => {
       disposed = true;
       engineRef.current = null;
+      playerRef.current = null;
       engine.stop();
       player.destroy();
       container.replaceChildren();
+      setVideoId(null);
+      setDurationSeconds(0);
     };
   }, [service]);
 
+  // Track duration for the timeline strip (0 until a video is loaded).
+  useEffect(() => {
+    if (videoId === null) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setDurationSeconds(playerRef.current?.getDuration() ?? 0);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [videoId]);
+
   function handleLoad(event: FormEvent): void {
     event.preventDefault();
-    const videoId = extractVideoId(url);
-    if (videoId === null) {
+    const id = extractVideoId(url);
+    if (id === null) {
       setError('That does not look like a YouTube link or video id.');
       return;
     }
     setError(null);
-    setHasVideo(true);
-    engineRef.current?.loadVideo(videoId);
+    engineRef.current?.loadVideo(id);
   }
+
+  const hasVideo = videoId !== null;
 
   return (
     <div className="player-panel">
@@ -106,12 +140,17 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
 
       <div className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}>
         <div ref={containerRef} className="player-mount" />
+        <ReactionOverlay bursts={bursts} onDone={removeBurst} />
         {!hasVideo && (
           <span className="player-placeholder">
             {isHost ? 'No video loaded' : 'Waiting for the host to pick a video…'}
           </span>
         )}
       </div>
+
+      <TimelineMarkers markers={markers} durationSeconds={durationSeconds} />
+
+      <ReactionBar disabled={!hasVideo} onReact={send} />
     </div>
   );
 }

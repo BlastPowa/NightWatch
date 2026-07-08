@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 6 — Social Features
+Phase 7 — Reaction System
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -23,13 +23,18 @@ Completed:
 ✅ Phase 5 — playback synchronization (verified: mirror, late join, host migration)
 ✅ Ephemeral chat (chat:message event, ChatService with rate limit + capped log)
 ✅ System notices from presence diffs (joined / left / new host)
-✅ ChatPanel with smart auto-scroll; two-column room layout (player + chat/members)
+✅ Phase 6 — chat + notifications (verified)
+✅ Reaction palette + wire validation (shared/reactions.ts)
+✅ ReactionService (rate-limited send, validated receive) on room channel
+✅ Floating emoji animation overlay (pointer-events: none over the player)
+✅ Timeline marker strip below the player (own strip — never drawn over YouTube's UI)
+✅ ReactionBar for all members (not host-gated)
 
 Current Work:
-Awaiting local verification (two clients chat; join/leave/host notices)
+Awaiting local verification (reactions animate + mark timeline on both clients)
 
 Blocked:
 None
 
 Next:
-Phase 7 — Reaction System (timestamp reactions, emoji stamps, timeline markers)
+Phase 8 — Personalization (themes, local preferences, volume, CSS filters)

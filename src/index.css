@@ -243,6 +243,77 @@ body {
   font-size: 0.9rem;
 }
 
+.reaction-overlay {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.reaction-float {
+  position: absolute;
+  bottom: 12%;
+  font-size: 1.8rem;
+  animation: reaction-rise 2.4s ease-out forwards;
+}
+
+@keyframes reaction-rise {
+  0% {
+    transform: translateY(0) scale(0.7);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+    transform: translateY(-8%) scale(1.15);
+  }
+  100% {
+    transform: translateY(-320%) scale(1);
+    opacity: 0;
+  }
+}
+
+.reaction-bar {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.reaction-button {
+  background: var(--nw-bg);
+  border: 1px solid #2a3444;
+  border-radius: 8px;
+  font-size: 1.15rem;
+  padding: 0.3rem 0.55rem;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.reaction-button:hover:not(:disabled) {
+  transform: scale(1.15);
+  border-color: var(--nw-accent);
+}
+
+.reaction-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.timeline-strip {
+  position: relative;
+  height: 22px;
+  background: var(--nw-bg);
+  border: 1px solid #1f2733;
+  border-radius: 6px;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.8rem;
+  cursor: default;
+}
+
 .field {
   display: flex;
   flex-direction: column;

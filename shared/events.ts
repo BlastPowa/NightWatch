@@ -29,6 +29,9 @@ export interface RealtimeEventMap {
   /** A chat message. senderName travels in the payload so messages from
    *  members who have since left still render correctly. */
   'chat:message': { text: string; senderName: string };
+  /** An emoji reaction stamped at a video timestamp. Emoji is validated
+   *  against the palette on receipt (shared/reactions.ts). */
+  'reaction:stamp': { emoji: string; videoId: string; positionSeconds: number };
   /** A member (late joiner / reconnector) asks the host for current state. */
   'sync:request': Record<string, never>;
   /** Host's authoritative snapshot of playback state. */
@@ -50,6 +53,7 @@ export const ROOM_EVENTS: readonly (keyof RealtimeEventMap & string)[] = [
   'playback:play',
   'playback:pause',
   'chat:message',
+  'reaction:stamp',
   'sync:request',
   'sync:state',
 ];

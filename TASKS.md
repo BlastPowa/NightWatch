@@ -2,13 +2,13 @@
 
 ## Current Phase
 
-Phase 6 — Social Features
+Phase 7 — Reaction System
 
 
 ## Backlog
 
-- Phase 7: timestamp reactions, emoji stamps, timeline markers
-- Phase 8: themes + local preferences
+- Phase 8: themes + local preferences (volume, CSS filters)
+- Phase 9: UI/UX polish
 
 
 ## Completed
@@ -18,12 +18,13 @@ Phase 6 — Social Features
 - Phase 3: room system (verified)
 - Phase 4: player integration (verified)
 - Phase 5: playback synchronization (verified)
-- Phase 6: ChatService, system notices, ChatPanel, room layout
+- Phase 6: chat + notifications (verified)
+- Phase 7: reaction palette, ReactionService, overlay animation, timeline markers, ReactionBar
 
 
 ## In Progress
 
-- Phase 6: local verification (chat + notices between two clients)
+- Phase 7: local verification (reactions on both clients)
 
 
 ## Blocked
