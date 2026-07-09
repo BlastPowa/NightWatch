@@ -7,6 +7,10 @@
 export const IpcChannel = {
   GetAppInfo: 'app:get-info',
   PresenceUpdate: 'presence:update',
+  UpdateCheck: 'update:check',
+  UpdateInstall: 'update:install',
+  /** Push channel (main → renderer) carrying UpdateStatusMessage. */
+  UpdateStatus: 'update:status',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -27,6 +31,24 @@ export interface PresenceState {
   videoTitle: string | null;
 }
 
+/** Auto-update status pushed from main to the renderer (ADR-016). */
+export interface UpdateStatusMessage {
+  state:
+    | 'dev'
+    | 'checking'
+    | 'available'
+    | 'downloading'
+    | 'downloaded'
+    | 'up-to-date'
+    | 'error';
+  /** New version, when known (available/downloading/downloaded). */
+  version?: string;
+  /** Download progress 0–100 (downloading only). */
+  percent?: number;
+  /** Human-readable error (error only). */
+  message?: string;
+}
+
 /**
  * Maps each invoke-style channel to its request arguments and response
  * type. Extending IPC in later phases means adding an entry here and a
@@ -41,6 +63,14 @@ export interface IpcInvokeContract {
     args: [PresenceState | null];
     result: void;
   };
+  [IpcChannel.UpdateCheck]: {
+    args: [];
+    result: void;
+  };
+  [IpcChannel.UpdateInstall]: {
+    args: [];
+    result: void;
+  };
 }
 
 /**
@@ -51,4 +81,10 @@ export interface NightWatchBridge {
   getAppInfo(): Promise<AppInfo>;
   /** Update (or clear with null) Discord Rich Presence. */
   updatePresence(state: PresenceState | null): Promise<void>;
+  /** Trigger an update check; results arrive via onUpdateStatus. */
+  checkForUpdates(): Promise<void>;
+  /** Quit and install a downloaded update. */
+  installUpdate(): Promise<void>;
+  /** Subscribe to update status pushes. Returns an unsubscribe fn. */
+  onUpdateStatus(callback: (status: UpdateStatusMessage) => void): () => void;
 }

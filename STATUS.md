@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 10 — Bonus Features & Engagement
+Phase 11 — Auto-Update & App Info
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -47,11 +47,17 @@ Completed:
 ✅ Chat profanity filter: obscenity, censored at source before broadcast (§7.7)
 ✅ Engagement Dashboard: AchievementTracker (5 stats, 8 achievements, batched watch-time), My Card view, unlock toast (ADR-009: device-local only)
 
+✅ Phase 10 — bonus features (Rich Presence verified; search pending Edge Function deploy)
+✅ UpdateManager (electron-updater, packaged-only, auto-check on launch + manual)
+✅ update:check / update:install / update:status IPC (first push channel, locked in preload)
+✅ electron-builder GitHub Releases publish config (BlastPowa/NightWatch)
+✅ About screen: version info, bundled patch notes (CHANGELOG.md), Check for Updates with progress + Restart & Update
+
 Current Work:
-Awaiting verification. NOTE: Edge Function not yet deployed — search shows "not set up" until SETUP.md step 5 + deploy is done (see chat for 3-step deploy).
+UI verification in dev ("dev mode" state); full update round-trip is a Phase 12 test (needs two published releases)
 
 Blocked:
-None (search deploy pending owner's Google API key)
+None (search Edge Function deploy still pending owner's Google API key)
 
 Next:
-Phase 11 — Auto-Update & App Info (ADR-016)
+Phase 12 — Production Preparation (packaging, installer, security review, logging, latency verification per ADR-017)

@@ -3,6 +3,7 @@ import { pathToFileURL } from 'node:url';
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { IpcChannel, type AppInfo, type PresenceState } from '@shared/ipc';
 import { RichPresenceManager } from './richPresence';
+import { UpdateManager } from './updater';
 
 const DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
@@ -12,6 +13,7 @@ let mainWindow: BrowserWindow | null = null;
 
 // Note: must be dot-access — Vite only statically replaces import.meta.env.X.
 const richPresence = new RichPresenceManager(import.meta.env.VITE_DISCORD_CLIENT_ID);
+const updateManager = new UpdateManager(() => mainWindow);
 
 function isValidPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== 'object' || value === null) {
@@ -95,6 +97,14 @@ function registerIpcHandlers(): void {
       richPresence.update(state);
     }
   });
+
+  ipcMain.handle(IpcChannel.UpdateCheck, async (): Promise<void> => {
+    await updateManager.check();
+  });
+
+  ipcMain.handle(IpcChannel.UpdateInstall, (): void => {
+    updateManager.install();
+  });
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -114,6 +124,7 @@ if (!hasSingleInstanceLock) {
   app.whenReady().then(() => {
     registerIpcHandlers();
     richPresence.start();
+    updateManager.init();
     createMainWindow();
 
     app.on('activate', () => {

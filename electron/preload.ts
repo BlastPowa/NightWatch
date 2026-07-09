@@ -4,6 +4,7 @@ import {
   type AppInfo,
   type NightWatchBridge,
   type PresenceState,
+  type UpdateStatusMessage,
 } from '@shared/ipc';
 
 /**
@@ -17,6 +18,23 @@ const bridge: NightWatchBridge = {
   },
   updatePresence: (state: PresenceState | null): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.PresenceUpdate, state) as Promise<void>;
+  },
+  checkForUpdates: (): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.UpdateCheck) as Promise<void>;
+  },
+  installUpdate: (): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.UpdateInstall) as Promise<void>;
+  },
+  onUpdateStatus: (callback: (status: UpdateStatusMessage) => void): (() => void) => {
+    // Locked to the single update:status channel — the listener receives
+    // only the payload, never the IpcRendererEvent.
+    const listener = (_event: unknown, status: UpdateStatusMessage): void => {
+      callback(status);
+    };
+    ipcRenderer.on(IpcChannel.UpdateStatus, listener);
+    return () => {
+      ipcRenderer.removeListener(IpcChannel.UpdateStatus, listener);
+    };
   },
 };
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AppInfo } from '@shared/ipc';
+import { AboutScreen } from '@/components/AboutScreen';
 import { HomeScreen } from '@/components/HomeScreen';
 import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
@@ -23,7 +24,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'settings' | 'card';
+type View = 'main' | 'settings' | 'card' | 'about';
 
 export function App(): JSX.Element {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -120,6 +121,13 @@ export function App(): JSX.Element {
           >
             Settings
           </button>
+          <button
+            type="button"
+            className={`nav-item${view === 'about' ? ' nav-item-active' : ''}`}
+            onClick={() => setView('about')}
+          >
+            About
+          </button>
         </nav>
 
         {inRoom && (
@@ -150,6 +158,7 @@ export function App(): JSX.Element {
       <main className="content">
         {view === 'settings' && <SettingsPanel />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
+        {view === 'about' && <AboutScreen />}
         {/* The room stays mounted while other views are open so the player,
             sync engine, and chat survive navigation (host state has no
             server-side source to restore from). */}
