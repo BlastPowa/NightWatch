@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
 import { ReactionBar } from '@/components/ReactionBar';
+import { SearchBox } from '@/components/SearchBox';
+import { achievementTracker } from '@/lib/engagement/AchievementTracker';
+import { updateRichPresence } from '@/lib/presence';
 import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
 import { useReactions } from '@/hooks/useReactions';
@@ -13,6 +16,8 @@ import { SyncEngine } from '@/lib/sync/SyncEngine';
 interface PlayerPanelProps {
   service: RoomService;
   isHost: boolean;
+  roomCode: string;
+  selfId: string;
 }
 
 /**
@@ -21,7 +26,7 @@ interface PlayerPanelProps {
  * with the player's native controls; viewers follow (ADR-006). Reactions
  * are open to everyone.
  */
-export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element {
+export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
@@ -30,6 +35,7 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [sourceMode, setSourceMode] = useState<'link' | 'search'>('link');
   const [videoId, setVideoId] = useState<string | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const videoIdRef = useRef<string | null>(null);
@@ -100,16 +106,40 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
     playerRef.current?.setVolume(settings.volumePercent);
   }, [settings.volumePercent]);
 
-  // Track duration for the timeline strip (0 until a video is loaded).
+  // Track duration for the timeline strip (0 until a video is loaded) and
+  // count active watch time for the local engagement dashboard.
   useEffect(() => {
     if (videoId === null) {
       return;
     }
     const timer = window.setInterval(() => {
       setDurationSeconds(playerRef.current?.getDuration() ?? 0);
+      if (playerRef.current?.getState() === 'playing') {
+        achievementTracker.tickWatch(1);
+      }
     }, 1000);
     return () => window.clearInterval(timer);
   }, [videoId]);
+
+  // Discord Rich Presence: report room + video title; clear on unmount.
+  useEffect(() => {
+    updateRichPresence({ roomCode, videoTitle: null });
+    if (videoId === null) {
+      return;
+    }
+    // Title is available shortly after the video loads.
+    const timer = window.setTimeout(() => {
+      updateRichPresence({
+        roomCode,
+        videoTitle: playerRef.current?.getVideoTitle() ?? null,
+      });
+    }, 2500);
+    return () => window.clearTimeout(timer);
+  }, [roomCode, videoId]);
+
+  useEffect(() => {
+    return () => updateRichPresence(null);
+  }, []);
 
   function handleLoad(event: FormEvent): void {
     event.preventDefault();
@@ -119,6 +149,11 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
       return;
     }
     setError(null);
+    loadVideo(id);
+  }
+
+  function loadVideo(id: string): void {
+    achievementTracker.record('video-loaded');
     engineRef.current?.loadVideo(id);
   }
 
@@ -127,20 +162,43 @@ export function PlayerPanel({ service, isHost }: PlayerPanelProps): JSX.Element 
   return (
     <div className="player-panel">
       {isHost ? (
-        <form className="player-form" onSubmit={handleLoad}>
-          <input
-            className="input"
-            value={url}
-            placeholder="Paste a YouTube link…"
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError(null);
-            }}
-          />
-          <button type="submit" className="button button-glow">
-            Load video
-          </button>
-        </form>
+        <>
+          <div className="source-tabs">
+            <button
+              type="button"
+              className={`source-tab${sourceMode === 'link' ? ' source-tab-active' : ''}`}
+              onClick={() => setSourceMode('link')}
+            >
+              Link
+            </button>
+            <button
+              type="button"
+              className={`source-tab${sourceMode === 'search' ? ' source-tab-active' : ''}`}
+              onClick={() => setSourceMode('search')}
+            >
+              Search
+            </button>
+          </div>
+
+          {sourceMode === 'link' ? (
+            <form className="player-form" onSubmit={handleLoad}>
+              <input
+                className="input"
+                value={url}
+                placeholder="Paste a YouTube link…"
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setError(null);
+                }}
+              />
+              <button type="submit" className="button button-glow">
+                Load video
+              </button>
+            </form>
+          ) : (
+            <SearchBox callerId={selfId} onSelect={loadVideo} />
+          )}
+        </>
       ) : (
         <p className="player-viewer-note">The host controls playback.</p>
       )}

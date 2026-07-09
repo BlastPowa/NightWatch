@@ -42,7 +42,10 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             sourcemap: true,
-            rollupOptions: { output: { format: 'cjs', entryFileNames: '[name].js' } },
+            rollupOptions: {
+              external: ['bufferutil', 'utf-8-validate'],
+              output: { format: 'cjs', entryFileNames: '[name].js' },
+            },
           },
         },
       },

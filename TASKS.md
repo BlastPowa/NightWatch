@@ -2,13 +2,16 @@
 
 ## Current Phase
 
-Phase 9 — UI/UX Polish
+Phase 10 — Bonus Features & Engagement
 
 
 ## Backlog
 
-- Phase 10: production prep (packaging, installer, security review)
-- Bonus features (ADR-011): Discord Rich Presence, in-app YouTube search, profanity filter
+- Phase 11: auto-update & app info — "About NightWatch" screen, changelog/patch notes, manual update check (ADR-016)
+- Phase 12: production prep (packaging, installer, security review, international latency verification — ADR-017)
+- Phase 13: Discord Activity (deferred, ADR-008)
+- Phases 14-17 (post-MVP differentiation backlog): persistent community rooms, collaborative queue & voting, creator/host tools, deeper social/gamification — see ROADMAP.md and PRODUCT_REQUIREMENTS.md §14
+- Deploy search-youtube Edge Function once Google API key exists (SETUP.md step 5)
 
 
 ## Completed
@@ -21,12 +24,13 @@ Phase 9 — UI/UX Polish
 - Phase 6: chat + notifications (verified)
 - Phase 7: reactions (verified)
 - Phase 8: personalization (verified)
-- Phase 9: sidebar shell, cards, accent picker, animations, loading states, responsive (refs: uiverse.io, shadesbyjay.site, flowbite.com, daisyui.com + owner screenshots)
+- Phase 9: UI overhaul (verified) — sidebar shell, cards, accent picker, animations, loading states, responsive
+- Phase 10: Rich Presence, YouTube search (client + Edge Function code), profanity filter, engagement dashboard
 
 
 ## In Progress
 
-- Phase 9: visual verification
+- Phase 10: verification; Edge Function deployment pending API key
 
 
 ## Blocked

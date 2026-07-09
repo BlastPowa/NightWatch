@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { RoomMember } from '@shared/room';
 import { useChat } from '@/hooks/useChat';
+import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { RoomService } from '@/lib/room/RoomService';
 
 interface ChatPanelProps {
@@ -37,6 +38,7 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
     event.preventDefault();
     if (send(draft, selfName) === 'ok') {
       setDraft('');
+      achievementTracker.record('chat-sent');
     }
   }
 

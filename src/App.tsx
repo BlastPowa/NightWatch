@@ -3,6 +3,8 @@ import type { AppInfo } from '@shared/ipc';
 import { HomeScreen } from '@/components/HomeScreen';
 import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { UserCard } from '@/components/UserCard';
+import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
@@ -21,7 +23,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'settings';
+type View = 'main' | 'settings' | 'card';
 
 export function App(): JSX.Element {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -32,6 +34,14 @@ export function App(): JSX.Element {
   const connectionStatus = useConnectionStatus();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
+  const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
+
+  useEffect(() => {
+    return achievementTracker.onUnlock((achievement) => {
+      setUnlockToast(achievement);
+      window.setTimeout(() => setUnlockToast(null), 4000);
+    });
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset['theme'] = settings.theme;
@@ -71,6 +81,7 @@ export function App(): JSX.Element {
     );
     setRoomCode(code);
     setView('main');
+    achievementTracker.record('room-joined');
   }, []);
 
   const handleLeaveRoom = useCallback((): void => {
@@ -94,6 +105,13 @@ export function App(): JSX.Element {
             onClick={() => setView('main')}
           >
             {inRoom ? 'Room' : 'Home'}
+          </button>
+          <button
+            type="button"
+            className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
+            onClick={() => setView('card')}
+          >
+            My Card
           </button>
           <button
             type="button"
@@ -130,17 +148,32 @@ export function App(): JSX.Element {
       </aside>
 
       <main className="content">
-        {view === 'settings' ? (
-          <SettingsPanel />
-        ) : inRoom ? (
-          <RoomScreen
-            room={session.state}
-            service={session.service}
-            selfId={identity.id}
-            onLeave={handleLeaveRoom}
-          />
-        ) : (
-          <HomeScreen initialName={identity?.displayName ?? ''} onEnterRoom={handleEnterRoom} />
+        {view === 'settings' && <SettingsPanel />}
+        {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
+        {/* The room stays mounted while other views are open so the player,
+            sync engine, and chat survive navigation (host state has no
+            server-side source to restore from). */}
+        <div style={{ display: view === 'main' ? 'contents' : 'none' }}>
+          {inRoom ? (
+            <RoomScreen
+              room={session.state}
+              service={session.service}
+              selfId={identity.id}
+              onLeave={handleLeaveRoom}
+            />
+          ) : (
+            <HomeScreen initialName={identity?.displayName ?? ''} onEnterRoom={handleEnterRoom} />
+          )}
+        </div>
+
+        {unlockToast !== null && (
+          <div className="unlock-toast">
+            <span className="unlock-emoji">{unlockToast.emoji}</span>
+            <div>
+              <p className="unlock-title">Achievement unlocked!</p>
+              <p className="unlock-name">{unlockToast.title}</p>
+            </div>
+          </div>
         )}
       </main>
     </div>

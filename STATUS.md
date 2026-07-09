@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 9 — UI/UX Polish
+Phase 10 — Bonus Features & Engagement
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -41,11 +41,17 @@ Completed:
 ✅ Loading states: skeleton shimmer on empty player, pulsing connect dot
 ✅ Responsive: sidebar collapses, chat stacks below player under 900px
 
+✅ Phase 9 — UI overhaul (verified)
+✅ Discord Rich Presence: main-process RPC manager (silent-degrade, retry), presence:update IPC, renderer reporting (room + video title via official getVideoData)
+✅ In-app YouTube search: search-youtube Edge Function (server-held key, per-caller daily limit), SearchService, host Link/Search tabs with thumbnail results
+✅ Chat profanity filter: obscenity, censored at source before broadcast (§7.7)
+✅ Engagement Dashboard: AchievementTracker (5 stats, 8 achievements, batched watch-time), My Card view, unlock toast (ADR-009: device-local only)
+
 Current Work:
-Awaiting visual verification in all three themes + accent colors
+Awaiting verification. NOTE: Edge Function not yet deployed — search shows "not set up" until SETUP.md step 5 + deploy is done (see chat for 3-step deploy).
 
 Blocked:
-None
+None (search deploy pending owner's Google API key)
 
 Next:
-Phase 10 — Production Preparation (packaging, installer, security review, error handling, logging)
+Phase 11 — Auto-Update & App Info (ADR-016)

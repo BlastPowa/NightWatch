@@ -1,7 +1,7 @@
 # NightWatch — Architecture
 
 Status: Draft v1 — Phase 0 (Documentation & Planning)
-Built from PRODUCT_REQUIREMENTS.md and the decisions logged in DESCISIONS.md (ADR-001 through ADR-011).
+Built from PRODUCT_REQUIREMENTS.md and the decisions logged in DESCISIONS.md (ADR-001 through ADR-017).
 
 This document is the technical blueprint. No code is written here — implementation begins only after this is reviewed.
 
@@ -209,6 +209,19 @@ Covers the newer MVP features from PRODUCT_REQUIREMENTS.md §5.6–§5.12. None 
 - **Discord Activity (ADR-008)**: the renderer's core modules — `SyncEngine` (§6), `AchievementTracker` (§7.4), room/chat/reaction UI components — are written against a small platform-adapter interface (`PlatformBridge`) for the handful of things that differ between Electron and a browser-hosted Activity: local storage (Electron `electron-store` vs. browser `localStorage`/Discord SDK storage), OAuth flow (system-browser + custom protocol vs. Discord Activity's own auth handshake), and Rich Presence (Electron main-process RPC vs. the Discord Embedded App SDK's built-in Activity status). A future Activity build supplies a different `PlatformBridge` implementation and reuses everything else — this is a *design constraint to honor now*, not implementation work.
 - **Cross-platform (desktop)**: main-process/renderer split and the Supabase-only backend have no Windows-specific dependency; adding Mac/Linux targets later is an electron-builder configuration change, not a rearchitecture (ADR-007).
 - **Additional media providers**: the `playback:load` broadcast shape already carries a provider-agnostic-enough payload (`videoId`) that a future provider would extend rather than replace, if ever legally pursued.
+
+### 9.1 Post-MVP Differentiation Architecture Notes
+
+Forward-looking notes for PRODUCT_REQUIREMENTS.md §14 — not built now, so a future implementer isn't starting from zero:
+
+- **Persistent Community Rooms (§14.1, ADR-012)**: introduces the first Postgres-backed table in the project — a `rooms` table (owner id, room code/slug, schedule, visibility) that the ephemeral Realtime channel is keyed against, rather than the channel *being* the room. Presence/Broadcast mechanics (§3.2) are unaffected; only room *creation/lookup* gains a persistence step.
+- **Collaborative Queue & Voting (§14.2, ADR-013)**: modeled as a new Broadcast event family (`queue:add`, `queue:vote`, `queue:advance`) carrying an ordered array in Presence-adjacent shared state — same pattern as existing `playback:*` events, no new persistence layer.
+- **Creator/Host Tools (§14.3, ADR-014)**: requires an opt-in event-logging path — likely a lightweight Edge Function (same pattern as §7.6's search proxy) that a host's client posts anonymized session events to, only when the host has enabled analytics for that room. Never default-on.
+- **Deeper Social/Gamification (§14.4)**: direct continuation of the Cross-Device Engagement Dashboard upgrade path already described above in this section.
+
+### 9.2 International Latency Verification (Phase 12)
+
+Supabase's free tier is single-region — there's no free multi-region option. Phase 12 (Production Preparation) should explicitly test the drift-correction tolerance defined in §6 (currently ~1.5s) against a higher-latency client (e.g. a tester on another continent from the project's Supabase region) and confirm it still produces smooth playback without excessive corrective seeking. If it doesn't hold up, the fix is making the tolerance adaptive per client's measured round-trip time rather than switching infrastructure — true multi-region hosting is out of scope without moving to paid tiers (ADR-017).
 
 ---
 

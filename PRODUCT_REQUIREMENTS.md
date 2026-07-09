@@ -31,6 +31,24 @@ Distribution model: a native Windows executable (installer), built and packaged 
 
 ---
 
+## 2.1 Why NightWatch, Not Discord Watch Together or YouTube Itself
+
+Discord already ships a native Watch Together Activity, and YouTube has billions of users on its own. Before investing further, it's worth answering directly: what does NightWatch do that those two don't?
+
+| Gap in existing tools | What NightWatch does differently |
+|---|---|
+| Discord Watch Together dies the moment the voice call ends — no persistence, no memory | **Persistent, shareable rooms** (§14) that exist independent of a live Discord call — a community's "usual room" you can return to anytime |
+| Discord Watch Together is locked to one Discord server/channel; hard to pull people from multiple servers or non-Discord friends into one session | Rooms are joinable by **link**, not tied to a single Discord server — cross-server and cross-platform friend groups can watch together |
+| Only the host controls the single video — no queueing, no input from the group | **Collaborative queue & voting** (§14) — anyone can add a video, the group votes on what's next |
+| Neither Discord nor YouTube has any shared, timestamp-tied reaction layer | **Timestamped floating stamp reactions** (§5.6) — a genuinely new social layer neither competitor offers today |
+| Neither platform gives a community host any insight into how their audience actually watched | **Host/creator analytics** (§14) — watch-time retention, reaction density by timestamp — useful to streamers/community leads running watch-alongs |
+| Watching together has no sense of progression or shared history | **Gamified engagement** (§5.9, §14) — achievements and streaks that build a repeat-use habit loop |
+| Watch Together is buried inside Discord's UI; YouTube has no group-watch concept at all | NightWatch is a **dedicated, standalone app** — its own taskbar presence and identity, not a feature three menus deep in another product |
+
+None of this requires breaking compliance with YouTube's ToS (§8) — the differentiation is entirely in the social/community layer *around* the video, never in how the video itself is served. §14 turns this table into a phased backlog.
+
+---
+
 ## 3. Target Users
 
 - Friend groups who want to watch YouTube content (videos, let's-plays, music, reaction content, etc.) together while physically apart.
@@ -229,7 +247,7 @@ Flagging these now so they can be deliberately addressed in ARCHITECTURE.md rath
 5. **YouTube playback restrictions.** Some videos are unembeddable, age-restricted, region-locked, or owner-disabled for embedding. The product needs defined behavior (error state, host notified, room notified) rather than silent failure.
 6. **Abuse/spam surface.** Chat and reactions are unauthenticated-by-default in MVP (no accounts) — needs at least basic rate-limiting and input sanitization to prevent spam/XSS-style payloads in chat.
 7. **API key handling in a distributed executable.** With the Supabase-based backend (ADR-004), the Electron app ships with a Supabase project URL and *anon* public key — this is safe to embed by design (Supabase's anon key is meant to be public; access control is enforced via Row Level Security / Realtime authorization rules, not by keeping the key secret). If a YouTube Data API key is added later for metadata/thumbnail lookups, that key would need its own handling review since Google API keys are not designed to be embedded client-side the same way.
-8. **Auto-update strategy.** Since this ships as an installed `.exe`, there's no implicit "refresh the page to get the latest version" — an update mechanism (or accepted manual-reinstall policy) needs to be decided before Phase 10.
+8. **Auto-update strategy.** Resolved — `electron-updater` + GitHub Releases (ARCHITECTURE.md §2.1/§2.3) is the mechanism; Phase 11 adds the in-app "About NightWatch" UI (version, patch notes, manual check) per ADR-016, so users are never left needing to manually revisit GitHub.
 
 ---
 
@@ -254,6 +272,55 @@ Flagging these now so they can be deliberately addressed in ARCHITECTURE.md rath
 
 ## 12. What Happens Next (Process, Not Architecture)
 
-Per the phased workflow defined in CLAUDE.md: this PRD is the functional source of truth going forward. The core open questions in §11 are now resolved (ADR-004 through ADR-007 in DESCISIONS.md), and **ARCHITECTURE.md** has been drafted on that basis — covering the Electron main/renderer split, IPC strategy, Supabase-based backend architecture, room lifecycle, and security model. The remaining "Still Open" items in §11 are small enough to resolve during Phase 3 (Room System) implementation rather than blocking architecture.
+Per the phased workflow defined in CLAUDE.md: this PRD is the functional source of truth going forward. The core open questions in §11 are now resolved (ADR-004 through ADR-011 in DESCISIONS.md), and **ARCHITECTURE.md** has been drafted on that basis — covering the Electron main/renderer split, IPC strategy, Supabase-based backend architecture, room lifecycle, and security model. The remaining "Still Open" items in §11 are small enough to resolve during implementation rather than blocking architecture.
 
-No code has been written; only planning/architecture documents exist so far.
+As of this revision, Phases 0–9 (ROADMAP.md) are complete. See §14 for what comes next.
+
+---
+
+## 13. Development Status
+
+Implementation is underway via Cowork, tracked in TASKS.md/STATUS.md/CHANGELOG.md rather than duplicated here. Phases 0–9 (documentation through UI/UX polish) are complete as of this revision. Remaining MVP phases (10–12) and the differentiation backlog (14+) are defined in ROADMAP.md and summarized in §14 below.
+
+---
+
+## 14. Post-MVP Differentiation Backlog
+
+Answers the "why NightWatch" question from §2.1 with a phased plan. None of this is scheduled with committed dates — it's a prioritized backlog for after the MVP (ROADMAP.md Phases 10–12) ships. Full architecture detail lives in ARCHITECTURE.md §9; ADRs 012–017 in DESCISIONS.md record the scoping decisions.
+
+### 14.1 Persistent Community Rooms (highest priority)
+
+- Permanent, reusable room links — not regenerated every session.
+- Scheduled watch parties: pick a future time, the room "opens" then.
+- Cross-Discord-server room access — a room isn't owned by or locked to one Discord server.
+- Requires a Postgres-backed room record (ADR-012) — the first feature that breaks from the pure-ephemeral MVP model.
+
+### 14.2 Collaborative Queue & Voting
+
+- A shared video queue any room member can add to.
+- Voting/reordering, with auto-advance when the current video ends.
+- Stays within the existing Realtime Broadcast model (ADR-013) — smaller architecture jump than persistent rooms.
+
+### 14.3 Creator/Host Tools
+
+- Host-facing analytics: watch-time retention curve, reaction density by timestamp.
+- Highlight-reel export, auto-compiled from clusters of top reactions.
+- Premiere-style scheduled events for a host's audience.
+- Requires opt-in telemetry persistence (ADR-014) — the first real analytics capability in the product; explicitly opt-in per host/room, not default-on data collection.
+
+### 14.4 Deeper Social & Gamification
+
+- Upgrades the local-only Engagement Dashboard (§5.9) to cross-device via Supabase Postgres + Row Level Security (the upgrade path already anticipated in ADR-009/ARCHITECTURE.md §9).
+- Cross-friend-group leaderboards, watch streaks, shared/visible achievements.
+
+### 14.5 Monetization Ideas (documented only — not designed or built)
+
+- **Pro room tier**: capacity beyond Supabase's free 200-connection ceiling, custom branding, highlight-reel export (§14.3) as a paid perk.
+- **In-app sponsorship/banner slots**: confined strictly to NightWatch's own UI (lobby/home screen only) — never on, over, or near the YouTube player, per the ad-safety guardrails in §8.1.
+- **B2B**: a creator/community analytics dashboard (§14.3) offered as a subscription add-on.
+
+See ADR-015 — this section exists to preserve the option, not to commit engineering time now.
+
+### 14.6 International Latency Handling
+
+Supabase's free tier runs in a single region — there is no free multi-region low-latency option, so users far from that region will see higher round-trip time on Realtime messages. Near-term mitigation (Phase 12, Production Preparation): verify the existing drift-correction tolerance (ARCHITECTURE.md §6, currently ~1.5s) actually holds up under higher latency, and consider making it adaptive per client's measured round-trip time rather than a fixed constant. True multi-region support is Future Expansion, contingent on paid infrastructure (ADR-017) — documented as a known limitation rather than promised as solved.

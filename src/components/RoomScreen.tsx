@@ -47,7 +47,12 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
 
       <div className="room-body">
         <div className="room-main card">
-          <PlayerPanel service={service} isHost={selfIsHost} />
+          <PlayerPanel
+            service={service}
+            isHost={selfIsHost}
+            roomCode={room.code}
+            selfId={selfId}
+          />
         </div>
 
         <aside className="room-aside card">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactionEmoji, ReactionStamp } from '@shared/reactions';
+import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import { ReactionService, type ReactionContext } from '@/lib/reactions/ReactionService';
 import type { RoomService } from '@/lib/room/RoomService';
 
@@ -56,6 +57,7 @@ export function useReactions(
 
   const send = useCallback((emoji: ReactionEmoji): void => {
     reactionsRef.current?.send(emoji);
+    achievementTracker.record('reaction-sent');
   }, []);
 
   const removeBurst = useCallback((id: string): void => {

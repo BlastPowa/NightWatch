@@ -91,6 +91,18 @@ export class YouTubePlayer {
     return this.player?.getDuration() ?? 0;
   }
 
+  /** Current video title from the player's own metadata (official API). */
+  public getVideoTitle(): string | null {
+    if (this.player === null || !this.isReady) {
+      return null;
+    }
+    const data = (
+      this.player as unknown as { getVideoData?: () => { title?: string } | undefined }
+    ).getVideoData?.();
+    const title = data?.title;
+    return typeof title === 'string' && title.length > 0 ? title : null;
+  }
+
   public getState(): PlayerState {
     if (this.player === null || !this.isReady) {
       return 'unstarted';

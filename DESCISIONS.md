@@ -142,3 +142,81 @@ Add three MVP bonus features, all free-tier: Discord Rich Presence (via the same
 Reason:
 
 All three were explicitly requested and confirmed as in-scope. None require new paid infrastructure — Rich Presence reuses the existing Discord Application, YouTube search proxying stays inside the already-free Supabase stack (and avoids shipping a raw Google API key inside the Electron binary, an extraction risk noted in PRODUCT_REQUIREMENTS.md §10.7), and the profanity filter is a local library with no external dependency.
+
+
+---
+
+## ADR-012
+
+Decision:
+
+Persistent/scheduled community rooms (Phase 14, post-MVP) require a Postgres-backed room record (room metadata, ownership, schedule) instead of the pure ephemeral Realtime-channel model used everywhere else.
+
+Reason:
+
+Rooms that must exist before anyone joins, survive being empty, and be reachable by a stable link cannot live purely in Realtime Presence/Broadcast state, which only exists while at least one client is subscribed. This is the first feature to require room data outside the ephemeral model — the rest of the architecture (Presence/Broadcast mechanics, sync engine) is unaffected and continues to run against whatever room record exists.
+
+
+---
+
+## ADR-013
+
+Decision:
+
+Collaborative queue & voting (Phase 15, post-MVP) is implemented within the existing Realtime Broadcast model — the queue is synced state (an ordered list) broadcast the same way `playback:*` events are, not a new Postgres-backed system.
+
+Reason:
+
+Unlike persistent rooms, a queue only needs to exist while people are actively in the room together — it doesn't need to survive an empty room. Keeping it in Broadcast avoids introducing persistence and Row Level Security work for a feature that doesn't need it.
+
+
+---
+
+## ADR-014
+
+Decision:
+
+Creator/host analytics (Phase 16, post-MVP) requires persisting session event data to Supabase Postgres, and must be explicitly opt-in per host/room.
+
+Reason:
+
+This is the first feature in the product that constitutes real telemetry/analytics — the original PRD explicitly scoped analytics as out-of-MVP (§6) specifically because no data collection existed. Introducing it later for a specific, valuable use case (host insight into their own audience) must not become silent/default data collection; hosts must opt in per room.
+
+
+---
+
+## ADR-015
+
+Decision:
+
+Monetization ideas (Pro room tier, in-app sponsorship/banner slots, B2B creator-analytics subscription) are documented for future consideration only. None are designed or built as part of this planning pass or the MVP.
+
+Reason:
+
+The user confirmed monetization is worth noting but not a current build priority. Documenting the ideas now (rather than omitting them) preserves the option without committing engineering time. Any future ad/sponsorship placement must stay confined to NightWatch's own UI (e.g. lobby/home screen) — never on, over, or near the YouTube player — to remain consistent with the existing ad-safety compliance guardrails (PRODUCT_REQUIREMENTS.md §8.1).
+
+
+---
+
+## ADR-016
+
+Decision:
+
+Add a dedicated in-app "About NightWatch" UI (Phase 11) that surfaces app version, patch notes/changelog, and a manual "Check for Updates" action, backed by the `electron-updater` + GitHub Releases mechanism already architected in ARCHITECTURE.md §2.1/§2.3.
+
+Reason:
+
+The auto-update mechanism itself was already planned (main-process `electron-updater` checking GitHub Releases), but had no user-facing surface — users would be updated silently at best, with no way to see what changed or manually trigger a check. This ADR adds the missing UI layer; it introduces no new update mechanism.
+
+
+---
+
+## ADR-017
+
+Decision:
+
+Acknowledge Supabase's free-tier single-region Realtime hosting as an MVP limitation for international users. Near-term mitigation is verifying and, if needed, tuning the drift-correction tolerance (ARCHITECTURE.md §6) during Phase 12 (Production Preparation) rather than pursuing multi-region infrastructure.
+
+Reason:
+
+There is no free multi-region low-latency option, so true global parity isn't achievable within the current zero-cost infrastructure constraint. The existing drift-correction tolerance already absorbs moderate latency; validating it against higher round-trip times (and considering an adaptive, per-client tolerance instead of a fixed constant) is a reasonable, low-cost mitigation. True multi-region support is documented as Future Expansion, contingent on moving to paid infrastructure.

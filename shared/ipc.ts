@@ -6,6 +6,7 @@
 
 export const IpcChannel = {
   GetAppInfo: 'app:get-info',
+  PresenceUpdate: 'presence:update',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -20,6 +21,12 @@ export interface AppInfo {
   platform: NodeJS.Platform;
 }
 
+/** Discord Rich Presence state reported by the renderer (§7.5). */
+export interface PresenceState {
+  roomCode: string;
+  videoTitle: string | null;
+}
+
 /**
  * Maps each invoke-style channel to its request arguments and response
  * type. Extending IPC in later phases means adding an entry here and a
@@ -30,6 +37,10 @@ export interface IpcInvokeContract {
     args: [];
     result: AppInfo;
   };
+  [IpcChannel.PresenceUpdate]: {
+    args: [PresenceState | null];
+    result: void;
+  };
 }
 
 /**
@@ -38,4 +49,6 @@ export interface IpcInvokeContract {
  */
 export interface NightWatchBridge {
   getAppInfo(): Promise<AppInfo>;
+  /** Update (or clear with null) Discord Rich Presence. */
+  updatePresence(state: PresenceState | null): Promise<void>;
 }
