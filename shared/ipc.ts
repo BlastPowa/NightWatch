@@ -11,6 +11,7 @@ export const IpcChannel = {
   UpdateInstall: 'update:install',
   /** Push channel (main → renderer) carrying UpdateStatusMessage. */
   UpdateStatus: 'update:status',
+  LogWrite: 'log:write',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -71,7 +72,13 @@ export interface IpcInvokeContract {
     args: [];
     result: void;
   };
+  [IpcChannel.LogWrite]: {
+    args: [LogLevel, string];
+    result: void;
+  };
 }
+
+export type LogLevel = 'info' | 'warn' | 'error';
 
 /**
  * The API surface exposed to the renderer on `window.nightwatch` by the
@@ -87,4 +94,6 @@ export interface NightWatchBridge {
   installUpdate(): Promise<void>;
   /** Subscribe to update status pushes. Returns an unsubscribe fn. */
   onUpdateStatus(callback: (status: UpdateStatusMessage) => void): () => void;
+  /** Append a line to the local log file (fire-and-forget). */
+  log(level: LogLevel, message: string): Promise<void>;
 }

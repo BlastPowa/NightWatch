@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 11 — Auto-Update & App Info
+Phase 12 — Production Preparation
 
 
 ## Backlog
@@ -26,11 +26,12 @@ Phase 11 — Auto-Update & App Info
 - Phase 9: UI overhaul (verified) — sidebar shell, cards, accent picker, animations, loading states, responsive
 - Phase 10: Rich Presence, YouTube search (client + Edge Function code), profanity filter, engagement dashboard
 - Phase 11: UpdateManager, update IPC + push channel, About screen, GitHub publish config
+- Phase 12: logging, global error handling, security review (SECURITY_REVIEW.md), payload validation, adaptive drift tolerance, packaging polish
 
 
 ## In Progress
 
-- Phase 11: dev-mode UI verification; Edge Function deployment pending API key
+- Phase 12: owner release/install/update verification; high-latency drift test; Edge Function deployment pending API key
 
 
 ## Blocked

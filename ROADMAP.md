@@ -8,7 +8,7 @@ Build a downloadable desktop watch-party application using Electron that allows 
 
 # Phase 0 — Documentation & Planning
 
-Status: Not Started
+Status: Complete
 
 Goals:
 
@@ -31,7 +31,7 @@ Deliverables:
 
 # Phase 1 — Desktop Foundation
 
-Status: Not Started
+Status: Complete
 
 Goal:
 
@@ -57,7 +57,7 @@ No application features yet.
 
 # Phase 2 — Backend Foundation
 
-Status: Not Started
+Status: Complete (implemented as Supabase Realtime foundation per ADR-004, replacing the Node/Express/Socket.io plan below)
 
 Goal:
 
@@ -77,7 +77,7 @@ Features:
 
 # Phase 3 — Room System
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -93,7 +93,7 @@ Features:
 
 # Phase 4 — YouTube Player Integration
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -108,7 +108,7 @@ Features:
 
 # Phase 5 — Playback Synchronization
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -124,7 +124,7 @@ Features:
 
 # Phase 6 — Social Features
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -137,7 +137,7 @@ Features:
 
 # Phase 7 — Reaction System
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -151,7 +151,7 @@ Features:
 
 # Phase 8 — Personalization
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -165,7 +165,7 @@ Features:
 
 # Phase 9 — UI/UX Polish
 
-Status: Not Started
+Status: Complete
 
 Features:
 
@@ -180,7 +180,7 @@ Features:
 
 # Phase 10 — Bonus Features & Engagement
 
-Status: Not Started
+Status: Complete (search Edge Function deployment pending owner's Google API key)
 
 Goal:
 
@@ -198,7 +198,7 @@ Features:
 
 # Phase 11 — Auto-Update & App Info
 
-Status: Not Started
+Status: Complete (full update round-trip verified as part of Phase 12 release testing)
 
 Goal:
 
@@ -215,7 +215,7 @@ Features:
 
 # Phase 12 — Production Preparation
 
-Status: Not Started
+Status: In Progress (code complete; release/install/update verification with the owner)
 
 Features:
 

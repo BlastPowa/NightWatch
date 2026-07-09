@@ -1,13 +1,32 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
-import { IpcChannel, type AppInfo, type PresenceState } from '@shared/ipc';
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron';
+import { IpcChannel, type AppInfo, type LogLevel, type PresenceState } from '@shared/ipc';
+import { logger } from './logger';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
 
 const DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 const RENDERER_INDEX = path.join(__dirname, '..', 'dist', 'index.html');
+const DIST_DIR = path.join(__dirname, '..', 'dist');
+
+// Custom scheme for production: serves the renderer via app:// instead of
+// file:// so embedded YouTube iframes see a valid HTTP-like origin (fixes
+// IFrame API Error 153). Must be registered before app 'ready'.
+if (!DEV_SERVER_URL) {
+  protocol.registerSchemesAsPrivileged([
+    {
+      scheme: 'app',
+      privileges: {
+        standard: true,
+        secure: true,
+        supportFetchAPI: true,
+        corsEnabled: true,
+      },
+    },
+  ]);
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -64,7 +83,8 @@ function createMainWindow(): void {
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const isDevServer = DEV_SERVER_URL !== undefined && url.startsWith(DEV_SERVER_URL);
     const isAppIndex = url === pathToFileURL(RENDERER_INDEX).href;
-    if (!isDevServer && !isAppIndex) {
+    const isCustomScheme = url.startsWith('app://nightwatch/');
+    if (!isDevServer && !isAppIndex && !isCustomScheme) {
       event.preventDefault();
     }
   });
@@ -77,7 +97,7 @@ function createMainWindow(): void {
     void mainWindow.loadURL(DEV_SERVER_URL);
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   } else {
-    void mainWindow.loadFile(RENDERER_INDEX);
+    void mainWindow.loadURL('app://nightwatch/index.html');
   }
 }
 
@@ -105,6 +125,13 @@ function registerIpcHandlers(): void {
   ipcMain.handle(IpcChannel.UpdateInstall, (): void => {
     updateManager.install();
   });
+
+  const LOG_LEVELS: readonly string[] = ['info', 'warn', 'error'];
+  ipcMain.handle(IpcChannel.LogWrite, (_event, level: unknown, message: unknown): void => {
+    if (typeof level === 'string' && LOG_LEVELS.includes(level) && typeof message === 'string') {
+      logger.write(level as LogLevel, 'renderer', message.slice(0, 2000));
+    }
+  });
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -121,7 +148,33 @@ if (!hasSingleInstanceLock) {
     }
   });
 
+  process.on('uncaughtException', (error) => {
+    logger.write('error', 'main', `Uncaught exception: ${error.stack ?? error.message}`);
+    dialog.showErrorBox('NightWatch error', error.message);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    logger.write('error', 'main', `Unhandled rejection: ${String(reason)}`);
+  });
+
   app.whenReady().then(() => {
+    logger.init();
+    logger.write('info', 'main', `NightWatch ${app.getVersion()} starting (packaged=${app.isPackaged})`);
+
+    // Register the app:// protocol handler that serves renderer files.
+    if (!DEV_SERVER_URL) {
+      protocol.handle('app', (request) => {
+        const url = new URL(request.url);
+        // Map app://nightwatch/path → dist/path
+        let filePath = path.join(DIST_DIR, decodeURIComponent(url.pathname));
+        // Default to index.html for the root
+        if (filePath.endsWith(path.sep) || filePath === DIST_DIR) {
+          filePath = path.join(DIST_DIR, 'index.html');
+        }
+        return net.fetch(pathToFileURL(filePath).href);
+      });
+    }
+
     registerIpcHandlers();
     richPresence.start();
     updateManager.init();

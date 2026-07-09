@@ -21,6 +21,7 @@ export interface ReactionsBinding {
 }
 
 const MAX_STAMPS = 500;
+const MAX_CONCURRENT_BURSTS = 30;
 
 export function useReactions(
   service: RoomService,
@@ -39,10 +40,12 @@ export function useReactions(
       () => getContextRef.current(),
       (stamp) => {
         setStamps((current) => [...current, stamp].slice(-MAX_STAMPS));
-        setBursts((current) => [
-          ...current,
-          { id: stamp.id, emoji: stamp.emoji, leftPercent: 10 + Math.random() * 80 },
-        ]);
+        // Cap concurrent animations: overflow is recorded but not animated.
+        setBursts((current) =>
+          current.length >= MAX_CONCURRENT_BURSTS
+            ? current
+            : [...current, { id: stamp.id, emoji: stamp.emoji, leftPercent: 10 + Math.random() * 80 }],
+        );
       },
     );
     reactionsRef.current = reactions;

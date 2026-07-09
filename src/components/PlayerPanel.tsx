@@ -38,6 +38,7 @@ export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelPr
   const [sourceMode, setSourceMode] = useState<'link' | 'search'>('link');
   const [videoId, setVideoId] = useState<string | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
   const videoIdRef = useRef<string | null>(null);
   videoIdRef.current = videoId;
   const settings = useSettings();
@@ -72,6 +73,7 @@ export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelPr
         setVideoId(id);
         setError(null);
       },
+      onDelayMeasured: (delayMs) => setSyncDelayMs(delayMs),
     });
     engineRef.current = engine;
 
@@ -200,7 +202,10 @@ export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelPr
           )}
         </>
       ) : (
-        <p className="player-viewer-note">The host controls playback.</p>
+        <p className="player-viewer-note">
+          The host controls playback.
+          {syncDelayMs !== null && ` · sync delay ~${syncDelayMs}ms`}
+        </p>
       )}
 
       {error !== null && <p className="form-error">{error}</p>}

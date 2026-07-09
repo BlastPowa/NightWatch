@@ -1,4 +1,5 @@
 import type { RealtimeEventMap } from '@shared/events';
+import { isValidVideoId } from '@shared/youtube';
 import type { PlayerState } from '@/lib/player/types';
 import type { YouTubePlayer } from '@/lib/player/YouTubePlayer';
 import type { RoomService } from '@/lib/room/RoomService';
@@ -13,10 +14,19 @@ interface ExpectedPlayback {
 export interface SyncEngineCallbacks {
   /** Fired when a video becomes active (locally or from the host). */
   onVideoChanged?(videoId: string): void;
+  /** Fired with the smoothed host→viewer event delay estimate (ms). */
+  onDelayMeasured?(delayMs: number): void;
+}
+
+/** Bounded numeric check for untrusted broadcast payloads (§8). */
+function isValidPosition(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value < 86_400;
 }
 
 const DRIFT_CHECK_INTERVAL_MS = 5000;
-const DRIFT_TOLERANCE_SECONDS = 1.5;
+const BASE_DRIFT_TOLERANCE_SECONDS = 1.5;
+/** Extra tolerance ceiling for high-latency clients (ADR-017). */
+const MAX_EXTRA_TOLERANCE_SECONDS = 2;
 const SEEK_TOLERANCE_SECONDS = 1;
 const SYNC_REQUEST_INTERVAL_MS = 2000;
 const REMOTE_APPLY_SUPPRESS_MS = 800;
@@ -41,6 +51,8 @@ export class SyncEngine {
   private hasHostSnapshot = false;
   private driftTimer: number | null = null;
   private syncRequestTimer: number | null = null;
+  /** Exponential moving average of observed host→viewer delay (ms). */
+  private smoothedDelayMs = 0;
   private readonly unsubscribes: Array<() => void> = [];
 
   public constructor(
@@ -53,17 +65,22 @@ export class SyncEngine {
   public start(): void {
     this.unsubscribes.push(
       this.room.on('playback:load', ({ data }) => {
-        if (!this.isHost()) {
+        if (!this.isHost() && typeof data.videoId === 'string' && isValidVideoId(data.videoId)) {
           this.applyLoad(data.videoId);
         }
       }),
       this.room.on('playback:play', ({ data }) => {
-        if (!this.isHost()) {
+        if (
+          !this.isHost() &&
+          isValidPosition(data.positionSeconds) &&
+          typeof data.hostClockMs === 'number' &&
+          Number.isFinite(data.hostClockMs)
+        ) {
           this.applyPlay(data.positionSeconds, data.hostClockMs);
         }
       }),
       this.room.on('playback:pause', ({ data }) => {
-        if (!this.isHost()) {
+        if (!this.isHost() && isValidPosition(data.positionSeconds)) {
           this.applyPause(data.positionSeconds);
         }
       }),
@@ -165,8 +182,25 @@ export class SyncEngine {
     this.callbacks.onVideoChanged?.(videoId);
   }
 
+  /** Update the delay estimate from a host-timestamped event (ADR-017). */
+  private observeDelay(hostClockMs: number): void {
+    const delay = Math.min(5000, Math.max(0, Date.now() - hostClockMs));
+    this.smoothedDelayMs =
+      this.smoothedDelayMs === 0 ? delay : this.smoothedDelayMs * 0.7 + delay * 0.3;
+    this.callbacks.onDelayMeasured?.(Math.round(this.smoothedDelayMs));
+  }
+
+  /** Base tolerance stretched by observed latency, capped (ADR-017). */
+  private driftTolerance(): number {
+    return (
+      BASE_DRIFT_TOLERANCE_SECONDS +
+      Math.min(MAX_EXTRA_TOLERANCE_SECONDS, this.smoothedDelayMs / 1000)
+    );
+  }
+
   private applyPlay(positionSeconds: number, hostClockMs: number): void {
     this.hasHostSnapshot = true;
+    this.observeDelay(hostClockMs);
     this.expected = { positionSeconds, isPlaying: true, hostClockMs };
     this.suppress();
     const target = positionSeconds + (Date.now() - hostClockMs) / 1000;
@@ -230,7 +264,7 @@ export class SyncEngine {
     }
     const target =
       this.expected.positionSeconds + (Date.now() - this.expected.hostClockMs) / 1000;
-    if (Math.abs(this.player.getCurrentTime() - target) > DRIFT_TOLERANCE_SECONDS) {
+    if (Math.abs(this.player.getCurrentTime() - target) > this.driftTolerance()) {
       this.suppress();
       this.player.seekTo(target);
     }

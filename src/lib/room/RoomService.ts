@@ -74,6 +74,18 @@ export class RoomService {
         broadcastListeners: ROOM_EVENTS.map((event) => ({
           event,
           callback: (envelope: unknown) => {
+            // Shape-check every incoming envelope before dispatch (§8):
+            // never trust broadcast payloads from other clients.
+            if (
+              typeof envelope !== 'object' ||
+              envelope === null ||
+              typeof (envelope as { senderId?: unknown }).senderId !== 'string' ||
+              typeof (envelope as { sentAt?: unknown }).sentAt !== 'number' ||
+              typeof (envelope as { data?: unknown }).data !== 'object' ||
+              (envelope as { data?: unknown }).data === null
+            ) {
+              return;
+            }
             this.eventListeners.get(event)?.forEach((listener) => listener(envelope));
           },
         })),

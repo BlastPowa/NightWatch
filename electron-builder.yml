@@ -1,16 +1,21 @@
 appId: com.blastpowa.nightwatch
 productName: NightWatch
+artifactName: NightWatch-Setup-${version}.${ext}
 directories:
   output: release
 files:
   - dist/**
   - dist-electron/**
+  - "!**/*.map"
 win:
   target:
     - nsis
+  publisherName: BlastPowa
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
 publish:
   provider: github
   owner: BlastPowa

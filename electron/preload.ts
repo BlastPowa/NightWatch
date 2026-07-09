@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   IpcChannel,
   type AppInfo,
+  type LogLevel,
   type NightWatchBridge,
   type PresenceState,
   type UpdateStatusMessage,
@@ -35,6 +36,9 @@ const bridge: NightWatchBridge = {
     return () => {
       ipcRenderer.removeListener(IpcChannel.UpdateStatus, listener);
     };
+  },
+  log: (level: LogLevel, message: string): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.LogWrite, level, message) as Promise<void>;
   },
 };
 

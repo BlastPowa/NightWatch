@@ -11,11 +11,13 @@ import electron from 'vite-plugin-electron/simple';
 function productionCsp(): PluginOption {
   const csp =
     "default-src 'self'; " +
-    "script-src 'self' https://www.youtube.com https://s.ytimg.com; " +
+    "script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://www.google.com https://apis.google.com blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https://i.ytimg.com; " +
+    "img-src 'self' data: https://i.ytimg.com https://*.googleusercontent.com https://*.ggpht.com; " +
     "frame-src https://www.youtube.com https://www.youtube-nocookie.com; " +
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.youtube.com";
+    "child-src https://www.youtube.com blob:; " +
+    "worker-src blob:; " +
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.youtube.com https://*.googlevideo.com https://*.youtube.com https://*.google.com";
   return {
     name: 'nightwatch-production-csp',
     apply: 'build',
@@ -72,6 +74,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // No renderer sourcemaps in production builds (smaller installer,
+    // no source exposure); dev uses the dev server anyway.
+    sourcemap: false,
   },
 });

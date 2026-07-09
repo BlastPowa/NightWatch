@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { log } from '@/lib/log';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -18,6 +19,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   public override componentDidCatch(error: Error, info: ErrorInfo): void {
     console.error('Renderer crash:', error, info.componentStack);
+    log('error', `Renderer crash: ${error.stack ?? error.message}`);
   }
 
   public override render(): ReactNode {

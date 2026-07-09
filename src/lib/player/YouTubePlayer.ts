@@ -33,7 +33,7 @@ export class YouTubePlayer {
       playerVars: {
         playsinline: 1,
         rel: 0,
-        origin: window.location.origin.startsWith('http') ? window.location.origin : undefined,
+        origin: window.location.origin !== 'null' ? window.location.origin : undefined,
       },
       events: {
         onReady: () => {

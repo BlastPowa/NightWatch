@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 11 — Auto-Update & App Info
+Phase 12 — Production Preparation
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -53,11 +53,18 @@ Completed:
 ✅ electron-builder GitHub Releases publish config (BlastPowa/NightWatch)
 ✅ About screen: version info, bundled patch notes (CHANGELOG.md), Check for Updates with progress + Restart & Update
 
+✅ Phase 11 — About + auto-update (dev-mode verified)
+✅ Local file logging (main + renderer via log:write IPC; 512KB rotation, no telemetry)
+✅ Global error handling (uncaughtException/unhandledRejection → log + dialog; ErrorBoundary logs)
+✅ Security review pass — findings fixed (broadcast envelope + payload validation everywhere); documented in SECURITY_REVIEW.md
+✅ Adaptive drift tolerance (base 1.5s + measured latency, capped +2s) with viewer sync-delay readout (ADR-017)
+✅ Perf/packaging: reaction burst cap, no renderer sourcemaps in prod, sourcemaps excluded from installer, NSIS shortcuts + publisher + versioned artifact name
+
 Current Work:
-UI verification in dev ("dev mode" state); full update round-trip is a Phase 12 test (needs two published releases)
+Owner verification: publish v0.1.0 release → install → publish v0.1.1 → confirm in-app update; high-latency friend test for drift behavior
 
 Blocked:
 None (search Edge Function deploy still pending owner's Google API key)
 
 Next:
-Phase 12 — Production Preparation (packaging, installer, security review, logging, latency verification per ADR-017)
+MVP complete after verification. Then: Phase 13 (Discord Activity) or Phases 14+ backlog, owner's choice

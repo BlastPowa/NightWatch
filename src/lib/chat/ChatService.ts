@@ -56,12 +56,19 @@ export class ChatService {
 
   public start(): void {
     this.unsubscribe = this.room.on('chat:message', (envelope) => {
+      // Bound incoming fields — other clients are untrusted (§8).
+      const text = typeof envelope.data.text === 'string' ? envelope.data.text : '';
+      const senderName =
+        typeof envelope.data.senderName === 'string' ? envelope.data.senderName : 'Unknown';
+      if (text.length === 0) {
+        return;
+      }
       this.push({
         id: crypto.randomUUID(),
         kind: 'message',
         senderId: envelope.senderId,
-        senderName: envelope.data.senderName,
-        text: envelope.data.text,
+        senderName: senderName.slice(0, 24),
+        text: text.slice(0, MAX_MESSAGE_LENGTH),
         at: envelope.sentAt,
       });
     });
