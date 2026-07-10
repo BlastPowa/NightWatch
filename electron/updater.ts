@@ -60,7 +60,8 @@ export class UpdateManager {
 
   public install(): void {
     if (app.isPackaged) {
-      autoUpdater.quitAndInstall();
+      // Silent install, relaunch when done — no NSIS wizard.
+      autoUpdater.quitAndInstall(true, true);
     }
   }
 

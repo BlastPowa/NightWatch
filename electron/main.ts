@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, session, shell } from 'electron';
 import { IpcChannel, type AppInfo, type LogLevel, type PresenceState } from '@shared/ipc';
 import { logger } from './logger';
 import { RichPresenceManager } from './richPresence';
@@ -171,8 +171,26 @@ if (!hasSingleInstanceLock) {
         if (filePath.endsWith(path.sep) || filePath === DIST_DIR) {
           filePath = path.join(DIST_DIR, 'index.html');
         }
-        return net.fetch(pathToFileURL(filePath).href);
+        // Containment guard: never serve anything outside dist/.
+        const resolved = path.resolve(filePath);
+        if (!resolved.startsWith(path.resolve(DIST_DIR))) {
+          return new Response(null, { status: 404 });
+        }
+        return net.fetch(pathToFileURL(resolved).href);
       });
+
+      // Belt-and-braces for YouTube error 153: some embed checks require a
+      // real https Referer/Origin, which app:// does not send. Use the
+      // Activity domain as a stable referrer for YouTube requests only.
+      const YT_ORIGIN = 'https://nightwatch.b00160446.workers.dev';
+      session.defaultSession.webRequest.onBeforeSendHeaders(
+        { urls: ['https://www.youtube.com/*', 'https://www.youtube-nocookie.com/*'] },
+        (details, callback) => {
+          details.requestHeaders['Referer'] = `${YT_ORIGIN}/`;
+          details.requestHeaders['Origin'] = YT_ORIGIN;
+          callback({ requestHeaders: details.requestHeaders });
+        },
+      );
     }
 
     registerIpcHandlers();
