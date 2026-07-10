@@ -215,22 +215,18 @@ if (!hasSingleInstanceLock) {
         return net.fetch(pathToFileURL(resolved).href);
       });
 
-      // The app:// scheme sends "Origin: app://nightwatch", which external
-      // services reject: Supabase drops the realtime WebSocket handshake
-      // (visible as endless "WebSocket connection failed"), and YouTube's
-      // embed checks want a real https referrer (error 153). Present a
-      // stable https origin (our Activity domain) to both instead.
+      // YouTube's embed checks want a real https referrer (error 153),
+      // which app:// does not provide — rewrite YOUTUBE requests only.
+      // Supabase must NOT be rewritten: Chromium validates CORS responses
+      // against the app's true origin (app://nightwatch), so a rewritten
+      // Origin makes Supabase reflect the wrong ACAO and every REST call
+      // fails. Supabase gets a response-side ACAO override below instead.
       // NOTE: Electron honors only ONE onBeforeSendHeaders listener per
       // session — keep every header rewrite inside this single handler.
       const APP_ORIGIN = 'https://nightwatch.b00160446.workers.dev';
       session.defaultSession.webRequest.onBeforeSendHeaders(
         {
-          urls: [
-            'https://www.youtube.com/*',
-            'https://www.youtube-nocookie.com/*',
-            'https://*.supabase.co/*',
-            'wss://*.supabase.co/*',
-          ],
+          urls: ['https://www.youtube.com/*', 'https://www.youtube-nocookie.com/*'],
         },
         (details, callback) => {
           // Only rewrite requests originating from OUR document (app://) or
@@ -246,6 +242,23 @@ if (!hasSingleInstanceLock) {
             details.requestHeaders['Origin'] = APP_ORIGIN;
           }
           callback({ requestHeaders: details.requestHeaders });
+        },
+      );
+
+      // Supabase REST/Auth from the app:// origin: responses must satisfy
+      // CORS against app://nightwatch, which Supabase never echoes. Force
+      // a permissive ACAO (safe: anon key only, no cookie credentials).
+      session.defaultSession.webRequest.onHeadersReceived(
+        { urls: ['https://*.supabase.co/*'] },
+        (details, callback) => {
+          const headers = { ...details.responseHeaders };
+          for (const key of Object.keys(headers)) {
+            if (key.toLowerCase() === 'access-control-allow-origin') {
+              delete headers[key];
+            }
+          }
+          headers['Access-Control-Allow-Origin'] = ['*'];
+          callback({ responseHeaders: headers });
         },
       );
     }

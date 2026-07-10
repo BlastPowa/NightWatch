@@ -5,6 +5,9 @@
 
 ### Backend/platform
 
+- Fixed packaged-build Supabase CORS (re-applied: no Origin rewrite for Supabase; response-side ACAO override) — restores REST calls (room banner lookup, auth token exchange) under the app:// scheme
+- OAuth callback errors (e.g. provider secret mismatch) are now parsed, logged, and shown on the My Rooms sign-in screen instead of failing silently
+
 - Activity Discord identity: discord-token Edge Function (OAuth code exchange, Client Secret server-side only), SDK authorize/authenticate in the Discord bridge, PlatformBridge.getPlatformIdentity, auto-join with real Discord name inside Activities (guest fallback preserved)
 - Windows app icon wired into packaging (build/icon.ico from the frontend lane)
 - Docs: packaged update round trip marked verified (0.1.4–0.1.11 evidence), reconciling STATUS/ROADMAP

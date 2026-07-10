@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useAuthError } from '@/hooks/useAuth';
 import { signInWithDiscord, signOut, type AuthUser } from '@/lib/auth';
 import {
   createRoom,
@@ -35,6 +36,7 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
   const [busy, setBusy] = useState(false);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [editSchedule, setEditSchedule] = useState('');
+  const authError = useAuthError();
 
   const refresh = useCallback((): void => {
     listMyRooms()
@@ -109,6 +111,7 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
           >
             Sign in with Discord
           </button>
+          {authError !== null && <p className="form-error">Sign-in failed: {authError}</p>}
           {error !== null && <p className="form-error">{error}</p>}
         </section>
       </div>
