@@ -179,15 +179,26 @@ if (!hasSingleInstanceLock) {
         return net.fetch(pathToFileURL(resolved).href);
       });
 
-      // Belt-and-braces for YouTube error 153: some embed checks require a
-      // real https Referer/Origin, which app:// does not send. Use the
-      // Activity domain as a stable referrer for YouTube requests only.
-      const YT_ORIGIN = 'https://nightwatch.b00160446.workers.dev';
+      // The app:// scheme sends "Origin: app://nightwatch", which external
+      // services reject: Supabase drops the realtime WebSocket handshake
+      // (visible as endless "WebSocket connection failed"), and YouTube's
+      // embed checks want a real https referrer (error 153). Present a
+      // stable https origin (our Activity domain) to both instead.
+      // NOTE: Electron honors only ONE onBeforeSendHeaders listener per
+      // session — keep every header rewrite inside this single handler.
+      const APP_ORIGIN = 'https://nightwatch.b00160446.workers.dev';
       session.defaultSession.webRequest.onBeforeSendHeaders(
-        { urls: ['https://www.youtube.com/*', 'https://www.youtube-nocookie.com/*'] },
+        {
+          urls: [
+            'https://www.youtube.com/*',
+            'https://www.youtube-nocookie.com/*',
+            'https://*.supabase.co/*',
+            'wss://*.supabase.co/*',
+          ],
+        },
         (details, callback) => {
-          details.requestHeaders['Referer'] = `${YT_ORIGIN}/`;
-          details.requestHeaders['Origin'] = YT_ORIGIN;
+          details.requestHeaders['Referer'] = `${APP_ORIGIN}/`;
+          details.requestHeaders['Origin'] = APP_ORIGIN;
           callback({ requestHeaders: details.requestHeaders });
         },
       );

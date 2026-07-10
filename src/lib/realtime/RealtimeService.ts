@@ -97,7 +97,13 @@ export class RealtimeService {
         });
       }
       onStatusChange?.('connecting');
-      channel.subscribe((status) => {
+      channel.subscribe((status, err) => {
+        if (err !== undefined) {
+          // Diagnostic detail for packaged builds (local log file).
+          import('@/lib/log')
+            .then(({ log }) => log('error', `Channel "${topic}" ${status}: ${err.message}`))
+            .catch(() => {});
+        }
         onStatusChange?.(toConnectionStatus(status));
       });
     }

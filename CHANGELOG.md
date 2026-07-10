@@ -30,6 +30,7 @@
 
 ### Fixed
 
+- Packaged-build realtime failure: app:// origin was rejected by Supabase's websocket handshake — Origin/Referer normalized to a stable https origin for Supabase and YouTube requests (single merged webRequest handler; channel errors now logged with detail)
 - Silent auto-update install (no NSIS wizard on Restart & Update)
 - YouTube error 153 hardening: Referer/Origin header shim for YouTube requests in packaged builds (on top of the app:// protocol fix); path-containment guard on the app:// handler
 - Realtime connection errors are now written to the local log for diagnosis
