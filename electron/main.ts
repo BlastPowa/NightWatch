@@ -201,8 +201,8 @@ if (!hasSingleInstanceLock) {
           // the embed frame document itself. YouTube's iframe-internal
           // requests must keep their natural headers, or its own API calls
           // start failing with 403 and playback breaks.
-          const initiator = details.initiator ?? '';
-          const fromApp = initiator.startsWith('app://');
+          const frameUrl = details.frame?.url ?? '';
+          const fromApp = frameUrl.startsWith('app://');
           const isFrameDocument =
             details.resourceType === 'subFrame' || details.resourceType === 'mainFrame';
           if (fromApp || isFrameDocument) {
