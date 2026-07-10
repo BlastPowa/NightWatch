@@ -197,8 +197,18 @@ if (!hasSingleInstanceLock) {
           ],
         },
         (details, callback) => {
-          details.requestHeaders['Referer'] = `${APP_ORIGIN}/`;
-          details.requestHeaders['Origin'] = APP_ORIGIN;
+          // Only rewrite requests originating from OUR document (app://) or
+          // the embed frame document itself. YouTube's iframe-internal
+          // requests must keep their natural headers, or its own API calls
+          // start failing with 403 and playback breaks.
+          const initiator = details.initiator ?? '';
+          const fromApp = initiator.startsWith('app://');
+          const isFrameDocument =
+            details.resourceType === 'subFrame' || details.resourceType === 'mainFrame';
+          if (fromApp || isFrameDocument) {
+            details.requestHeaders['Referer'] = `${APP_ORIGIN}/`;
+            details.requestHeaders['Origin'] = APP_ORIGIN;
+          }
           callback({ requestHeaders: details.requestHeaders });
         },
       );
