@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 15 — Collaborative Queue & Voting (Phase 14 deliberately sequenced after, owner's choice)
+Phase 14 — Persistent Community Rooms
 
 
 ## Backlog
@@ -34,9 +34,13 @@ Phase 15 — Collaborative Queue & Voting (Phase 14 deliberately sequenced after
 - Phase 15: QueueService, useQueue, QueuePanel, auto-advance
 
 
+- Phase 15: queue & voting (verified) + Play Next
+- Phase 14: migration, Discord OAuth deep link, PersistentRoomService, My Rooms UI
+
+
 ## In Progress
 
-- Phase 15: three-client verification
+- Phase 14: owner runs migration + adds redirect URL, then sign-in/persistence verification
 - Pending owner: in-Activity video playback test; Google API key → Edge Function deploy; high-latency drift test
 
 

@@ -30,6 +30,35 @@ if (!DEV_SERVER_URL) {
 
 let mainWindow: BrowserWindow | null = null;
 
+// nightwatch:// protocol for the OAuth callback (Phase 14, ADR-005).
+// Dev mode must pass the script path so Windows launches "electron ." .
+if (process.defaultApp) {
+  if (process.argv.length >= 2 && typeof process.argv[1] === 'string') {
+    app.setAsDefaultProtocolClient('nightwatch', process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('nightwatch');
+}
+
+function forwardAuthCallback(url: string | undefined): void {
+  if (typeof url === 'string' && url.startsWith('nightwatch://auth-callback')) {
+    logger.write('info', 'main', 'OAuth callback received');
+    mainWindow?.webContents.send(IpcChannel.AuthCallback, url);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  }
+}
+
+function findDeepLink(argv: readonly string[]): string | undefined {
+  return argv.find((arg) => arg.startsWith('nightwatch://'));
+}
+
 // Note: must be dot-access — Vite only statically replaces import.meta.env.X.
 const richPresence = new RichPresenceManager(import.meta.env.VITE_DISCORD_CLIENT_ID);
 const updateManager = new UpdateManager(() => mainWindow);
@@ -139,13 +168,20 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, commandLine) => {
+    // Windows delivers deep links via a second instance's argv.
+    forwardAuthCallback(findDeepLink(commandLine));
     if (mainWindow) {
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
       }
       mainWindow.focus();
     }
+  });
+
+  // macOS-style delivery (harmless on Windows).
+  app.on('open-url', (_event, url) => {
+    forwardAuthCallback(url);
   });
 
   process.on('uncaughtException', (error) => {

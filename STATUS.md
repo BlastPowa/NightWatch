@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 15 — Collaborative Queue & Voting
+Phase 14 — Persistent Community Rooms
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -70,11 +70,17 @@ Completed:
 ✅ Chat profanity filter toggle (per-sender, Settings)
 ✅ Phase 15: queue events, host-authoritative QueueService (add/vote/remove, 50-entry cap, rate limits, late-join snapshot), useQueue, QueuePanel (vote to reorder), host auto-advance on video end
 
+✅ Phase 15 — queue & voting (verified) + host Play Next; Rich Presence privacy (no room code) + toggle
+✅ Phase 14: rooms table migration + RLS + 10-room cap + get_room_by_code (supabase/migrations/0001_rooms.sql)
+✅ Discord login: PKCE OAuth via system browser + nightwatch:// deep link (main-process protocol handling, auth:callback push channel)
+✅ PersistentRoomService (CRUD + code-collision retry + meta lookup), useAuth, My Rooms screen (create/schedule/join/delete, sign in/out)
+✅ Persistent room name + schedule banner in room header
+
 Current Work:
-Phase 15 verification (three clients: add/vote/reorder/auto-advance/late join)
+Owner setup: run 0001_rooms.sql in Supabase SQL Editor; add nightwatch://auth-callback to Auth → URL Configuration → Redirect URLs. Then verify sign-in + room persistence.
 
 Blocked:
 None (search Edge Function deploy still pending owner's Google API key)
 
 Next:
-Phase 14 — Persistent Community Rooms (ADR-012, first Postgres/RLS work), or Discord-identity OAuth for the Activity
+Phase 16 — Creator/Host Tools (ADR-014) or Discord-identity OAuth for the Activity

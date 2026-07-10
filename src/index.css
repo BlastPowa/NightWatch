@@ -548,6 +548,91 @@ body {
   color: var(--nw-text-muted);
 }
 
+.room-persistent {
+  flex: 1;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 0.8rem;
+}
+
+.room-schedule {
+  font-weight: 400;
+  color: var(--nw-accent);
+  font-size: 0.82rem;
+}
+
+.auth-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.auth-signout {
+  margin-left: auto;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.room-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.room-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.room-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.75rem;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 10px;
+}
+
+.room-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.room-row-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.room-row-meta {
+  font-size: 0.8rem;
+  color: var(--nw-text-muted);
+}
+
+.room-row-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.room-row-actions .button {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+}
+
 .room-body {
   display: flex;
   gap: 1rem;

@@ -37,6 +37,17 @@ const bridge: NightWatchBridge = {
       ipcRenderer.removeListener(IpcChannel.UpdateStatus, listener);
     };
   },
+  onAuthCallback: (callback: (url: string) => void): (() => void) => {
+    const listener = (_event: unknown, url: string): void => {
+      if (typeof url === 'string' && url.startsWith('nightwatch://auth-callback')) {
+        callback(url);
+      }
+    };
+    ipcRenderer.on(IpcChannel.AuthCallback, listener);
+    return () => {
+      ipcRenderer.removeListener(IpcChannel.AuthCallback, listener);
+    };
+  },
   log: (level: LogLevel, message: string): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.LogWrite, level, message) as Promise<void>;
   },

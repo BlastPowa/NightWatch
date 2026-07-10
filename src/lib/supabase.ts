@@ -17,6 +17,10 @@ export const supabase: SupabaseClient = createClient(url, anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    // Desktop OAuth uses the PKCE flow with a nightwatch:// deep link;
+    // there is no redirect page to detect a session in.
+    flowType: 'pkce',
+    detectSessionInUrl: false,
   },
   realtime: {
     params: {
