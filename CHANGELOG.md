@@ -6,6 +6,7 @@
 
 ### Added
 
+- Queue: host "Play next" button — manually skip to the top-voted entry (needed for livestreams, which never fire the ended event)
 - Phase 15 collaborative queue (ADR-013): shared room queue with voting (votes reorder, host-authoritative snapshots, 50-entry cap, per-member rate limit), add-by-link for all members, own/host entry removal, auto-advance to top-voted entry when the current video ends, late-join queue sync
 
 - Phase 1 desktop foundation: Electron + React 18 + TypeScript (strict) + Vite scaffolding

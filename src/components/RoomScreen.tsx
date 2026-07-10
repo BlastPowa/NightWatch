@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
 import { QueuePanel } from '@/components/QueuePanel';
@@ -25,6 +25,14 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
+  const loadVideoRef = useRef<((videoId: string) => void) | null>(null);
+
+  function handlePlayNext(): void {
+    const next = queue.popNext();
+    if (next !== null) {
+      loadVideoRef.current?.(next.videoId);
+    }
+  }
 
   function copyCode(): void {
     navigator.clipboard
@@ -56,6 +64,9 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
             roomCode={room.code}
             selfId={selfId}
             takeNextFromQueue={queue.popNext}
+            exposeLoadVideo={(loader) => {
+              loadVideoRef.current = loader;
+            }}
           />
 
           <QueuePanel
@@ -63,6 +74,7 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
             selfId={selfId}
             selfName={self?.displayName ?? 'Me'}
             isHost={selfIsHost}
+            onPlayNext={handlePlayNext}
           />
         </div>
 

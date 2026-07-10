@@ -1209,6 +1209,12 @@ body {
   color: var(--nw-text-muted);
 }
 
+.queue-play-next {
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
 .queue-form {
   display: flex;
   gap: 0.5rem;

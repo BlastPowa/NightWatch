@@ -7,13 +7,21 @@ interface QueuePanelProps {
   selfId: string;
   selfName: string;
   isHost: boolean;
+  /** Host: skip to the top-voted entry now (livestreams never "end"). */
+  onPlayNext(): void;
 }
 
 /**
  * Shared video queue (Phase 15, ADR-013): anyone adds and votes; playback
  * auto-advances to the top entry when the current video ends.
  */
-export function QueuePanel({ queue, selfId, selfName, isHost }: QueuePanelProps): JSX.Element {
+export function QueuePanel({
+  queue,
+  selfId,
+  selfName,
+  isHost,
+  onPlayNext,
+}: QueuePanelProps): JSX.Element {
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +44,19 @@ export function QueuePanel({ queue, selfId, selfName, isHost }: QueuePanelProps)
     <div className="queue-panel">
       <div className="queue-header">
         <h2 className="settings-heading">Up next — vote to reorder</h2>
-        <span className="queue-count">{queue.entries.length > 0 ? queue.entries.length : ''}</span>
+        <span className="queue-count">
+          {queue.entries.length > 0 ? queue.entries.length : ''}
+        </span>
+        {isHost && queue.entries.length > 0 && (
+          <button
+            type="button"
+            className="button queue-play-next"
+            title="Skip to the top-voted video now"
+            onClick={onPlayNext}
+          >
+            ▶ Play next
+          </button>
+        )}
       </div>
 
       <form className="queue-form" onSubmit={handleAdd}>
