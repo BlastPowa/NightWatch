@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="180" viewBox="0 0 720 180" role="img" aria-labelledby="title">
+  <title id="title">NightWatch</title>
+  <rect width="180" height="180" rx="46" fill="#090D1A"/>
+  <path d="M131.3 32A70 70 0 1 0 148 128.5 59 59 0 1 1 131.3 32Z" fill="#8B7CFF"/>
+  <path d="M45 121V59h17l33 39V59h17v62H95L62 82v39Z" fill="#F5F7FF"/>
+  <path d="m79 59 14 62h17l11-31 12 31h17l17-62h-19l-9 37-11-37h-14l-11 37-7-37Z" fill="#F5F7FF"/>
+  <circle cx="137" cy="45" r="7" fill="#5EE7F7"/>
+  <text x="218" y="112" fill="#F5F7FF" font-family="Segoe UI, Arial, sans-serif" font-size="70" font-weight="700" letter-spacing="-2">NightWatch</text>
+</svg>

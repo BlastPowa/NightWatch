@@ -40,6 +40,9 @@ Phase 14 — Persistent Community Rooms
 
 ## In Progress
 
+- Frontend cinematic polish: brand/shell implementation complete; core-flow visual QA and Figma canvas construction pending review/quota availability.
+- Phase 13: owner deploy (Cloudflare Pages) + portal config + in-Discord verification
+- Phase 12: owner release/install/update verification; high-latency drift test; Edge Function deployment pending API key
 - Phase 14: owner runs migration + adds redirect URL, then sign-in/persistence verification
 - Pending owner: in-Activity video playback test; Google API key → Edge Function deploy; high-latency drift test
 

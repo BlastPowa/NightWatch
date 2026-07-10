@@ -3,6 +3,13 @@
 
 ## Unreleased
 
+### Cinematic frontend
+
+- Added NightWatch NW monogram assets for in-app branding, favicons, Discord art, and Electron packaging.
+- Added responsive cinematic room/lobby treatments, member initials, accessible form feedback, and reduced-motion support.
+- Added a dedicated backend/platform handoff and two-worktree collaboration layout for Fable.
+- Refined the app shell, watch room, player framing, settings guidance, focus states, and compact Activity layout.
+
 
 ### Added
 

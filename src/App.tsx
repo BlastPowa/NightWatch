@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AppInfo } from '@shared/ipc';
 import { AboutScreen } from '@/components/AboutScreen';
+import { BrandMark } from '@/components/BrandMark';
 import { HomeScreen } from '@/components/HomeScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { useAuth } from '@/hooks/useAuth';
@@ -139,7 +140,7 @@ export function App(): JSX.Element {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <span className="brand-mark">◗</span>
+          <BrandMark />
           <span className="brand-name">NightWatch</span>
         </div>
 

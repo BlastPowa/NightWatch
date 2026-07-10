@@ -20,10 +20,17 @@ export function SettingsPanel(): JSX.Element {
 
   return (
     <div className="settings-page fade-up">
-      <h1 className="page-title">Settings</h1>
+      <header className="page-header">
+        <span className="eyebrow">Personalization</span>
+        <h1 className="page-title">Settings</h1>
+        <p className="page-lede">Tune NightWatch for your room. These choices stay on this device.</p>
+      </header>
 
       <section className="card settings-card">
         <h2 className="settings-heading">Accent color</h2>
+        <p className="settings-description">
+          Choose the moonlight color used for actions, focus, and room presence.
+        </p>
         <div className="swatch-row">
           {ACCENT_COLORS.map((color) => (
             <button
@@ -32,6 +39,8 @@ export function SettingsPanel(): JSX.Element {
               className={`swatch${settings.accent === color ? ' swatch-active' : ''}`}
               style={{ background: color }}
               title={color}
+              aria-label={`Use accent color ${color}`}
+              aria-pressed={settings.accent === color}
               onClick={() => settingsStore.update({ accent: color })}
             />
           ))}
@@ -40,6 +49,9 @@ export function SettingsPanel(): JSX.Element {
 
       <section className="card settings-card">
         <h2 className="settings-heading">Background</h2>
+        <p className="settings-description">
+          Switch the atmosphere without changing your room or playback.
+        </p>
         <div className="swatch-row">
           {THEMES.map((theme) => (
             <button
@@ -48,6 +60,7 @@ export function SettingsPanel(): JSX.Element {
               className={`swatch swatch-wide${settings.theme === theme.id ? ' swatch-active' : ''}`}
               style={{ background: THEME_PREVIEW[theme.id] }}
               title={theme.label}
+              aria-pressed={settings.theme === theme.id}
               onClick={() => settingsStore.update({ theme: theme.id })}
             >
               <span className="swatch-label">{theme.label}</span>

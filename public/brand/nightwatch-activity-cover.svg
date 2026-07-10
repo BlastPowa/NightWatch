@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="576" viewBox="0 0 1024 576" role="img" aria-labelledby="title desc">
+  <title id="title">NightWatch Discord Activity cover</title>
+  <desc id="desc">NightWatch monogram floating over a cinematic midnight horizon.</desc>
+  <defs>
+    <linearGradient id="sky" x1="120" y1="0" x2="810" y2="576" gradientUnits="userSpaceOnUse"><stop stop-color="#171E3B"/><stop offset=".5" stop-color="#0A0E20"/><stop offset="1" stop-color="#050711"/></linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientTransform="translate(706 110) rotate(135) scale(460 360)" gradientUnits="userSpaceOnUse"><stop stop-color="#8B7CFF" stop-opacity=".42"/><stop offset="1" stop-color="#8B7CFF" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam" x1="134" y1="125" x2="483" y2="462" gradientUnits="userSpaceOnUse"><stop stop-color="#C9D2FF"/><stop offset=".5" stop-color="#8B7CFF"/><stop offset="1" stop-color="#5EE7F7"/></linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="42"/></filter>
+  </defs>
+  <rect width="1024" height="576" rx="36" fill="url(#sky)"/>
+  <rect width="1024" height="576" rx="36" fill="url(#halo)"/>
+  <ellipse cx="263" cy="470" rx="260" ry="70" fill="#5EE7F7" fill-opacity=".1" filter="url(#blur)"/>
+  <path d="M320 107A181 181 0 1 0 407 416 150 150 0 1 1 320 107Z" fill="url(#beam)" opacity=".95"/>
+  <path d="M112 367V191h47l93 110V191h48v176h-48l-93-110v110Z" fill="#F7F8FF"/>
+  <path d="m209 191 40 176h47l32-87 33 87h47l48-176h-53l-25 105-32-105h-39l-31 105-21-105Z" fill="#F7F8FF"/>
+  <circle cx="339" cy="133" r="16" fill="#5EE7F7"/>
+  <text x="530" y="270" fill="#F7F8FF" font-family="Segoe UI, Arial, sans-serif" font-size="76" font-weight="700" letter-spacing="-3">NightWatch</text>
+  <text x="535" y="323" fill="#AEB7D4" font-family="Segoe UI, Arial, sans-serif" font-size="21" letter-spacing=".6">WATCH TOGETHER. PERFECTLY IN SYNC.</text>
+  <path d="M536 358h304" stroke="#8B7CFF" stroke-width="3" stroke-linecap="round"/>
+</svg>
