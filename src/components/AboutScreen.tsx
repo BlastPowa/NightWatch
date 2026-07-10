@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AppInfo, UpdateStatusMessage } from '@shared/ipc';
 import changelog from '../../CHANGELOG.md?raw';
+import { BrandMark } from '@/components/BrandMark';
 
 const STATUS_TEXT: Record<UpdateStatusMessage['state'], string> = {
   dev: 'Updates only work in the installed app.',
@@ -46,7 +47,7 @@ export function AboutScreen(): JSX.Element {
 
       <section className="card settings-card">
         <div className="about-header">
-          <span className="brand-mark about-mark">◗</span>
+          <BrandMark className="about-mark" />
           <div>
             <p className="user-name">NightWatch</p>
             <p className="user-sub">

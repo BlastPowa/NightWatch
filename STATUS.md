@@ -1,5 +1,7 @@
 # Current Status
 
+Parallel Frontend Track: Cinematic midnight brand and shell implementation is in progress on `frontend/nightwatch-cinematic`. The Figma target file exists; canvas construction is paused at discovery because the Starter-plan MCP quota was reached.
+
 Current Phase:
 Phase 13 — Discord Activity
 

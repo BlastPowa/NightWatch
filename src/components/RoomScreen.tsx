@@ -38,11 +38,23 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
   return (
     <section className="room-view fade-up">
       <header className="room-header card">
-        <button type="button" className="room-code" onClick={copyCode} title="Click to copy">
-          {room.code}
-          <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
-        </button>
-        <span className="room-status">{STATUS_TEXT[room.status]}</span>
+        <div className="room-heading">
+          <span className="eyebrow">Watch party</span>
+          <button
+            type="button"
+            className="room-code"
+            onClick={copyCode}
+            title="Copy room code"
+            aria-label={`Copy room code ${room.code}`}
+          >
+            {room.code}
+            <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
+          </button>
+        </div>
+        <span className={`room-status room-status-${room.status}`}>
+          <span className="status-dot" aria-hidden="true" />
+          {STATUS_TEXT[room.status]}
+        </span>
       </header>
 
       <div className="room-body">
@@ -61,6 +73,9 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
           <ul className="member-list">
             {room.members.map((member) => (
               <li key={member.id} className="member">
+                <span className="member-avatar" aria-hidden="true">
+                  {member.displayName.slice(0, 1).toUpperCase()}
+                </span>
                 <span className="member-name">
                   {member.displayName}
                   {member.id === selfId && <span className="member-you"> (you)</span>}

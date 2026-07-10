@@ -34,6 +34,7 @@ Phase 13 — Discord Activity
 
 ## In Progress
 
+- Frontend cinematic polish: brand/shell implementation complete; core-flow visual QA and Figma canvas construction pending review/quota availability.
 - Phase 13: owner deploy (Cloudflare Pages) + portal config + in-Discord verification
 - Phase 12: owner release/install/update verification; high-latency drift test; Edge Function deployment pending API key
 
