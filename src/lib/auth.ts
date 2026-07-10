@@ -48,10 +48,21 @@ export async function signInWithDiscord(): Promise<void> {
 
 /** Complete sign-in from the deep-link callback URL. */
 export async function completeSignIn(callbackUrl: string): Promise<void> {
-  const code = new URL(callbackUrl).searchParams.get('code');
+  const params = new URL(callbackUrl).searchParams;
+
+  // Supabase reports its own failures (e.g. a bad Discord provider secret:
+  // "Unable to exchange external code") as error params on the callback.
+  const errorDescription = params.get('error_description') ?? params.get('error');
+  if (errorDescription !== null) {
+    const message = errorDescription.replace(/\+/g, ' ');
+    log('error', `OAuth callback returned an error: ${message}`);
+    throw new Error(message);
+  }
+
+  const code = params.get('code');
   if (code === null) {
     log('warn', 'OAuth callback without code parameter');
-    return;
+    throw new Error('Sign-in was cancelled or the callback was malformed.');
   }
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error !== null) {
@@ -62,4 +73,27 @@ export async function completeSignIn(callbackUrl: string): Promise<void> {
 
 export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
+}
+
+/* Last sign-in error, observable by the UI (set by the useAuth hook). */
+
+type AuthErrorListener = (message: string | null) => void;
+
+let lastAuthError: string | null = null;
+const authErrorListeners = new Set<AuthErrorListener>();
+
+export function setLastAuthError(message: string | null): void {
+  lastAuthError = message;
+  authErrorListeners.forEach((listener) => listener(lastAuthError));
+}
+
+export function getLastAuthError(): string | null {
+  return lastAuthError;
+}
+
+export function subscribeAuthError(listener: AuthErrorListener): () => void {
+  authErrorListeners.add(listener);
+  return () => {
+    authErrorListeners.delete(listener);
+  };
 }

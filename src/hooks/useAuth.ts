@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
-import { completeSignIn, mapSessionToUser, type AuthUser } from '@/lib/auth';
+import {
+  completeSignIn,
+  getLastAuthError,
+  mapSessionToUser,
+  setLastAuthError,
+  subscribeAuthError,
+  type AuthUser,
+} from '@/lib/auth';
 import { log } from '@/lib/log';
 import { supabase } from '@/lib/supabase';
 
@@ -24,9 +31,14 @@ export function useAuth(): AuthUser | null {
     const unsubscribeCallback =
       typeof window.nightwatch !== 'undefined'
         ? window.nightwatch.onAuthCallback((url) => {
-            completeSignIn(url).catch((error: unknown) => {
-              log('error', `Sign-in failed: ${String(error)}`);
-            });
+            setLastAuthError(null);
+            completeSignIn(url)
+              .then(() => setLastAuthError(null))
+              .catch((error: unknown) => {
+                const message = error instanceof Error ? error.message : String(error);
+                log('error', `Sign-in failed: ${message}`);
+                setLastAuthError(message);
+              });
           })
         : null;
 
@@ -37,4 +49,11 @@ export function useAuth(): AuthUser | null {
   }, []);
 
   return user;
+}
+
+/** Last sign-in failure message, for UI display (null when none). */
+export function useAuthError(): string | null {
+  const [error, setError] = useState<string | null>(() => getLastAuthError());
+  useEffect(() => subscribeAuthError(setError), []);
+  return error;
 }
