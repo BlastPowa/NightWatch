@@ -3,6 +3,12 @@
 
 ## Unreleased
 
+### Backend/platform
+
+- Activity Discord identity: discord-token Edge Function (OAuth code exchange, Client Secret server-side only), SDK authorize/authenticate in the Discord bridge, PlatformBridge.getPlatformIdentity, auto-join with real Discord name inside Activities (guest fallback preserved)
+- Windows app icon wired into packaging (build/icon.ico from the frontend lane)
+- Docs: packaged update round trip marked verified (0.1.4–0.1.11 evidence), reconciling STATUS/ROADMAP
+
 ### Cinematic frontend
 
 - Added NightWatch NW monogram assets for in-app branding, favicons, Discord art, and Electron packaging.

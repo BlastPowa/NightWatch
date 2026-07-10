@@ -18,6 +18,11 @@ export interface PlatformBridge {
    * room), or null when the user picks/creates rooms freely.
    */
   getFixedRoomCode(): Promise<string | null>;
+  /**
+   * Identity supplied by the platform (Discord Activity auth), or null
+   * when the user goes through the normal name prompt / guest flow.
+   */
+  getPlatformIdentity(): Promise<{ name: string; avatarUrl: string | null } | null>;
 }
 
 /** Safe default: plain browser (dev tab) — everything is a no-op. */
@@ -31,6 +36,7 @@ export const webBridge: PlatformBridge = {
     }
   },
   getFixedRoomCode: () => Promise.resolve(null),
+  getPlatformIdentity: () => Promise.resolve(null),
 };
 
 let currentBridge: PlatformBridge = webBridge;

@@ -90,11 +90,27 @@ export function App(): JSX.Element {
       }
     });
 
-    void bridge.getFixedRoomCode().then((code) => {
-      if (!cancelled) {
+    // Discord Activity: with a platform identity AND a channel-fixed room,
+    // skip the name prompt entirely and drop straight into the party.
+    void Promise.all([bridge.getFixedRoomCode(), bridge.getPlatformIdentity()]).then(
+      ([code, platformIdentity]) => {
+        if (cancelled) {
+          return;
+        }
         setFixedRoomCode(code);
-      }
-    });
+        if (platformIdentity !== null) {
+          setIdentity((current) =>
+            current === null
+              ? createIdentity(platformIdentity.name)
+              : updateDisplayName(current, platformIdentity.name),
+          );
+          if (code !== null) {
+            setRoomCode(code);
+            achievementTracker.record('room-joined');
+          }
+        }
+      },
+    );
 
     return () => {
       cancelled = true;

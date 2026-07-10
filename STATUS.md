@@ -77,12 +77,14 @@ Completed:
 ✅ Discord login: PKCE OAuth via system browser + nightwatch:// deep link (main-process protocol handling, auth:callback push channel)
 ✅ PersistentRoomService (CRUD + code-collision retry + meta lookup), useAuth, My Rooms screen (create/schedule/join/delete, sign in/out)
 ✅ Persistent room name + schedule banner in room header
+✅ Packaged update round trip VERIFIED (0.1.4 → … → 0.1.11 including silent installs; reconciles the earlier STATUS/ROADMAP conflict — evidence: owner's release log 2026-07-10)
+✅ Backend batch 1 (branch backend/nightwatch-platform): Windows icon wired (build/icon.ico from frontend lane), discord-token Edge Function (server-held Client Secret), Activity Discord identity (authorize → exchange → authenticate, guest fallback), auto-join in Activity (identity + channel room = no prompts)
 
 Current Work:
-Owner setup: run 0001_rooms.sql in Supabase SQL Editor; add nightwatch://auth-callback to Auth → URL Configuration → Redirect URLs. Then verify sign-in + room persistence.
+Backend branch: owner deploys discord-token function + sets DISCORD_CLIENT_ID/DISCORD_CLIENT_SECRET secrets, then Activity identity verification. Search Edge Function still pending Google API key.
 
 Blocked:
-None (search Edge Function deploy still pending owner's Google API key)
+None
 
 Next:
-Phase 16 — Creator/Host Tools (ADR-014) or Discord-identity OAuth for the Activity
+Merge backend/nightwatch-platform → main after review; then Phase 16 — Creator/Host Tools (ADR-014)
