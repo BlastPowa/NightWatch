@@ -13,6 +13,11 @@
 
 ### Added
 
+- Phase 14 persistent rooms (ADR-012): Discord sign-in (PKCE, system browser + nightwatch:// deep link), rooms table with RLS + 10-room cap + code-only public lookup, My Rooms screen (create/schedule/join/delete), persistent room name/schedule banner in the room header
+
+- Queue: host "Play next" button — manually skip to the top-voted entry (needed for livestreams, which never fire the ended event)
+- Phase 15 collaborative queue (ADR-013): shared room queue with voting (votes reorder, host-authoritative snapshots, 50-entry cap, per-member rate limit), add-by-link for all members, own/host entry removal, auto-advance to top-voted entry when the current video ends, late-join queue sync
+
 - Phase 1 desktop foundation: Electron + React 18 + TypeScript (strict) + Vite scaffolding
 - Secure Electron main process: context isolation, sandboxed renderer, no node integration, single-instance lock, external-link and navigation guards, CSP in index.html
 - Typed IPC layer: shared/ipc.ts contract, preload contextBridge exposing `window.nightwatch`
@@ -37,6 +42,10 @@
 
 ### Fixed
 
+- Rich Presence: room code no longer shown in Discord status (it's the room's access credential); added Settings toggle to disable Rich Presence entirely (clears immediately when switched off)
+- Video not loading in packaged builds: Origin/Referer rewrite now applies only to app-initiated and frame-document requests, leaving YouTube's iframe-internal API calls untouched (they were being 403'd)
+- Chat: profanity filter can now be toggled per user in Settings (sender-side; English wordlist)
+- Packaged-build realtime failure: app:// origin was rejected by Supabase's websocket handshake — Origin/Referer normalized to a stable https origin for Supabase and YouTube requests (single merged webRequest handler; channel errors now logged with detail)
 - Silent auto-update install (no NSIS wizard on Restart & Update)
 - YouTube error 153 hardening: Referer/Origin header shim for YouTube requests in packaged builds (on top of the app:// protocol fix); path-containment guard on the app:// handler
 - Realtime connection errors are now written to the local log for diagnosis

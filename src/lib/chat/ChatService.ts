@@ -6,6 +6,7 @@ import {
 } from 'obscenity';
 import type { RoomMember } from '@shared/room';
 import type { RoomService } from '@/lib/room/RoomService';
+import { settingsStore } from '@/lib/settings';
 
 /**
  * Profanity filtering happens once, at the source (§7.7): outgoing text is
@@ -81,7 +82,8 @@ export class ChatService {
 
   /** Send a message. Own messages are appended locally (broadcast self=false). */
   public send(text: string, senderName: string): SendResult {
-    const clean = censorProfanity(text.trim().slice(0, MAX_MESSAGE_LENGTH));
+    const trimmed = text.trim().slice(0, MAX_MESSAGE_LENGTH);
+    const clean = settingsStore.get().chatFilterEnabled ? censorProfanity(trimmed) : trimmed;
     if (clean.length === 0) {
       return 'empty';
     }

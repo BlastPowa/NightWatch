@@ -18,6 +18,10 @@ interface PlayerPanelProps {
   isHost: boolean;
   roomCode: string;
   selfId: string;
+  /** Host auto-advance: take the next queued entry when a video ends. */
+  takeNextFromQueue: () => { videoId: string } | null;
+  /** Hands the parent a loader so other panels (queue) can start videos. */
+  exposeLoadVideo?: (loader: (videoId: string) => void) => void;
 }
 
 /**
@@ -26,12 +30,21 @@ interface PlayerPanelProps {
  * with the player's native controls; viewers follow (ADR-006). Reactions
  * are open to everyone.
  */
-export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelProps): JSX.Element {
+export function PlayerPanel({
+  service,
+  isHost,
+  roomCode,
+  selfId,
+  takeNextFromQueue,
+  exposeLoadVideo,
+}: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
+  const takeNextRef = useRef(takeNextFromQueue);
+  takeNextRef.current = takeNextFromQueue;
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +76,17 @@ export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelPr
 
     const player = new YouTubePlayer({
       onReady: () => player.setVolume(settingsStore.get().volumePercent),
-      onStateChange: (state) => engineRef.current?.handleLocalStateChange(state),
+      onStateChange: (state) => {
+        engineRef.current?.handleLocalStateChange(state);
+        // Auto-advance (ADR-013): when the video ends, the host plays the
+        // top-voted queue entry through the normal load/broadcast path.
+        if (state === 'ended' && isHostRef.current) {
+          const next = takeNextRef.current();
+          if (next !== null) {
+            engineRef.current?.loadVideo(next.videoId);
+          }
+        }
+      },
       onError: (message) => setError(message),
     });
     playerRef.current = player;
@@ -158,6 +181,14 @@ export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelPr
     achievementTracker.record('video-loaded');
     engineRef.current?.loadVideo(id);
   }
+
+  const exposeLoadVideoRef = useRef(exposeLoadVideo);
+  exposeLoadVideoRef.current = exposeLoadVideo;
+  useEffect(() => {
+    exposeLoadVideoRef.current?.((id) => loadVideo(id));
+    // loadVideo is stable in behavior (uses refs internally).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const hasVideo = videoId !== null;
 

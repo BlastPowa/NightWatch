@@ -70,6 +70,36 @@ export function SettingsPanel(): JSX.Element {
       </section>
 
       <section className="card settings-card">
+        <h2 className="settings-heading">Discord</h2>
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={settings.richPresenceEnabled}
+            onChange={(e) => settingsStore.update({ richPresenceEnabled: e.target.checked })}
+          />
+          <span>
+            Show what I&apos;m watching on Discord
+            <span className="toggle-hint"> — Rich Presence status (never shows the room code)</span>
+          </span>
+        </label>
+      </section>
+
+      <section className="card settings-card">
+        <h2 className="settings-heading">Chat</h2>
+        <label className="toggle-row">
+          <input
+            type="checkbox"
+            checked={settings.chatFilterEnabled}
+            onChange={(e) => settingsStore.update({ chatFilterEnabled: e.target.checked })}
+          />
+          <span>
+            Filter profanity in my messages
+            <span className="toggle-hint"> — applies to what you send; everyone sees the result</span>
+          </span>
+        </label>
+      </section>
+
+      <section className="card settings-card">
         <h2 className="settings-heading">Volume — {settings.volumePercent}%</h2>
         <input
           type="range"

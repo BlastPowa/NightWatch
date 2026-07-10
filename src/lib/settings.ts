@@ -37,6 +37,10 @@ export interface Settings {
   accent: AccentColor;
   volumePercent: number;
   videoFilters: VideoFilters;
+  /** Censor profanity in messages YOU send (English wordlist). */
+  chatFilterEnabled: boolean;
+  /** Show what you're watching as Discord Rich Presence. */
+  richPresenceEnabled: boolean;
 }
 
 export const NEUTRAL_FILTERS: VideoFilters = { brightness: 100, contrast: 100, saturation: 100 };
@@ -46,6 +50,8 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: '#2dd4bf',
   volumePercent: 100,
   videoFilters: NEUTRAL_FILTERS,
+  chatFilterEnabled: true,
+  richPresenceEnabled: true,
 };
 
 const STORAGE_KEY = 'nightwatch:settings';
@@ -66,6 +72,10 @@ function sanitize(raw: unknown): Settings {
   return {
     theme,
     accent,
+    chatFilterEnabled:
+      typeof partial.chatFilterEnabled === 'boolean' ? partial.chatFilterEnabled : true,
+    richPresenceEnabled:
+      typeof partial.richPresenceEnabled === 'boolean' ? partial.richPresenceEnabled : true,
     volumePercent: clamp(Number(partial.volumePercent ?? 100) || 100, 0, 100),
     videoFilters: {
       brightness: clamp(Number(filters.brightness ?? 100) || 100, 50, 150),

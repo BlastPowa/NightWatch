@@ -3,6 +3,9 @@ import type { AppInfo } from '@shared/ipc';
 import { AboutScreen } from '@/components/AboutScreen';
 import { BrandMark } from '@/components/BrandMark';
 import { HomeScreen } from '@/components/HomeScreen';
+import { MyRoomsScreen } from '@/components/MyRoomsScreen';
+import { useAuth } from '@/hooks/useAuth';
+import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { UserCard } from '@/components/UserCard';
@@ -26,7 +29,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'settings' | 'card' | 'about';
+type View = 'main' | 'rooms' | 'settings' | 'card' | 'about';
 
 export function App(): JSX.Element {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -52,6 +55,26 @@ export function App(): JSX.Element {
   }, [settings.theme, settings.accent]);
 
   const [fixedRoomCode, setFixedRoomCode] = useState<string | null>(null);
+  const [roomMeta, setRoomMeta] = useState<RoomMeta | null>(null);
+  const authUser = useAuth();
+  const isElectron = getPlatformBridge().kind === 'electron';
+
+  // Persistent-room banner: look the code up when joining (null = ephemeral).
+  useEffect(() => {
+    if (roomCode === null) {
+      setRoomMeta(null);
+      return;
+    }
+    let cancelled = false;
+    void getRoomMeta(roomCode).then((meta) => {
+      if (!cancelled) {
+        setRoomMeta(meta);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [roomCode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +118,22 @@ export function App(): JSX.Element {
     setRoomCode(null);
   }, []);
 
+  const handleJoinPersistentRoom = useCallback(
+    (code: string): void => {
+      const fallbackName = authUser?.name ?? '';
+      setIdentity((current) => {
+        if (current !== null) {
+          return current;
+        }
+        return fallbackName.length > 0 ? createIdentity(fallbackName) : null;
+      });
+      setRoomCode(code);
+      setView('main');
+      achievementTracker.record('room-joined');
+    },
+    [authUser],
+  );
+
   const inRoom = roomCode !== null && session !== null && identity !== null;
 
   return (
@@ -113,6 +152,15 @@ export function App(): JSX.Element {
           >
             {inRoom ? 'Room' : 'Home'}
           </button>
+          {isElectron && (
+            <button
+              type="button"
+              className={`nav-item${view === 'rooms' ? ' nav-item-active' : ''}`}
+              onClick={() => setView('rooms')}
+            >
+              My Rooms
+            </button>
+          )}
           <button
             type="button"
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
@@ -163,6 +211,7 @@ export function App(): JSX.Element {
 
       <main className="content">
         {view === 'settings' && <SettingsPanel />}
+        {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
         {view === 'about' && <AboutScreen />}
         {/* The room stays mounted while other views are open so the player,
@@ -174,6 +223,7 @@ export function App(): JSX.Element {
               room={session.state}
               service={session.service}
               selfId={identity.id}
+              meta={roomMeta}
               onLeave={handleLeaveRoom}
             />
           ) : (

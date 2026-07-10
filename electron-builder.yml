@@ -7,10 +7,13 @@ files:
   - dist/**
   - dist-electron/**
   - "!**/*.map"
+# Note: no `publisherName` here — with unsigned binaries, electron-updater
+# treats it as a code-signature requirement and rejects every update
+# ("not signed by the application owner"). Restore it only if/when a real
+# code-signing certificate is added.
 win:
   target:
     - nsis
-  publisherName: BlastPowa
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

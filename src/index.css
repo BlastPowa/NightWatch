@@ -588,6 +588,91 @@ input {
   color: var(--nw-text-muted);
 }
 
+.room-persistent {
+  flex: 1;
+  text-align: center;
+  font-size: 0.92rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 0.8rem;
+}
+
+.room-schedule {
+  font-weight: 400;
+  color: var(--nw-accent);
+  font-size: 0.82rem;
+}
+
+.auth-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.auth-signout {
+  margin-left: auto;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.room-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.room-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.room-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.75rem;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 10px;
+}
+
+.room-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.room-row-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.room-row-meta {
+  font-size: 0.8rem;
+  color: var(--nw-text-muted);
+}
+
+.room-row-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.room-row-actions .button {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+}
+
 .room-body {
   display: flex;
   gap: 1rem;
@@ -977,6 +1062,25 @@ input {
   color: var(--nw-text);
 }
 
+.toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  color: var(--nw-text);
+  cursor: pointer;
+}
+
+.toggle-row input[type='checkbox'] {
+  accent-color: var(--nw-accent);
+  margin-top: 0.15rem;
+}
+
+.toggle-hint {
+  color: var(--nw-text-muted);
+  font-size: 0.78rem;
+}
+
 .settings-page input[type='range'] {
   accent-color: var(--nw-accent);
   width: 100%;
@@ -1206,6 +1310,122 @@ input {
   margin: 0;
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+/* ===== Queue (Phase 15) ===== */
+
+.queue-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--nw-border);
+}
+
+.queue-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.queue-count {
+  font-size: 0.78rem;
+  color: var(--nw-text-muted);
+}
+
+.queue-play-next {
+  margin-left: auto;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.queue-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.queue-form .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.queue-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.queue-pos {
+  width: 1.3rem;
+  text-align: center;
+  font-family: Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--nw-text-muted);
+}
+
+.queue-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-by {
+  color: var(--nw-text-muted);
+  font-size: 0.78rem;
+}
+
+.queue-vote {
+  padding: 0.25rem 0.55rem;
+  background: transparent;
+  border: 1px solid var(--nw-border);
+  border-radius: 999px;
+  color: var(--nw-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s var(--nw-ease);
+}
+
+.queue-vote:hover {
+  border-color: var(--nw-accent);
+  color: var(--nw-accent);
+}
+
+.queue-vote-active {
+  background: color-mix(in srgb, var(--nw-accent) 16%, transparent);
+  border-color: var(--nw-accent);
+  color: var(--nw-accent);
+}
+
+.queue-remove {
+  padding: 0.2rem 0.45rem;
+  background: transparent;
+  border: none;
+  color: var(--nw-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.queue-remove:hover {
+  color: #f87171;
 }
 
 /* ===== About screen ===== */

@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 13 — Discord Activity
+Phase 14 — Persistent Community Rooms
 
 
 ## Backlog
@@ -29,7 +29,13 @@ Phase 13 — Discord Activity
 - Phase 12: logging, global error handling, security review (SECURITY_REVIEW.md), payload validation, adaptive drift tolerance, packaging polish
 
 
-- Phase 13: PlatformBridge, Activity build target, Discord SDK bridge, fixed-room flow
+- Phase 13: PlatformBridge, Activity build target, Discord SDK bridge, fixed-room flow (deployed; DM launch verified)
+- Release pipeline: tag-triggered Action, silent updates, packaged-build connection + playback fixes (v0.1.1–v0.1.6)
+- Phase 15: QueueService, useQueue, QueuePanel, auto-advance
+
+
+- Phase 15: queue & voting (verified) + Play Next
+- Phase 14: migration, Discord OAuth deep link, PersistentRoomService, My Rooms UI
 
 
 ## In Progress
@@ -37,6 +43,8 @@ Phase 13 — Discord Activity
 - Frontend cinematic polish: brand/shell implementation complete; core-flow visual QA and Figma canvas construction pending review/quota availability.
 - Phase 13: owner deploy (Cloudflare Pages) + portal config + in-Discord verification
 - Phase 12: owner release/install/update verification; high-latency drift test; Edge Function deployment pending API key
+- Phase 14: owner runs migration + adds redirect URL, then sign-in/persistence verification
+- Pending owner: in-Activity video playback test; Google API key → Edge Function deploy; high-latency drift test
 
 
 ## Blocked

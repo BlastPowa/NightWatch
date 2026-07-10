@@ -30,6 +30,35 @@ if (!DEV_SERVER_URL) {
 
 let mainWindow: BrowserWindow | null = null;
 
+// nightwatch:// protocol for the OAuth callback (Phase 14, ADR-005).
+// Dev mode must pass the script path so Windows launches "electron ." .
+if (process.defaultApp) {
+  if (process.argv.length >= 2 && typeof process.argv[1] === 'string') {
+    app.setAsDefaultProtocolClient('nightwatch', process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('nightwatch');
+}
+
+function forwardAuthCallback(url: string | undefined): void {
+  if (typeof url === 'string' && url.startsWith('nightwatch://auth-callback')) {
+    logger.write('info', 'main', 'OAuth callback received');
+    mainWindow?.webContents.send(IpcChannel.AuthCallback, url);
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.focus();
+    }
+  }
+}
+
+function findDeepLink(argv: readonly string[]): string | undefined {
+  return argv.find((arg) => arg.startsWith('nightwatch://'));
+}
+
 // Note: must be dot-access — Vite only statically replaces import.meta.env.X.
 const richPresence = new RichPresenceManager(import.meta.env.VITE_DISCORD_CLIENT_ID);
 const updateManager = new UpdateManager(() => mainWindow);
@@ -139,13 +168,20 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, commandLine) => {
+    // Windows delivers deep links via a second instance's argv.
+    forwardAuthCallback(findDeepLink(commandLine));
     if (mainWindow) {
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
       }
       mainWindow.focus();
     }
+  });
+
+  // macOS-style delivery (harmless on Windows).
+  app.on('open-url', (_event, url) => {
+    forwardAuthCallback(url);
   });
 
   process.on('uncaughtException', (error) => {
@@ -179,15 +215,36 @@ if (!hasSingleInstanceLock) {
         return net.fetch(pathToFileURL(resolved).href);
       });
 
-      // Belt-and-braces for YouTube error 153: some embed checks require a
-      // real https Referer/Origin, which app:// does not send. Use the
-      // Activity domain as a stable referrer for YouTube requests only.
-      const YT_ORIGIN = 'https://nightwatch.b00160446.workers.dev';
+      // The app:// scheme sends "Origin: app://nightwatch", which external
+      // services reject: Supabase drops the realtime WebSocket handshake
+      // (visible as endless "WebSocket connection failed"), and YouTube's
+      // embed checks want a real https referrer (error 153). Present a
+      // stable https origin (our Activity domain) to both instead.
+      // NOTE: Electron honors only ONE onBeforeSendHeaders listener per
+      // session — keep every header rewrite inside this single handler.
+      const APP_ORIGIN = 'https://nightwatch.b00160446.workers.dev';
       session.defaultSession.webRequest.onBeforeSendHeaders(
-        { urls: ['https://www.youtube.com/*', 'https://www.youtube-nocookie.com/*'] },
+        {
+          urls: [
+            'https://www.youtube.com/*',
+            'https://www.youtube-nocookie.com/*',
+            'https://*.supabase.co/*',
+            'wss://*.supabase.co/*',
+          ],
+        },
         (details, callback) => {
-          details.requestHeaders['Referer'] = `${YT_ORIGIN}/`;
-          details.requestHeaders['Origin'] = YT_ORIGIN;
+          // Only rewrite requests originating from OUR document (app://) or
+          // the embed frame document itself. YouTube's iframe-internal
+          // requests must keep their natural headers, or its own API calls
+          // start failing with 403 and playback breaks.
+          const frameUrl = details.frame?.url ?? '';
+          const fromApp = frameUrl.startsWith('app://');
+          const isFrameDocument =
+            details.resourceType === 'subFrame' || details.resourceType === 'mainFrame';
+          if (fromApp || isFrameDocument) {
+            details.requestHeaders['Referer'] = `${APP_ORIGIN}/`;
+            details.requestHeaders['Origin'] = APP_ORIGIN;
+          }
           callback({ requestHeaders: details.requestHeaders });
         },
       );

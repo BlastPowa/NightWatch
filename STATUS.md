@@ -3,7 +3,7 @@
 Parallel Frontend Track: Cinematic midnight brand and shell implementation is in progress on `frontend/nightwatch-cinematic`. The Figma target file exists; canvas construction is paused at discovery because the Starter-plan MCP quota was reached.
 
 Current Phase:
-Phase 13 — Discord Activity
+Phase 14 — Persistent Community Rooms
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -67,11 +67,22 @@ Completed:
 ✅ Activity build target: index.discord.html, main.discord.tsx bootstrap, vite.config.web.ts → dist-web (scripts: dev:activity / build:activity)
 ✅ Discord SDK bridge: patchUrlMappings (supabase/youtube/ytimg/ytstatic), voice-channel-derived fixed room code (deriveRoomCode), locked home screen ("Join the Watch Party")
 
+✅ Phase 13 — Discord Activity (deployed to Cloudflare Workers; DM launch verified; in-Activity video playback still to verify)
+✅ Release pipeline hardened through v0.1.6 (tag-triggered Action, silent updates, unsigned-updater fix, CI env newline fix, app:// origin fixes for Supabase + YouTube)
+✅ Chat profanity filter toggle (per-sender, Settings)
+✅ Phase 15: queue events, host-authoritative QueueService (add/vote/remove, 50-entry cap, rate limits, late-join snapshot), useQueue, QueuePanel (vote to reorder), host auto-advance on video end
+
+✅ Phase 15 — queue & voting (verified) + host Play Next; Rich Presence privacy (no room code) + toggle
+✅ Phase 14: rooms table migration + RLS + 10-room cap + get_room_by_code (supabase/migrations/0001_rooms.sql)
+✅ Discord login: PKCE OAuth via system browser + nightwatch:// deep link (main-process protocol handling, auth:callback push channel)
+✅ PersistentRoomService (CRUD + code-collision retry + meta lookup), useAuth, My Rooms screen (create/schedule/join/delete, sign in/out)
+✅ Persistent room name + schedule banner in room header
+
 Current Work:
-Owner setup: Cloudflare Pages deploy of dist-web, portal URL mappings + enable Activities, in-Discord verification (YouTube-through-proxy is the known-risk item)
+Owner setup: run 0001_rooms.sql in Supabase SQL Editor; add nightwatch://auth-callback to Auth → URL Configuration → Redirect URLs. Then verify sign-in + room persistence.
 
 Blocked:
 None (search Edge Function deploy still pending owner's Google API key)
 
 Next:
-Phase 13 verification, then Phases 14+ backlog (persistent rooms first, ADR-012)
+Phase 16 — Creator/Host Tools (ADR-014) or Discord-identity OAuth for the Activity

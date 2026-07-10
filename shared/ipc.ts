@@ -11,6 +11,8 @@ export const IpcChannel = {
   UpdateInstall: 'update:install',
   /** Push channel (main → renderer) carrying UpdateStatusMessage. */
   UpdateStatus: 'update:status',
+  /** Push channel (main → renderer) carrying the OAuth deep-link URL. */
+  AuthCallback: 'auth:callback',
   LogWrite: 'log:write',
 } as const;
 
@@ -94,6 +96,8 @@ export interface NightWatchBridge {
   installUpdate(): Promise<void>;
   /** Subscribe to update status pushes. Returns an unsubscribe fn. */
   onUpdateStatus(callback: (status: UpdateStatusMessage) => void): () => void;
+  /** Subscribe to OAuth deep-link callbacks (nightwatch://auth-callback). */
+  onAuthCallback(callback: (url: string) => void): () => void;
   /** Append a line to the local log file (fire-and-forget). */
   log(level: LogLevel, message: string): Promise<void>;
 }
