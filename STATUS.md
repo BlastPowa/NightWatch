@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 12 — Production Preparation
+Phase 13 — Discord Activity
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -60,11 +60,16 @@ Completed:
 ✅ Adaptive drift tolerance (base 1.5s + measured latency, capped +2s) with viewer sync-delay readout (ADR-017)
 ✅ Perf/packaging: reaction burst cap, no renderer sourcemaps in prod, sourcemaps excluded from installer, NSIS shortcuts + publisher + versioned artifact name
 
+✅ Phase 12 — production prep (code complete; release verification with owner)
+✅ PlatformBridge adapter (§9): electron / discord / web implementations; presence+log+app-info routed through it
+✅ Activity build target: index.discord.html, main.discord.tsx bootstrap, vite.config.web.ts → dist-web (scripts: dev:activity / build:activity)
+✅ Discord SDK bridge: patchUrlMappings (supabase/youtube/ytimg/ytstatic), voice-channel-derived fixed room code (deriveRoomCode), locked home screen ("Join the Watch Party")
+
 Current Work:
-Owner verification: publish v0.1.0 release → install → publish v0.1.1 → confirm in-app update; high-latency friend test for drift behavior
+Owner setup: Cloudflare Pages deploy of dist-web, portal URL mappings + enable Activities, in-Discord verification (YouTube-through-proxy is the known-risk item)
 
 Blocked:
 None (search Edge Function deploy still pending owner's Google API key)
 
 Next:
-MVP complete after verification. Then: Phase 13 (Discord Activity) or Phases 14+ backlog, owner's choice
+Phase 13 verification, then Phases 14+ backlog (persistent rooms first, ADR-012)

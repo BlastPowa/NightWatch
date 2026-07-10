@@ -20,6 +20,25 @@ export function generateRoomCode(): string {
   return code;
 }
 
+/**
+ * Deterministically derive a room code from a platform-provided seed
+ * (e.g. a Discord voice channel id) so everyone in the same channel lands
+ * in the same room. Simple FNV-1a hash mapped onto the code alphabet.
+ */
+export function deriveRoomCode(seed: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  let code = '';
+  for (let i = 0; i < ROOM_CODE_LENGTH; i++) {
+    code += ROOM_CODE_ALPHABET[hash % ROOM_CODE_ALPHABET.length];
+    hash = Math.imul(hash ^ (hash >>> 13), 0x01000193) >>> 0;
+  }
+  return code;
+}
+
 /** Normalize user input (trim, uppercase) before validation or joining. */
 export function normalizeRoomCode(input: string): string {
   return input.trim().toUpperCase();

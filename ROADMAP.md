@@ -232,7 +232,7 @@ Features:
 
 # Phase 13 — Discord Activity (Future, Post-MVP)
 
-Status: Not Started (deferred — see DESCISIONS.md ADR-008)
+Status: In Progress (code complete: PlatformBridge, Activity build target, Discord SDK bridge; awaiting hosting deploy + portal config + in-Discord verification)
 
 Goal:
 

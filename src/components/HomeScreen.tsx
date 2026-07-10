@@ -4,10 +4,16 @@ import { sanitizeDisplayName } from '@/lib/identity';
 
 interface HomeScreenProps {
   initialName: string;
+  /** True when the platform fixes the room (Discord Activity voice channel). */
+  lockedRoom?: boolean;
   onEnterRoom(displayName: string, roomCode: string): void;
 }
 
-export function HomeScreen({ initialName, onEnterRoom }: HomeScreenProps): JSX.Element {
+export function HomeScreen({
+  initialName,
+  lockedRoom = false,
+  onEnterRoom,
+}: HomeScreenProps): JSX.Element {
   const [name, setName] = useState(initialName);
   const [joinCode, setJoinCode] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -63,26 +69,30 @@ export function HomeScreen({ initialName, onEnterRoom }: HomeScreenProps): JSX.E
         </label>
 
         <button type="button" className="button button-primary button-lg" onClick={handleCreate}>
-          Create Room
+          {lockedRoom ? 'Join the Watch Party' : 'Create Room'}
         </button>
 
-        <div className="divider">or join with a code</div>
+        {!lockedRoom && (
+          <>
+            <div className="divider">or join with a code</div>
 
-        <form className="join-form" onSubmit={handleJoin}>
-          <input
-            className="input input-code"
-            value={joinCode}
-            maxLength={6}
-            placeholder="ROOM CODE"
-            onChange={(e) => {
-              setJoinCode(e.target.value.toUpperCase());
-              setFormError(null);
-            }}
-          />
-          <button type="submit" className="button">
-            Join
-          </button>
-        </form>
+            <form className="join-form" onSubmit={handleJoin}>
+              <input
+                className="input input-code"
+                value={joinCode}
+                maxLength={6}
+                placeholder="ROOM CODE"
+                onChange={(e) => {
+                  setJoinCode(e.target.value.toUpperCase());
+                  setFormError(null);
+                }}
+              />
+              <button type="submit" className="button">
+                Join
+              </button>
+            </form>
+          </>
+        )}
 
         {formError !== null && <p className="form-error">{formError}</p>}
       </div>

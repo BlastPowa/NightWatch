@@ -1,12 +1,10 @@
 import type { PresenceState } from '@shared/ipc';
+import { getPlatformBridge } from '@/platform/PlatformBridge';
 
 /**
- * Fire-and-forget Rich Presence updates. No-ops outside Electron (browser
- * dev tab) and never throws — presence is cosmetic.
+ * Fire-and-forget presence updates, routed through the platform bridge
+ * (Electron → Discord RPC; Activity/browser → no-op). Never throws.
  */
 export function updateRichPresence(state: PresenceState | null): void {
-  if (typeof window.nightwatch === 'undefined') {
-    return;
-  }
-  window.nightwatch.updatePresence(state).catch(() => {});
+  getPlatformBridge().updatePresence(state);
 }

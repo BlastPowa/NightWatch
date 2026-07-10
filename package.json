@@ -10,11 +10,13 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build && electron-builder",
-    "build:web": "vite build",
+    "build:activity": "vite build --config vite.config.web.ts",
+    "dev:activity": "vite --config vite.config.web.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@discord/embedded-app-sdk": "^1.9.0",
     "@supabase/supabase-js": "^2.46.1",
     "@xhayper/discord-rpc": "^1.2.0",
     "electron-updater": "^6.3.9",

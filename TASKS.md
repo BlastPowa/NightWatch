@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-Phase 12 — Production Preparation
+Phase 13 — Discord Activity
 
 
 ## Backlog
@@ -29,8 +29,12 @@ Phase 12 — Production Preparation
 - Phase 12: logging, global error handling, security review (SECURITY_REVIEW.md), payload validation, adaptive drift tolerance, packaging polish
 
 
+- Phase 13: PlatformBridge, Activity build target, Discord SDK bridge, fixed-room flow
+
+
 ## In Progress
 
+- Phase 13: owner deploy (Cloudflare Pages) + portal config + in-Discord verification
 - Phase 12: owner release/install/update verification; high-latency drift test; Edge Function deployment pending API key
 
 

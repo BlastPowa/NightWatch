@@ -1,0 +1,9 @@
+// Cloudflare Workers config: serves the Discord Activity build (dist-web)
+// as static assets. Used by `npx wrangler deploy` in Cloudflare Builds.
+{
+  "name": "nightwatch",
+  "compatibility_date": "2026-01-01",
+  "assets": {
+    "directory": "./dist-web"
+  }
+}

@@ -1,12 +1,7 @@
 import type { LogLevel } from '@shared/ipc';
+import { getPlatformBridge } from '@/platform/PlatformBridge';
 
-/** Renderer-side logging to the local file; no-op outside Electron. */
+/** Logging routed through the platform bridge (file on Electron). */
 export function log(level: LogLevel, message: string): void {
-  if (level === 'error') {
-    console.error(`[nightwatch] ${message}`);
-  }
-  if (typeof window.nightwatch === 'undefined') {
-    return;
-  }
-  window.nightwatch.log(level, message).catch(() => {});
+  getPlatformBridge().log(level, message);
 }

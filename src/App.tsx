@@ -16,6 +16,7 @@ import {
   type GuestIdentity,
 } from '@/lib/identity';
 import type { ConnectionStatus } from '@/lib/realtime/types';
+import { getPlatformBridge } from '@/platform/PlatformBridge';
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
   connecting: 'Connecting…',
@@ -49,41 +50,45 @@ export function App(): JSX.Element {
     document.documentElement.style.setProperty('--nw-accent', settings.accent);
   }, [settings.theme, settings.accent]);
 
+  const [fixedRoomCode, setFixedRoomCode] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
+    const bridge = getPlatformBridge();
 
-    // window.nightwatch only exists inside Electron (injected by preload).
-    if (typeof window.nightwatch === 'undefined') {
-      setBridgeError('Running outside Electron');
-      return;
+    if (bridge.kind !== 'electron') {
+      setBridgeError(bridge.kind === 'discord' ? 'Discord Activity' : 'Running outside Electron');
     }
 
-    window.nightwatch
-      .getAppInfo()
-      .then((info) => {
-        if (!cancelled) {
-          setAppInfo(info);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setBridgeError('IPC bridge unavailable');
-        }
-      });
+    void bridge.getAppInfo().then((info) => {
+      if (!cancelled && info !== null) {
+        setAppInfo(info);
+      }
+    });
+
+    void bridge.getFixedRoomCode().then((code) => {
+      if (!cancelled) {
+        setFixedRoomCode(code);
+      }
+    });
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const handleEnterRoom = useCallback((displayName: string, code: string): void => {
-    setIdentity((current) =>
-      current === null ? createIdentity(displayName) : updateDisplayName(current, displayName),
-    );
-    setRoomCode(code);
-    setView('main');
-    achievementTracker.record('room-joined');
-  }, []);
+  const handleEnterRoom = useCallback(
+    (displayName: string, code: string): void => {
+      setIdentity((current) =>
+        current === null ? createIdentity(displayName) : updateDisplayName(current, displayName),
+      );
+      // Inside a Discord Activity the room is fixed to the voice channel.
+      setRoomCode(fixedRoomCode ?? code);
+      setView('main');
+      achievementTracker.record('room-joined');
+    },
+    [fixedRoomCode],
+  );
 
   const handleLeaveRoom = useCallback((): void => {
     setRoomCode(null);
@@ -171,7 +176,11 @@ export function App(): JSX.Element {
               onLeave={handleLeaveRoom}
             />
           ) : (
-            <HomeScreen initialName={identity?.displayName ?? ''} onEnterRoom={handleEnterRoom} />
+            <HomeScreen
+              initialName={identity?.displayName ?? ''}
+              lockedRoom={fixedRoomCode !== null}
+              onEnterRoom={handleEnterRoom}
+            />
           )}
         </div>
 
