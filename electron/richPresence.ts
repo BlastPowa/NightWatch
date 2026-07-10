@@ -90,7 +90,8 @@ export class RichPresenceManager {
           this.lastState.videoTitle !== null && this.lastState.videoTitle.length > 0
             ? `Watching: ${this.lastState.videoTitle.slice(0, 100)}`
             : 'Picking something to watch',
-        state: `Room ${this.lastState.roomCode}`,
+        // Never expose the room code — it's the room's access credential.
+        state: 'In a watch party',
         startTimestamp: this.sessionStartMs,
       });
     } catch {

@@ -32,6 +32,7 @@
 
 ### Fixed
 
+- Rich Presence: room code no longer shown in Discord status (it's the room's access credential); added Settings toggle to disable Rich Presence entirely (clears immediately when switched off)
 - Video not loading in packaged builds: Origin/Referer rewrite now applies only to app-initiated and frame-document requests, leaving YouTube's iframe-internal API calls untouched (they were being 403'd)
 - Chat: profanity filter can now be toggled per user in Settings (sender-side; English wordlist)
 - Packaged-build realtime failure: app:// origin was rejected by Supabase's websocket handshake — Origin/Referer normalized to a stable https origin for Supabase and YouTube requests (single merged webRequest handler; channel errors now logged with detail)
