@@ -32,6 +32,14 @@ export interface RealtimeEventMap {
   /** An emoji reaction stamped at a video timestamp. Emoji is validated
    *  against the palette on receipt (shared/reactions.ts). */
   'reaction:stamp': { emoji: string; videoId: string; positionSeconds: number };
+  /** Ask the host to add a video to the shared queue. */
+  'queue:add': { videoId: string; title: string; addedByName: string };
+  /** Toggle the sender's upvote on a queue entry. */
+  'queue:vote': { entryId: string };
+  /** Ask the host to remove a queue entry (adder or host only). */
+  'queue:remove': { entryId: string };
+  /** Host's authoritative queue snapshot (broadcast on every change). */
+  'queue:state': { entries: unknown[] };
   /** A member (late joiner / reconnector) asks the host for current state. */
   'sync:request': Record<string, never>;
   /** Host's authoritative snapshot of playback state. */
@@ -54,6 +62,10 @@ export const ROOM_EVENTS: readonly (keyof RealtimeEventMap & string)[] = [
   'playback:pause',
   'chat:message',
   'reaction:stamp',
+  'queue:add',
+  'queue:vote',
+  'queue:remove',
+  'queue:state',
   'sync:request',
   'sync:state',
 ];

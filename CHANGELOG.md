@@ -6,6 +6,8 @@
 
 ### Added
 
+- Phase 15 collaborative queue (ADR-013): shared room queue with voting (votes reorder, host-authoritative snapshots, 50-entry cap, per-member rate limit), add-by-link for all members, own/host entry removal, auto-advance to top-voted entry when the current video ends, late-join queue sync
+
 - Phase 1 desktop foundation: Electron + React 18 + TypeScript (strict) + Vite scaffolding
 - Secure Electron main process: context isolation, sandboxed renderer, no node integration, single-instance lock, external-link and navigation guards, CSP in index.html
 - Typed IPC layer: shared/ipc.ts contract, preload contextBridge exposing `window.nightwatch`

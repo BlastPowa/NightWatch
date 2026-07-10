@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
+import { QueuePanel } from '@/components/QueuePanel';
+import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 
 interface RoomScreenProps {
@@ -22,6 +24,7 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
   const [copied, setCopied] = useState(false);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
+  const queue = useQueue(service, selfIsHost);
 
   function copyCode(): void {
     navigator.clipboard
@@ -52,6 +55,14 @@ export function RoomScreen({ room, service, selfId, onLeave }: RoomScreenProps):
             isHost={selfIsHost}
             roomCode={room.code}
             selfId={selfId}
+            takeNextFromQueue={queue.popNext}
+          />
+
+          <QueuePanel
+            queue={queue}
+            selfId={selfId}
+            selfName={self?.displayName ?? 'Me'}
+            isHost={selfIsHost}
           />
         </div>
 

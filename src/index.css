@@ -1187,6 +1187,116 @@ body {
   font-weight: 700;
 }
 
+/* ===== Queue (Phase 15) ===== */
+
+.queue-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--nw-border);
+}
+
+.queue-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.queue-count {
+  font-size: 0.78rem;
+  color: var(--nw-text-muted);
+}
+
+.queue-form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.queue-form .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.queue-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.queue-pos {
+  width: 1.3rem;
+  text-align: center;
+  font-family: Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--nw-text-muted);
+}
+
+.queue-title {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queue-by {
+  color: var(--nw-text-muted);
+  font-size: 0.78rem;
+}
+
+.queue-vote {
+  padding: 0.25rem 0.55rem;
+  background: transparent;
+  border: 1px solid var(--nw-border);
+  border-radius: 999px;
+  color: var(--nw-text-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s var(--nw-ease);
+}
+
+.queue-vote:hover {
+  border-color: var(--nw-accent);
+  color: var(--nw-accent);
+}
+
+.queue-vote-active {
+  background: color-mix(in srgb, var(--nw-accent) 16%, transparent);
+  border-color: var(--nw-accent);
+  color: var(--nw-accent);
+}
+
+.queue-remove {
+  padding: 0.2rem 0.45rem;
+  background: transparent;
+  border: none;
+  color: var(--nw-text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.queue-remove:hover {
+  color: #f87171;
+}
+
 /* ===== About screen ===== */
 
 .about-header {

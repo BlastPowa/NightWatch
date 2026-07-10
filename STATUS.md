@@ -1,7 +1,7 @@
 # Current Status
 
 Current Phase:
-Phase 13 — Discord Activity
+Phase 15 — Collaborative Queue & Voting
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -65,11 +65,16 @@ Completed:
 ✅ Activity build target: index.discord.html, main.discord.tsx bootstrap, vite.config.web.ts → dist-web (scripts: dev:activity / build:activity)
 ✅ Discord SDK bridge: patchUrlMappings (supabase/youtube/ytimg/ytstatic), voice-channel-derived fixed room code (deriveRoomCode), locked home screen ("Join the Watch Party")
 
+✅ Phase 13 — Discord Activity (deployed to Cloudflare Workers; DM launch verified; in-Activity video playback still to verify)
+✅ Release pipeline hardened through v0.1.6 (tag-triggered Action, silent updates, unsigned-updater fix, CI env newline fix, app:// origin fixes for Supabase + YouTube)
+✅ Chat profanity filter toggle (per-sender, Settings)
+✅ Phase 15: queue events, host-authoritative QueueService (add/vote/remove, 50-entry cap, rate limits, late-join snapshot), useQueue, QueuePanel (vote to reorder), host auto-advance on video end
+
 Current Work:
-Owner setup: Cloudflare Pages deploy of dist-web, portal URL mappings + enable Activities, in-Discord verification (YouTube-through-proxy is the known-risk item)
+Phase 15 verification (three clients: add/vote/reorder/auto-advance/late join)
 
 Blocked:
 None (search Edge Function deploy still pending owner's Google API key)
 
 Next:
-Phase 13 verification, then Phases 14+ backlog (persistent rooms first, ADR-012)
+Phase 14 — Persistent Community Rooms (ADR-012, first Postgres/RLS work), or Discord-identity OAuth for the Activity

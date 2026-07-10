@@ -18,6 +18,8 @@ interface PlayerPanelProps {
   isHost: boolean;
   roomCode: string;
   selfId: string;
+  /** Host auto-advance: take the next queued entry when a video ends. */
+  takeNextFromQueue: () => { videoId: string } | null;
 }
 
 /**
@@ -26,12 +28,20 @@ interface PlayerPanelProps {
  * with the player's native controls; viewers follow (ADR-006). Reactions
  * are open to everyone.
  */
-export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelProps): JSX.Element {
+export function PlayerPanel({
+  service,
+  isHost,
+  roomCode,
+  selfId,
+  takeNextFromQueue,
+}: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
+  const takeNextRef = useRef(takeNextFromQueue);
+  takeNextRef.current = takeNextFromQueue;
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +73,17 @@ export function PlayerPanel({ service, isHost, roomCode, selfId }: PlayerPanelPr
 
     const player = new YouTubePlayer({
       onReady: () => player.setVolume(settingsStore.get().volumePercent),
-      onStateChange: (state) => engineRef.current?.handleLocalStateChange(state),
+      onStateChange: (state) => {
+        engineRef.current?.handleLocalStateChange(state);
+        // Auto-advance (ADR-013): when the video ends, the host plays the
+        // top-voted queue entry through the normal load/broadcast path.
+        if (state === 'ended' && isHostRef.current) {
+          const next = takeNextRef.current();
+          if (next !== null) {
+            engineRef.current?.loadVideo(next.videoId);
+          }
+        }
+      },
       onError: (message) => setError(message),
     });
     playerRef.current = player;
