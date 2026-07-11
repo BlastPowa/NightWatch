@@ -12,6 +12,8 @@
     "build": "npm run typecheck && vite build && electron-builder",
     "build:activity": "vite build --config vite.config.web.ts",
     "dev:activity": "vite --config vite.config.web.ts",
+    "git:sync": "powershell -ExecutionPolicy Bypass -File scripts/git/sync-feature.ps1",
+    "git:finish": "powershell -ExecutionPolicy Bypass -File scripts/git/finish-feature.ps1",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "preview": "vite preview"
   },

@@ -1,0 +1,45 @@
+name: Feature PR
+
+on:
+  push:
+    branches:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'feature/**'
+      - 'fix/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-and-open:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build:activity
+      - run: npm run build
+      - name: Create or update pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head = context.ref.replace('refs/heads/', '');
+            const existing = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head}`, base: 'main', state: 'open' });
+            if (existing.data.length === 0) {
+              const title = context.payload.head_commit?.message?.split('\n')[0] ?? `Merge ${head}`;
+              const created = await github.rest.pulls.create({
+                owner, repo, head, base: 'main', title,
+                body: `Automated PR for \`${head}\`.\n\nValidation passed: install, typecheck, Activity build, and Electron package.\n\nManual owner merge is required.`,
+              });
+              core.summary.addLink(`Pull request #${created.data.number}`, created.data.html_url).write();
+            } else {
+              core.summary.addLink(`Updated pull request #${existing.data[0].number}`, existing.data[0].html_url).write();
+            }
