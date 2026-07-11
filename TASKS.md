@@ -40,6 +40,9 @@ Phase 14 — Persistent Community Rooms
 
 ## In Progress
 
+- Browse/watch-room overhaul: cinematic featured title, fuller responsive YouTube-style library grid, progressive result reveal, player-first room hierarchy, and clearer queue/chat/member modules on `frontend/browse-room-overhaul`.
+- Feature PR automation hardening: treat an already-merged branch as a successful no-op instead of a failed PR-creation run.
+
 - Advanced cinematic UI: discovery grid, categorized settings, branded startup, responsive/accessibility polish, and automated PR/release workflow are in review on `frontend/advanced-ui-overhaul`.
 
 - Frontend cinematic polish: brand/shell implementation complete; core-flow visual QA and Figma canvas construction pending review/quota availability.

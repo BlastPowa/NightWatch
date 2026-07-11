@@ -35,11 +35,23 @@ jobs:
             const existing = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head}`, base: 'main', state: 'open' });
             if (existing.data.length === 0) {
               const title = context.payload.head_commit?.message?.split('\n')[0] ?? `Merge ${head}`;
-              const created = await github.rest.pulls.create({
-                owner, repo, head, base: 'main', title,
-                body: `Automated PR for \`${head}\`.\n\nValidation passed: install, typecheck, Activity build, and Electron package.\n\nManual owner merge is required.`,
-              });
-              core.summary.addLink(`Pull request #${created.data.number}`, created.data.html_url).write();
+              try {
+                const created = await github.rest.pulls.create({
+                  owner, repo, head, base: 'main', title,
+                  body: `Automated PR for \`${head}\`.\n\nValidation passed: install, typecheck, Activity build, and Electron package.\n\nManual owner merge is required.`,
+                });
+                core.summary.addLink(`Pull request #${created.data.number}`, created.data.html_url).write();
+              } catch (error) {
+                const message = String(error?.message ?? error);
+                if (error?.status === 422 && /No commits between/i.test(message)) {
+                  core.notice(`${head} is already merged into main; no pull request is needed.`);
+                  core.summary.addHeading('No pull request needed').addRaw(`\`${head}\` is already contained in \`main\`.`).write();
+                } else if (error?.status === 403) {
+                  core.setFailed('GitHub Actions cannot create pull requests. Enable Settings → Actions → General → Workflow permissions → Allow GitHub Actions to create and approve pull requests.');
+                } else {
+                  throw error;
+                }
+              }
             } else {
               core.summary.addLink(`Updated pull request #${existing.data[0].number}`, existing.data[0].html_url).write();
             }

@@ -42,6 +42,7 @@ export function DiscoveryPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [queuedId, setQueuedId] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(11);
 
   async function runTrending(categoryId: string): Promise<void> {
     setLoading(true);
@@ -100,6 +101,7 @@ export function DiscoveryPanel({
     setTab(next);
     setResults([]);
     setMessage(null);
+    setVisibleCount(11);
     if (next === 'trending') {
       void runTrending(category);
     } else if (next === 'history') {
@@ -119,6 +121,10 @@ export function DiscoveryPanel({
       window.setTimeout(() => setQueuedId(null), 1500);
     }
   }
+
+  const featured = tab === 'trending' ? results[0] : undefined;
+  const libraryResults = featured === undefined ? results : results.slice(1);
+  const visibleResults = libraryResults.slice(0, visibleCount);
 
   return (
     <div className="discovery-panel">
@@ -143,6 +149,22 @@ export function DiscoveryPanel({
         ))}
         </div>
       </header>
+
+      {featured !== undefined && !loading && (
+        <section className="discovery-feature" aria-labelledby="featured-title">
+          <img src={featured.thumbnailUrl} alt="" className="discovery-feature-art" />
+          <div className="discovery-feature-shade" />
+          <div className="discovery-feature-content">
+            <span className="eyebrow">Featured tonight</span>
+            <h3 id="featured-title">{featured.title}</h3>
+            <p>{featured.channelTitle || 'Trending on YouTube'}</p>
+            <div className="discovery-feature-actions">
+              {isHost && <button type="button" className="button button-primary button-lg" onClick={() => onPlayNow(featured.videoId)}>▶ Play now</button>}
+              <button type="button" className="button button-lg" onClick={() => handleQueue(featured)}>{queuedId === featured.videoId ? 'Added to queue ✓' : '+ Add to queue'}</button>
+            </div>
+          </div>
+        </section>
+      )}
 
       {tab === 'search' && (
         <form className="player-form" onSubmit={(e) => void handleSearch(e)}>
@@ -185,9 +207,14 @@ export function DiscoveryPanel({
       )}
       {message !== null && <div className="discovery-empty"><span aria-hidden="true">◌</span><p>{message}</p></div>}
 
-      {results.length > 0 && (
+      {libraryResults.length > 0 && (
+        <section className="discovery-library" aria-labelledby="library-title">
+          <div className="shelf-heading">
+            <div><span className="eyebrow">Watch together</span><h3 id="library-title">{tab === 'history' ? 'Previously watched' : tab === 'search' ? `Results for “${query}”` : 'Trending now'}</h3></div>
+            <span>{libraryResults.length} videos</span>
+          </div>
         <ul className="discovery-grid">
-          {results.map((result) => (
+          {visibleResults.map((result) => (
             <li key={result.videoId} className="discovery-card">
               {result.thumbnailUrl !== '' && (
                 <div className="discovery-thumb-wrap">
@@ -196,11 +223,14 @@ export function DiscoveryPanel({
                 </div>
               )}
               <div className="discovery-info">
+                <span className="channel-avatar" aria-hidden="true">{(result.channelTitle || result.title).slice(0, 1).toUpperCase()}</span>
+                <span className="discovery-copy">
                 <span className="discovery-title" title={result.title}>
                   {result.title}
                 </span>
                 <span className="discovery-meta">
                   {result.channelTitle}
+                </span>
                 </span>
               </div>
               <div className="discovery-actions">
@@ -224,6 +254,12 @@ export function DiscoveryPanel({
             </li>
           ))}
         </ul>
+        {visibleCount < libraryResults.length && (
+          <button type="button" className="button browse-more" onClick={() => setVisibleCount((count) => count + 12)}>
+            Show more videos
+          </button>
+        )}
+        </section>
       )}
     </div>
   );
