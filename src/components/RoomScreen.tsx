@@ -188,6 +188,10 @@ export function RoomScreen({
 
       <div className="room-body">
         <div className="room-main card">
+          <div className="watch-stage-heading">
+            <div><span className="eyebrow">Now watching</span><h1>{meta?.name ?? 'Your watch party'}</h1></div>
+            <span className={`watch-role${selfIsHost ? ' watch-role-host' : ''}`}>{selfIsHost ? 'Host controls' : 'Watching in sync'}</span>
+          </div>
           <PlayerPanel
             service={service}
             isHost={selfIsHost}
@@ -198,6 +202,8 @@ export function RoomScreen({
             }}
           />
 
+          <section className="room-module" aria-labelledby="queue-title">
+          <div className="module-heading"><span className="eyebrow">Playlist</span><h2 id="queue-title">Up next</h2></div>
           <QueuePanel
             queue={queue}
             selfId={selfId}
@@ -205,11 +211,14 @@ export function RoomScreen({
             isHost={selfIsHost}
             onPlayNext={handlePlayNext}
           />
+          </section>
         </div>
 
         <aside className="room-aside card">
+          <div className="module-heading"><span className="eyebrow">Watch party</span><h2>Conversation</h2></div>
           <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
 
+          <div className="member-heading"><h3>Watching now</h3><span>{room.members.length}</span></div>
           <ul className="member-list">
             {room.members.map((member) => (
               <li key={member.id} className="member">
