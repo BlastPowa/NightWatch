@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type SyntheticEvent } from 'react';
 import {
   getTrending,
   searchYouTube,
@@ -126,6 +126,11 @@ export function DiscoveryPanel({
   const libraryResults = featured === undefined ? results : results.slice(1);
   const visibleResults = libraryResults.slice(0, visibleCount);
 
+  function handleThumbnailError(event: SyntheticEvent<HTMLImageElement>): void {
+    event.currentTarget.hidden = true;
+    event.currentTarget.parentElement?.classList.add('thumbnail-unavailable');
+  }
+
   return (
     <div className="discovery-panel">
       <header className="discovery-hero">
@@ -152,7 +157,7 @@ export function DiscoveryPanel({
 
       {featured !== undefined && !loading && (
         <section className="discovery-feature" aria-labelledby="featured-title">
-          <img src={featured.thumbnailUrl} alt="" className="discovery-feature-art" />
+          <img src={featured.thumbnailUrl} alt="" className="discovery-feature-art" onError={handleThumbnailError} />
           <div className="discovery-feature-shade" />
           <div className="discovery-feature-content">
             <span className="eyebrow">Featured tonight</span>
@@ -218,7 +223,7 @@ export function DiscoveryPanel({
             <li key={result.videoId} className="discovery-card">
               {result.thumbnailUrl !== '' && (
                 <div className="discovery-thumb-wrap">
-                  <img className="discovery-thumb" src={result.thumbnailUrl} alt="" loading="lazy" />
+                  <img className="discovery-thumb" src={result.thumbnailUrl} alt="" loading="lazy" onError={handleThumbnailError} />
                   {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
                 </div>
               )}
