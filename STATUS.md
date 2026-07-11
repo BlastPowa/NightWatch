@@ -80,11 +80,13 @@ Completed:
 ✅ Packaged update round trip VERIFIED (0.1.4 → … → 0.1.11 including silent installs; reconciles the earlier STATUS/ROADMAP conflict — evidence: owner's release log 2026-07-10)
 ✅ Backend batch 1 (branch backend/nightwatch-platform): Windows icon wired (build/icon.ico from frontend lane), discord-token Edge Function (server-held Client Secret), Activity Discord identity (authorize → exchange → authenticate, guest fallback), auto-join in Activity (identity + channel room = no prompts)
 
+✅ Phase 16 backend (Discovery Hub): trending endpoint + channelTitle in search-youtube, room_history migration/RPCs + automatic host-side recording, invite deep links (nightwatch://join/CODE) with auto-join, typed interfaces published in FEATURES_UI_BRIEF.md
+
 Current Work:
-Backend branch: owner deploys discord-token function + sets DISCORD_CLIENT_ID/DISCORD_CLIENT_SECRET secrets, then Activity identity verification. Search Edge Function still pending Google API key.
+Owner: run 0002_room_history.sql in SQL Editor; re-paste updated search-youtube function in dashboard. Codex: Discovery Hub grid UI per FEATURES_UI_BRIEF.md. Then merge + release + verify (search grid, trending, history shelf, invite links, Discord sign-in, Activity identity).
 
 Blocked:
 None
 
 Next:
-Merge backend/nightwatch-platform → main after review; then Phase 16 — Creator/Host Tools (ADR-014)
+Phase 17 — Creator/Host Tools (ADR-014); Phase 18 — gamification upgrade

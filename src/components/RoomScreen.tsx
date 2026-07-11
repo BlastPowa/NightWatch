@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
 import { QueuePanel } from '@/components/QueuePanel';
@@ -12,6 +12,9 @@ interface RoomScreenProps {
   selfId: string;
   /** Persistent-room metadata (name/schedule), null for ephemeral rooms. */
   meta: RoomMeta | null;
+  /** A video picked on the Discover page, to play or queue on arrival. */
+  pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue' } | null;
+  onPendingHandled(): void;
   onLeave(): void;
 }
 
@@ -36,6 +39,8 @@ export function RoomScreen({
   service,
   selfId,
   meta,
+  pendingVideo,
+  onPendingHandled,
   onLeave,
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -43,6 +48,34 @@ export function RoomScreen({
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
   const loadVideoRef = useRef<((videoId: string) => void) | null>(null);
+
+  // Apply a Discover-page pick once the player loader is mounted (poll
+  // briefly — the child registers its loader in its own mount effect).
+  useEffect(() => {
+    if (pendingVideo === null) {
+      return;
+    }
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      attempts += 1;
+      if (pendingVideo.mode === 'queue') {
+        window.clearInterval(timer);
+        queue.add(pendingVideo.videoId, pendingVideo.title, self?.displayName ?? 'Me');
+        onPendingHandled();
+        return;
+      }
+      if (loadVideoRef.current !== null) {
+        window.clearInterval(timer);
+        loadVideoRef.current(pendingVideo.videoId);
+        onPendingHandled();
+      } else if (attempts > 20) {
+        window.clearInterval(timer);
+        onPendingHandled();
+      }
+    }, 250);
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingVideo]);
 
   function handlePlayNext(): void {
     const next = queue.popNext();
@@ -79,14 +112,6 @@ export function RoomScreen({
             <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
           </button>
         </div>
-        <span className={`room-status room-status-${room.status}`}>
-          <span className="status-dot" aria-hidden="true" />
-          {STATUS_TEXT[room.status]}
-        </span>
-        <button type="button" className="room-code" onClick={copyCode} title="Click to copy">
-          {room.code}
-          <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
-        </button>
         {meta !== null && (
           <span className="room-persistent">
             {meta.name}
@@ -98,7 +123,10 @@ export function RoomScreen({
             )}
           </span>
         )}
-        <span className="room-status">{STATUS_TEXT[room.status]}</span>
+        <span className={`room-status room-status-${room.status}`}>
+          <span className="status-dot" aria-hidden="true" />
+          {STATUS_TEXT[room.status]}
+        </span>
       </header>
 
       <div className="room-body">
@@ -107,7 +135,6 @@ export function RoomScreen({
             service={service}
             isHost={selfIsHost}
             roomCode={room.code}
-            selfId={selfId}
             takeNextFromQueue={queue.popNext}
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;

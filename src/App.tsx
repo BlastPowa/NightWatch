@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { AppInfo } from '@shared/ipc';
+import { generateRoomCode } from '@shared/room';
 import { AboutScreen } from '@/components/AboutScreen';
 import { BrandMark } from '@/components/BrandMark';
+import { ChatPanel } from '@/components/ChatPanel';
+import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { HomeScreen } from '@/components/HomeScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { useAuth } from '@/hooks/useAuth';
@@ -29,14 +32,22 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'rooms' | 'settings' | 'card' | 'about';
+type View = 'main' | 'discover' | 'rooms' | 'settings' | 'card' | 'about';
+
+interface PendingVideo {
+  videoId: string;
+  title: string;
+  mode: 'play' | 'queue';
+}
 
 export function App(): JSX.Element {
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [bridgeError, setBridgeError] = useState<string | null>(null);
   const [identity, setIdentity] = useState<GuestIdentity | null>(() => loadIdentity());
   const [roomCode, setRoomCode] = useState<string | null>(null);
-  const [view, setView] = useState<View>('main');
+  // The Discover grid is the app's home page; the Room (player) page is
+  // where a picked video takes you.
+  const [view, setView] = useState<View>('discover');
   const connectionStatus = useConnectionStatus();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
@@ -56,6 +67,29 @@ export function App(): JSX.Element {
 
   const [fixedRoomCode, setFixedRoomCode] = useState<string | null>(null);
   const [roomMeta, setRoomMeta] = useState<RoomMeta | null>(null);
+  const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<PendingVideo | null>(null);
+
+  // Invite deep links (nightwatch://join/CODE, Phase 16).
+  useEffect(() => {
+    if (typeof window.nightwatch === 'undefined') {
+      return;
+    }
+    return window.nightwatch.onJoinLink((code) => {
+      setPendingJoinCode(code);
+      setView('discover');
+    });
+  }, []);
+
+  // Complete a pending invite once an identity exists (immediately for
+  // returning users; after the name prompt for first-timers).
+  useEffect(() => {
+    if (pendingJoinCode !== null && identity !== null) {
+      setRoomCode(pendingJoinCode);
+      setPendingJoinCode(null);
+      achievementTracker.record('room-joined');
+    }
+  }, [pendingJoinCode, identity]);
   const authUser = useAuth();
   const isElectron = getPlatformBridge().kind === 'electron';
 
@@ -124,10 +158,11 @@ export function App(): JSX.Element {
       );
       // Inside a Discord Activity the room is fixed to the voice channel.
       setRoomCode(fixedRoomCode ?? code);
-      setView('main');
+      // Land on the grid — unless a Discover pick is waiting to play.
+      setView(pendingVideo?.mode === 'play' ? 'main' : 'discover');
       achievementTracker.record('room-joined');
     },
-    [fixedRoomCode],
+    [fixedRoomCode, pendingVideo],
   );
 
   const handleLeaveRoom = useCallback((): void => {
@@ -144,13 +179,38 @@ export function App(): JSX.Element {
         return fallbackName.length > 0 ? createIdentity(fallbackName) : null;
       });
       setRoomCode(code);
-      setView('main');
+      setView('discover');
       achievementTracker.record('room-joined');
     },
     [authUser],
   );
 
   const inRoom = roomCode !== null && session !== null && identity !== null;
+  const selfIsHost =
+    inRoom && session.state.members.some((m) => m.id === identity.id && m.isHost);
+
+  /** Discover-page pick: route into a room (existing or new) with it. */
+  const handleDiscoverPick = useCallback(
+    (videoId: string, title: string, mode: 'play' | 'queue'): void => {
+      setPendingVideo({ videoId, title, mode });
+      if (roomCode === null) {
+        if (identity !== null) {
+          // Start a fresh watch party around the pick.
+          setRoomCode(generateRoomCode());
+          achievementTracker.record('room-joined');
+        } else {
+          // Name prompt first; the pick applies right after.
+          setView('main');
+          return;
+        }
+      }
+      // Playing takes you to the room; queueing keeps you browsing.
+      if (mode === 'play') {
+        setView('main');
+      }
+    },
+    [roomCode, identity],
+  );
 
   return (
     <div className="app">
@@ -163,10 +223,17 @@ export function App(): JSX.Element {
         <nav className="side-nav">
           <button
             type="button"
+            className={`nav-item${view === 'discover' ? ' nav-item-active' : ''}`}
+            onClick={() => setView('discover')}
+          >
+            Browse
+          </button>
+          <button
+            type="button"
             className={`nav-item${view === 'main' ? ' nav-item-active' : ''}`}
             onClick={() => setView('main')}
           >
-            {inRoom ? 'Room' : 'Home'}
+            {inRoom ? 'Room' : 'Join'}
           </button>
           {isElectron && (
             <button
@@ -226,6 +293,32 @@ export function App(): JSX.Element {
       </aside>
 
       <main className="content">
+        {view === 'discover' && (
+          <div className="discover-layout fade-up">
+            <div className="discover-main card">
+              <h1 className="page-title">Browse</h1>
+              <DiscoveryPanel
+                callerId={identity?.id ?? 'anonymous'}
+                isHost={inRoom ? selfIsHost : true}
+                roomCode={roomCode ?? ''}
+                onPlayNow={(videoId) => handleDiscoverPick(videoId, '', 'play')}
+                onQueueAdd={(videoId, title) => {
+                  handleDiscoverPick(videoId, title, 'queue');
+                  return true;
+                }}
+              />
+            </div>
+            {session !== null && identity !== null && (
+              <aside className="room-aside card">
+                <ChatPanel
+                  service={session.service}
+                  members={session.state.members}
+                  selfName={identity.displayName}
+                />
+              </aside>
+            )}
+          </div>
+        )}
         {view === 'settings' && <SettingsPanel />}
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
@@ -240,6 +333,8 @@ export function App(): JSX.Element {
               service={session.service}
               selfId={identity.id}
               meta={roomMeta}
+              pendingVideo={pendingVideo}
+              onPendingHandled={() => setPendingVideo(null)}
               onLeave={handleLeaveRoom}
             />
           ) : (

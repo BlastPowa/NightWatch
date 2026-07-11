@@ -1428,6 +1428,119 @@ input {
   color: #f87171;
 }
 
+/* ===== Discovery panel (Phase 16 — temporary, frontend lane restyles) ===== */
+
+.discovery-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--nw-border);
+}
+
+.category-chips {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.discovery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.7rem;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.discovery-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.discovery-thumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+}
+
+.discovery-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.6rem 0.3rem;
+}
+
+.discovery-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.discovery-meta {
+  font-size: 0.75rem;
+  color: var(--nw-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discovery-actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem 0.6rem;
+  margin-top: auto;
+}
+
+.discovery-btn {
+  flex: 1;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.78rem;
+}
+
+/* Discover as a full page (grid home) with optional chat aside */
+.discover-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.discover-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.discover-main .discovery-panel {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.discover-main .discovery-grid {
+  max-height: none;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+@media (max-width: 900px) {
+  .discover-layout {
+    flex-direction: column;
+  }
+}
+
 /* ===== About screen ===== */
 
 .about-header {

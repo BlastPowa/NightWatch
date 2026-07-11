@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
 import { ReactionBar } from '@/components/ReactionBar';
-import { SearchBox } from '@/components/SearchBox';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import { updateRichPresence } from '@/lib/presence';
+import { recordWatch } from '@/lib/rooms/HistoryService';
 import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
 import { useReactions } from '@/hooks/useReactions';
@@ -17,7 +17,6 @@ interface PlayerPanelProps {
   service: RoomService;
   isHost: boolean;
   roomCode: string;
-  selfId: string;
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   /** Hands the parent a loader so other panels (queue) can start videos. */
@@ -34,7 +33,6 @@ export function PlayerPanel({
   service,
   isHost,
   roomCode,
-  selfId,
   takeNextFromQueue,
   exposeLoadVideo,
 }: PlayerPanelProps): JSX.Element {
@@ -48,7 +46,6 @@ export function PlayerPanel({
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [sourceMode, setSourceMode] = useState<'link' | 'search'>('link');
   const [videoId, setVideoId] = useState<string | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
@@ -154,10 +151,13 @@ export function PlayerPanel({
     }
     // Title is available shortly after the video loads.
     const timer = window.setTimeout(() => {
-      updateRichPresence({
-        roomCode,
-        videoTitle: playerRef.current?.getVideoTitle() ?? null,
-      });
+      const videoTitle = playerRef.current?.getVideoTitle() ?? null;
+      updateRichPresence({ roomCode, videoTitle });
+      // Persistent-room watch history (Phase 16): host writes one entry;
+      // the server ignores ephemeral codes and dedupes repeats.
+      if (isHostRef.current) {
+        recordWatch(roomCode, videoId, videoTitle);
+      }
     }, 2500);
     return () => window.clearTimeout(timer);
   }, [roomCode, videoId]);
@@ -195,43 +195,22 @@ export function PlayerPanel({
   return (
     <div className="player-panel">
       {isHost ? (
-        <>
-          <div className="source-tabs">
-            <button
-              type="button"
-              className={`source-tab${sourceMode === 'link' ? ' source-tab-active' : ''}`}
-              onClick={() => setSourceMode('link')}
-            >
-              Link
-            </button>
-            <button
-              type="button"
-              className={`source-tab${sourceMode === 'search' ? ' source-tab-active' : ''}`}
-              onClick={() => setSourceMode('search')}
-            >
-              Search
-            </button>
-          </div>
-
-          {sourceMode === 'link' ? (
-            <form className="player-form" onSubmit={handleLoad}>
-              <input
-                className="input"
-                value={url}
-                placeholder="Paste a YouTube link…"
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  setError(null);
-                }}
-              />
-              <button type="submit" className="button button-glow">
-                Load video
-              </button>
-            </form>
-          ) : (
-            <SearchBox callerId={selfId} onSelect={loadVideo} />
-          )}
-        </>
+        // Search/browse moved to the Discovery panel below the player
+        // (Phase 16) — the host bar keeps direct link loading.
+        <form className="player-form" onSubmit={handleLoad}>
+          <input
+            className="input"
+            value={url}
+            placeholder="Paste a YouTube link…"
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setError(null);
+            }}
+          />
+          <button type="submit" className="button button-glow">
+            Load video
+          </button>
+        </form>
       ) : (
         <p className="player-viewer-note">
           The host controls playback.
