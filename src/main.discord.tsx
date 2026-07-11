@@ -23,6 +23,9 @@ async function bootstrap(): Promise<void> {
   // it) does any network work, so patchUrlMappings is already active.
   setPlatformBridge(await createDiscordBridge(clientId));
 
+  const { initCloudSync } = await import('@/lib/engagement/CloudSync');
+  initCloudSync();
+
   const { App } = await import('@/App');
   root.render(
     <StrictMode>

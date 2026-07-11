@@ -10,6 +10,10 @@ export interface EngagementStats {
   reactionsSent: number;
   chatsSent: number;
   videosLoaded: number;
+  /** Consecutive days with watch activity (Phase 18). */
+  streakDays: number;
+  /** YYYY-MM-DD of the last day watch activity was recorded. */
+  lastWatchDay: string | null;
 }
 
 export type EngagementEvent = 'room-joined' | 'video-loaded' | 'reaction-sent' | 'chat-sent';
@@ -79,6 +83,27 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     description: 'Load 10 videos for the room.',
     isUnlocked: (s) => s.videosLoaded >= 10,
   },
+  {
+    id: 'streak-3',
+    emoji: '🔥',
+    title: 'Warming Up',
+    description: 'Watch 3 days in a row.',
+    isUnlocked: (s) => s.streakDays >= 3,
+  },
+  {
+    id: 'streak-7',
+    emoji: '⚡',
+    title: 'Weekly Ritual',
+    description: 'Watch 7 days in a row.',
+    isUnlocked: (s) => s.streakDays >= 7,
+  },
+  {
+    id: 'streak-30',
+    emoji: '👑',
+    title: 'Night Sovereign',
+    description: 'Watch 30 days in a row.',
+    isUnlocked: (s) => s.streakDays >= 30,
+  },
 ];
 
 export interface EngagementSnapshot {
@@ -97,7 +122,23 @@ const DEFAULT_STATS: EngagementStats = {
   reactionsSent: 0,
   chatsSent: 0,
   videosLoaded: 0,
+  streakDays: 0,
+  lastWatchDay: null,
 };
+
+/** Local calendar day, YYYY-MM-DD. */
+export function todayKey(now = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function yesterdayKey(): string {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return todayKey(date);
+}
 
 function toCount(value: unknown): number {
   const n = Number(value);
@@ -120,6 +161,9 @@ function loadSnapshot(): EngagementSnapshot {
       reactionsSent: toCount(parsed.stats?.reactionsSent),
       chatsSent: toCount(parsed.stats?.chatsSent),
       videosLoaded: toCount(parsed.stats?.videosLoaded),
+      streakDays: toCount(parsed.stats?.streakDays),
+      lastWatchDay:
+        typeof parsed.stats?.lastWatchDay === 'string' ? parsed.stats.lastWatchDay : null,
     };
     const unlockedIds = Array.isArray(parsed.unlockedIds)
       ? parsed.unlockedIds.filter(
@@ -171,8 +215,27 @@ class AchievementTracker {
         watchSeconds: this.snapshot.stats.watchSeconds + this.pendingWatchSeconds,
       };
       this.pendingWatchSeconds = 0;
+
+      // Streak (Phase 18): consecutive calendar days with watch activity.
+      const today = todayKey();
+      if (stats.lastWatchDay !== today) {
+        stats.streakDays = stats.lastWatchDay === yesterdayKey() ? stats.streakDays + 1 : 1;
+        stats.lastWatchDay = today;
+      }
+
       this.commit(stats);
     }
+  }
+
+  /**
+   * Cloud sync (Phase 18): adopt a merged snapshot. Unlocks already earned on
+   * another device are seeded as previously-unlocked so commit() does not
+   * replay them as fresh toasts.
+   */
+  public applyMerged(stats: EngagementStats, unlockedIds: readonly string[]): void {
+    const known = unlockedIds.filter((id) => ACHIEVEMENTS.some((a) => a.id === id));
+    this.snapshot = { stats: this.snapshot.stats, unlockedIds: known };
+    this.commit(stats);
   }
 
   public subscribe(listener: SnapshotListener): () => void {
