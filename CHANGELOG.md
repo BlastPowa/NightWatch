@@ -10,6 +10,7 @@
 - Rebuilt Browse around a cinematic featured title, channel-forward media cards, responsive shelves, and progressive result reveal; reshaped the room around a player-first stage with clearer queue, conversation, member, and host/viewer hierarchy.
 - Fixed feature validation reporting a failure when its branch had already been merged before the PR-opening step completed.
 - Added graceful thumbnail fallbacks for removed, private, or temporarily unavailable YouTube preview images.
+- Redesigned the app navigation, create/join lobby, queue interactions, and chat empty state with a more cinematic media-app hierarchy and compact icon navigation.
 
 ### Backend/platform
 

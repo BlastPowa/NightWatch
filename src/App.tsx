@@ -236,14 +236,14 @@ export function App(): JSX.Element {
             className={`nav-item${view === 'discover' ? ' nav-item-active' : ''}`}
             onClick={() => setView('discover')}
           >
-            Browse
+            <span className="nav-icon" aria-hidden="true">⌂</span><span className="nav-label">Browse</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'main' ? ' nav-item-active' : ''}`}
             onClick={() => setView('main')}
           >
-            {inRoom ? 'Room' : 'Join'}
+            <span className="nav-icon" aria-hidden="true">▶</span><span className="nav-label">{inRoom ? 'Room' : 'Join'}</span>
           </button>
           {isElectron && (
             <button
@@ -251,7 +251,7 @@ export function App(): JSX.Element {
               className={`nav-item${view === 'rooms' ? ' nav-item-active' : ''}`}
               onClick={() => setView('rooms')}
             >
-              My Rooms
+              <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">My Rooms</span>
             </button>
           )}
           <button
@@ -259,21 +259,21 @@ export function App(): JSX.Element {
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
             onClick={() => setView('card')}
           >
-            My Card
+            <span className="nav-icon" aria-hidden="true">◇</span><span className="nav-label">My Card</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'settings' ? ' nav-item-active' : ''}`}
             onClick={() => setView('settings')}
           >
-            Settings
+            <span className="nav-icon" aria-hidden="true">⚙</span><span className="nav-label">Settings</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'about' ? ' nav-item-active' : ''}`}
             onClick={() => setView('about')}
           >
-            About
+            <span className="nav-icon" aria-hidden="true">i</span><span className="nav-label">About</span>
           </button>
         </nav>
 
