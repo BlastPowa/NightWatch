@@ -9,7 +9,7 @@ export interface SearchResult {
 }
 
 export type SearchOutcome =
-  | { status: 'ok'; results: SearchResult[] }
+  | { status: 'ok'; results: SearchResult[]; nextPageToken: string | null }
   | { status: 'not-configured' }
   | { status: 'rate-limited' }
   | { status: 'error' };
@@ -62,22 +62,42 @@ async function invoke(body: Record<string, unknown>): Promise<SearchOutcome> {
       return { status: 'error' };
     }
     const results = normalizeResults(data);
-    return results === null ? { status: 'error' } : { status: 'ok', results };
+    if (results === null) {
+      return { status: 'error' };
+    }
+    const token = (data as { nextPageToken?: unknown }).nextPageToken;
+    return {
+      status: 'ok',
+      results,
+      nextPageToken: typeof token === 'string' && token.length > 0 ? token : null,
+    };
   } catch {
     return { status: 'error' };
   }
 }
 
-/** In-app YouTube search via the search-youtube Edge Function (§7.6). */
-export async function searchYouTube(query: string, callerId: string): Promise<SearchOutcome> {
+/**
+ * In-app YouTube search via the search-youtube Edge Function (§7.6).
+ * Pass the previous outcome's nextPageToken to append the next page — the
+ * function serves those from its cache, so paging costs no YouTube quota.
+ */
+export async function searchYouTube(
+  query: string,
+  callerId: string,
+  pageToken?: string,
+): Promise<SearchOutcome> {
   const trimmed = query.trim();
   if (trimmed.length === 0) {
-    return { status: 'ok', results: [] };
+    return { status: 'ok', results: [], nextPageToken: null };
   }
-  return invoke({ kind: 'search', query: trimmed, callerId });
+  return invoke({ kind: 'search', query: trimmed, callerId, ...(pageToken ? { pageToken } : {}) });
 }
 
 /** Trending grid for the Discovery Hub (Phase 16). categoryId '' = all. */
-export async function getTrending(categoryId: string, callerId: string): Promise<SearchOutcome> {
-  return invoke({ kind: 'trending', categoryId, callerId });
+export async function getTrending(
+  categoryId: string,
+  callerId: string,
+  pageToken?: string,
+): Promise<SearchOutcome> {
+  return invoke({ kind: 'trending', categoryId, callerId, ...(pageToken ? { pageToken } : {}) });
 }

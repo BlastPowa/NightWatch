@@ -42,14 +42,20 @@ export function DiscoveryPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [queuedId, setQueuedId] = useState<string | null>(null);
+  // Continuation token for Show More. Only ever spent on an explicit click —
+  // never followed automatically, so a launch costs exactly one page.
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   async function runTrending(categoryId: string): Promise<void> {
     setLoading(true);
     setMessage(null);
+    setNextToken(null);
     const outcome = await getTrending(categoryId, callerId);
     setLoading(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
+      setNextToken(outcome.nextPageToken);
       setMessage(outcome.results.length === 0 ? 'Nothing trending right now.' : null);
     } else {
       setResults([]);
@@ -60,6 +66,7 @@ export function DiscoveryPanel({
   async function runHistory(): Promise<void> {
     setLoading(true);
     setMessage(null);
+    setNextToken(null);
     const entries = await listHistory(roomCode);
     setLoading(false);
     setResults(
@@ -85,10 +92,12 @@ export function DiscoveryPanel({
     }
     setLoading(true);
     setMessage(null);
+    setNextToken(null);
     const outcome = await searchYouTube(query, callerId);
     setLoading(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
+      setNextToken(outcome.nextPageToken);
       setMessage(outcome.results.length === 0 ? 'No results.' : null);
     } else {
       setResults([]);
@@ -96,10 +105,34 @@ export function DiscoveryPanel({
     }
   }
 
+  async function handleShowMore(): Promise<void> {
+    if (nextToken === null || loadingMore) {
+      return;
+    }
+    setLoadingMore(true);
+    const outcome =
+      tab === 'trending'
+        ? await getTrending(category, callerId, nextToken)
+        : await searchYouTube(query, callerId, nextToken);
+    setLoadingMore(false);
+
+    if (outcome.status !== 'ok') {
+      setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'Could not load more.');
+      return;
+    }
+    // A page can overlap a previous one if trending shifted between fetches.
+    setResults((current) => {
+      const seen = new Set(current.map((r) => r.videoId));
+      return [...current, ...outcome.results.filter((r) => !seen.has(r.videoId))];
+    });
+    setNextToken(outcome.nextPageToken);
+  }
+
   function switchTab(next: DiscoveryTab): void {
     setTab(next);
     setResults([]);
     setMessage(null);
+    setNextToken(null);
     if (next === 'trending') {
       void runTrending(category);
     } else if (next === 'history') {
@@ -224,6 +257,19 @@ export function DiscoveryPanel({
             </li>
           ))}
         </ul>
+      )}
+
+      {nextToken !== null && !loading && (
+        <div className="discovery-more">
+          <button
+            type="button"
+            className="button discovery-more-btn"
+            onClick={() => void handleShowMore()}
+            disabled={loadingMore}
+          >
+            {loadingMore ? 'Loading…' : 'Show more'}
+          </button>
+        </div>
       )}
     </div>
   );
