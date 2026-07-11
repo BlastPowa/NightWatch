@@ -30,7 +30,9 @@ export const ACCENT_COLORS = [
   '#ec4899',
 ] as const;
 
-export type AccentColor = (typeof ACCENT_COLORS)[number];
+export type AccentColor = string;
+export type UiDensity = 'compact' | 'comfortable' | 'spacious';
+export type BackgroundStyle = 'midnight' | 'aurora' | 'studio';
 
 export interface Settings {
   theme: ThemeId;
@@ -41,6 +43,12 @@ export interface Settings {
   chatFilterEnabled: boolean;
   /** Show what you're watching as Discord Rich Presence. */
   richPresenceEnabled: boolean;
+  accentGlowPercent: number;
+  cornerRadiusPx: number;
+  density: UiDensity;
+  backgroundStyle: BackgroundStyle;
+  reduceMotion: boolean;
+  highContrast: boolean;
 }
 
 export const NEUTRAL_FILTERS: VideoFilters = { brightness: 100, contrast: 100, saturation: 100 };
@@ -52,6 +60,12 @@ export const DEFAULT_SETTINGS: Settings = {
   videoFilters: NEUTRAL_FILTERS,
   chatFilterEnabled: true,
   richPresenceEnabled: true,
+  accentGlowPercent: 55,
+  cornerRadiusPx: 16,
+  density: 'comfortable',
+  backgroundStyle: 'midnight',
+  reduceMotion: false,
+  highContrast: false,
 };
 
 const STORAGE_KEY = 'nightwatch:settings';
@@ -66,12 +80,29 @@ function sanitize(raw: unknown): Settings {
   const theme = THEMES.some((t) => t.id === partial.theme)
     ? (partial.theme as ThemeId)
     : DEFAULT_SETTINGS.theme;
-  const accent = (ACCENT_COLORS as readonly string[]).includes(partial.accent as string)
-    ? (partial.accent as AccentColor)
-    : DEFAULT_SETTINGS.accent;
+  const accent =
+    typeof partial.accent === 'string' && /^#[0-9a-f]{6}$/i.test(partial.accent)
+      ? partial.accent.toLowerCase()
+      : DEFAULT_SETTINGS.accent;
+  const density: UiDensity = ['compact', 'comfortable', 'spacious'].includes(
+    partial.density as string,
+  )
+    ? (partial.density as UiDensity)
+    : DEFAULT_SETTINGS.density;
+  const backgroundStyle: BackgroundStyle = ['midnight', 'aurora', 'studio'].includes(
+    partial.backgroundStyle as string,
+  )
+    ? (partial.backgroundStyle as BackgroundStyle)
+    : DEFAULT_SETTINGS.backgroundStyle;
   return {
     theme,
     accent,
+    accentGlowPercent: clamp(Number(partial.accentGlowPercent ?? 55) || 0, 0, 100),
+    cornerRadiusPx: clamp(Number(partial.cornerRadiusPx ?? 16) || 0, 4, 28),
+    density,
+    backgroundStyle,
+    reduceMotion: typeof partial.reduceMotion === 'boolean' ? partial.reduceMotion : false,
+    highContrast: typeof partial.highContrast === 'boolean' ? partial.highContrast : false,
     chatFilterEnabled:
       typeof partial.chatFilterEnabled === 'boolean' ? partial.chatFilterEnabled : true,
     richPresenceEnabled:

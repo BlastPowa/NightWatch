@@ -62,8 +62,18 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     document.documentElement.dataset['theme'] = settings.theme;
+    document.documentElement.dataset['density'] = settings.density;
+    document.documentElement.dataset['background'] = settings.backgroundStyle;
+    document.documentElement.dataset['reduceMotion'] = String(settings.reduceMotion);
+    document.documentElement.dataset['highContrast'] = String(settings.highContrast);
     document.documentElement.style.setProperty('--nw-accent', settings.accent);
-  }, [settings.theme, settings.accent]);
+    document.documentElement.style.setProperty('--nw-glow-strength', `${settings.accentGlowPercent}%`);
+    document.documentElement.style.setProperty('--nw-radius-lg', `${settings.cornerRadiusPx}px`);
+    document.documentElement.style.setProperty(
+      '--nw-radius',
+      `${Math.max(4, settings.cornerRadiusPx - 4)}px`,
+    );
+  }, [settings]);
 
   const [fixedRoomCode, setFixedRoomCode] = useState<string | null>(null);
   const [roomMeta, setRoomMeta] = useState<RoomMeta | null>(null);
@@ -319,7 +329,7 @@ export function App(): JSX.Element {
             )}
           </div>
         )}
-        {view === 'settings' && <SettingsPanel />}
+        {view === 'settings' && <SettingsPanel user={authUser} />}
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
         {view === 'about' && <AboutScreen />}
