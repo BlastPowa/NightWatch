@@ -4,6 +4,7 @@ import { ReactionBar } from '@/components/ReactionBar';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import { updateRichPresence } from '@/lib/presence';
 import { recordWatch } from '@/lib/rooms/HistoryService';
+import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
 import { useReactions } from '@/hooks/useReactions';
@@ -75,6 +76,13 @@ export function PlayerPanel({
       onReady: () => player.setVolume(settingsStore.get().volumePercent),
       onStateChange: (state) => {
         engineRef.current?.handleLocalStateChange(state);
+        // Opt-in insights (Phase 17): the recorder no-ops unless enabled.
+        if (isHostRef.current && (state === 'playing' || state === 'paused')) {
+          sessionRecorder.playback(
+            state === 'playing' ? 'play' : 'pause',
+            player.getCurrentTime(),
+          );
+        }
         // Auto-advance (ADR-013): when the video ends, the host plays the
         // top-voted queue entry through the normal load/broadcast path.
         if (state === 'ended' && isHostRef.current) {

@@ -1510,6 +1510,55 @@ input {
   font-size: 0.78rem;
 }
 
+/* ===== Insights (Phase 17 — temporary, frontend lane restyles) ===== */
+
+.insights-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--nw-border);
+}
+
+.insights-sessions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.insights-chart {
+  width: 100%;
+  height: 60px;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 8px;
+}
+
+.insights-bar {
+  fill: color-mix(in srgb, var(--nw-text-muted) 60%, transparent);
+}
+
+.insights-bar-accent {
+  fill: var(--nw-accent);
+}
+
+.room-row-premiere {
+  width: 100%;
+}
+
+.room-row-premiere .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.room-insights-note {
+  font-weight: 400;
+  color: var(--nw-text-muted);
+  font-size: 0.78rem;
+}
+
 /* Discover as a full page (grid home) with optional chat aside */
 .discover-layout {
   display: flex;
