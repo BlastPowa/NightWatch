@@ -5,6 +5,9 @@
 
 ### Backend/platform
 
+- Discover is now the app's home page: full-page video grid (Trending with category chips / Search / Previously watched) with room chat alongside, so the group can discuss picks; Play routes into the Room page (creating a room on the fly if needed), Queue keeps you browsing. Temporary layout — frontend lane restyles per FEATURES_UI_BRIEF.md
+- Phase 16 Discovery Hub services: search-youtube Edge Function extended with trending (mostPopular, category filter, 10-min cache) and channelTitle; room_history table + capped/deduped RPCs (0002_room_history.sql) with automatic host-side watch recording; invite deep links (nightwatch://join/CODE — buildInviteLink, main-process routing, join:link IPC, auto-join flow); FEATURES_UI_BRIEF.md interface contract for the frontend grid
+
 - Fixed packaged-build Supabase CORS (re-applied: no Origin rewrite for Supabase; response-side ACAO override) — restores REST calls (room banner lookup, auth token exchange) under the app:// scheme
 - OAuth callback errors (e.g. provider secret mismatch) are now parsed, logged, and shown on the My Rooms sign-in screen instead of failing silently
 

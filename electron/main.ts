@@ -2,6 +2,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, session, shell } from 'electron';
 import { IpcChannel, type AppInfo, type LogLevel, type PresenceState } from '@shared/ipc';
+import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
@@ -42,16 +43,31 @@ if (process.defaultApp) {
   app.setAsDefaultProtocolClient('nightwatch');
 }
 
-function forwardAuthCallback(url: string | undefined): void {
-  if (typeof url === 'string' && url.startsWith('nightwatch://auth-callback')) {
+function focusMainWindow(): void {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+  }
+}
+
+/** Route any nightwatch:// deep link (auth callback or room invite). */
+function handleDeepLink(url: string | undefined): void {
+  if (typeof url !== 'string') {
+    return;
+  }
+  if (url.startsWith('nightwatch://auth-callback')) {
     logger.write('info', 'main', 'OAuth callback received');
     mainWindow?.webContents.send(IpcChannel.AuthCallback, url);
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
-      mainWindow.focus();
-    }
+    focusMainWindow();
+    return;
+  }
+  const joinCode = parseJoinLink(url);
+  if (joinCode !== null) {
+    logger.write('info', 'main', `Invite link received for room ${joinCode}`);
+    mainWindow?.webContents.send(IpcChannel.JoinLink, joinCode);
+    focusMainWindow();
   }
 }
 
@@ -170,7 +186,7 @@ if (!hasSingleInstanceLock) {
 } else {
   app.on('second-instance', (_event, commandLine) => {
     // Windows delivers deep links via a second instance's argv.
-    forwardAuthCallback(findDeepLink(commandLine));
+    handleDeepLink(findDeepLink(commandLine));
     if (mainWindow) {
       if (mainWindow.isMinimized()) {
         mainWindow.restore();
@@ -181,7 +197,7 @@ if (!hasSingleInstanceLock) {
 
   // macOS-style delivery (harmless on Windows).
   app.on('open-url', (_event, url) => {
-    forwardAuthCallback(url);
+    handleDeepLink(url);
   });
 
   process.on('uncaughtException', (error) => {

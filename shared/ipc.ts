@@ -13,6 +13,8 @@ export const IpcChannel = {
   UpdateStatus: 'update:status',
   /** Push channel (main → renderer) carrying the OAuth deep-link URL. */
   AuthCallback: 'auth:callback',
+  /** Push channel (main → renderer) carrying a room code from an invite. */
+  JoinLink: 'join:link',
   LogWrite: 'log:write',
 } as const;
 
@@ -98,6 +100,8 @@ export interface NightWatchBridge {
   onUpdateStatus(callback: (status: UpdateStatusMessage) => void): () => void;
   /** Subscribe to OAuth deep-link callbacks (nightwatch://auth-callback). */
   onAuthCallback(callback: (url: string) => void): () => void;
+  /** Subscribe to invite deep links (nightwatch://join/CODE). */
+  onJoinLink(callback: (code: string) => void): () => void;
   /** Append a line to the local log file (fire-and-forget). */
   log(level: LogLevel, message: string): Promise<void>;
 }

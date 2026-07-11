@@ -6,6 +6,21 @@
 
 export const ROOM_CODE_LENGTH = 6;
 
+/** Deep-link invite for a room (Phase 16), e.g. nightwatch://join/KX3F9Q */
+export function buildInviteLink(code: string): string {
+  return `nightwatch://join/${normalizeRoomCode(code)}`;
+}
+
+/** Extract a valid room code from a join deep link, else null. */
+export function parseJoinLink(url: string): string | null {
+  const match = /^nightwatch:\/\/join\/([A-Za-z0-9]{6})\/?$/.exec(url.trim());
+  if (match === null || match[1] === undefined) {
+    return null;
+  }
+  const code = normalizeRoomCode(match[1]);
+  return isValidRoomCode(code) ? code : null;
+}
+
 /** Unambiguous alphabet — no 0/O, 1/I/L to keep codes easy to read aloud. */
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 

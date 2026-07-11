@@ -1,20 +1,27 @@
-// Supabase Edge Function: search-youtube (§7.6, ADR-011)
+// Supabase Edge Function: search-youtube (§7.6, ADR-011 + Phase 16)
 //
-// Proxies YouTube Data API v3 search so the Google API key never ships in
-// the Electron binary. Deploy:
+// Proxies YouTube Data API v3 so the Google API key never ships in the
+// Electron binary. Handles both search and trending (Discovery Hub).
+// Deploy:
 //   supabase functions deploy search-youtube --no-verify-jwt
 //   supabase secrets set YOUTUBE_API_KEY=<your key>
 //
-// Request:  POST { query: string, callerId: string }
-// Response: { results: { videoId, title, thumbnailUrl, durationText }[] }
+// Request:  POST { kind?: 'search' | 'trending', query?: string,
+//                  categoryId?: string, callerId: string }
+//           (kind defaults to 'search' for backward compatibility)
+// Response: { results: { videoId, title, channelTitle, thumbnailUrl,
+//                        durationText }[] }
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const MAX_RESULTS = 8;
-const DAILY_LIMIT_PER_CALLER = 50;
+const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json' };
+
+const MAX_RESULTS = 12;
+const DAILY_LIMIT_PER_CALLER = 80;
+const TRENDING_CACHE_MS = 10 * 60 * 1000;
 
 // Coarse per-instance rate limit (resets when the instance recycles and
 // daily). Good enough to protect the free quota per ADR-011.
@@ -31,6 +38,18 @@ function isRateLimited(callerId: string): boolean {
   return entry.count > DAILY_LIMIT_PER_CALLER;
 }
 
+// Trending barely changes minute-to-minute; a small cache keeps the whole
+// friend group browsing off ~1 quota unit per 10 minutes per category.
+const trendingCache = new Map<string, { at: number; results: VideoResult[] }>();
+
+interface VideoResult {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  durationText: string;
+}
+
 function parseIsoDuration(iso: string): string {
   const match = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(iso);
   if (match === null) {
@@ -44,50 +63,35 @@ function parseIsoDuration(iso: string): string {
   return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
 }
 
-Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: CORS_HEADERS });
-  }
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'method-not-allowed' }), {
-      status: 405,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
-  }
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
 
-  const apiKey = Deno.env.get('YOUTUBE_API_KEY');
-  if (apiKey === undefined || apiKey.length === 0) {
-    return new Response(JSON.stringify({ error: 'not-configured' }), {
-      status: 503,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
+async function fetchDurations(apiKey: string, ids: string[]): Promise<Map<string, string>> {
+  const durations = new Map<string, string>();
+  if (ids.length === 0) {
+    return durations;
   }
+  const url = new URL('https://www.googleapis.com/youtube/v3/videos');
+  url.searchParams.set('part', 'contentDetails');
+  url.searchParams.set('id', ids.join(','));
+  url.searchParams.set('key', apiKey);
+  const response = await fetch(url);
+  if (!response.ok) {
+    return durations;
+  }
+  const data = (await response.json()) as {
+    items?: Array<{ id?: string; contentDetails?: { duration?: string } }>;
+  };
+  for (const video of data.items ?? []) {
+    if (typeof video.id === 'string' && typeof video.contentDetails?.duration === 'string') {
+      durations.set(video.id, parseIsoDuration(video.contentDetails.duration));
+    }
+  }
+  return durations;
+}
 
-  let body: { query?: unknown; callerId?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'bad-request' }), {
-      status: 400,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const query = typeof body.query === 'string' ? body.query.trim().slice(0, 120) : '';
-  const callerId = typeof body.callerId === 'string' ? body.callerId.slice(0, 64) : '';
-  if (query.length === 0 || callerId.length === 0) {
-    return new Response(JSON.stringify({ error: 'bad-request' }), {
-      status: 400,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
-  }
-  if (isRateLimited(callerId)) {
-    return new Response(JSON.stringify({ error: 'rate-limited' }), {
-      status: 429,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
-  }
-
+async function handleSearch(apiKey: string, query: string): Promise<VideoResult[]> {
   const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
   searchUrl.searchParams.set('part', 'snippet');
   searchUrl.searchParams.set('type', 'video');
@@ -95,52 +99,128 @@ Deno.serve(async (req: Request): Promise<Response> => {
   searchUrl.searchParams.set('q', query);
   searchUrl.searchParams.set('key', apiKey);
 
-  const searchResponse = await fetch(searchUrl);
-  if (!searchResponse.ok) {
-    return new Response(JSON.stringify({ error: 'upstream-error' }), {
-      status: 502,
-      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-    });
+  const response = await fetch(searchUrl);
+  if (!response.ok) {
+    throw new Error('upstream');
   }
-  const searchData = (await searchResponse.json()) as {
+  const data = (await response.json()) as {
     items?: Array<{
       id?: { videoId?: string };
-      snippet?: { title?: string; thumbnails?: { medium?: { url?: string } } };
+      snippet?: {
+        title?: string;
+        channelTitle?: string;
+        thumbnails?: { medium?: { url?: string } };
+      };
     }>;
   };
 
-  const items = (searchData.items ?? []).filter(
-    (item) => typeof item.id?.videoId === 'string',
+  const items = (data.items ?? []).filter((item) => typeof item.id?.videoId === 'string');
+  const durations = await fetchDurations(
+    apiKey,
+    items.map((item) => item.id!.videoId!),
   );
-  const ids = items.map((item) => item.id!.videoId!).join(',');
 
-  const durations = new Map<string, string>();
-  if (ids.length > 0) {
-    const videosUrl = new URL('https://www.googleapis.com/youtube/v3/videos');
-    videosUrl.searchParams.set('part', 'contentDetails');
-    videosUrl.searchParams.set('id', ids);
-    videosUrl.searchParams.set('key', apiKey);
-    const videosResponse = await fetch(videosUrl);
-    if (videosResponse.ok) {
-      const videosData = (await videosResponse.json()) as {
-        items?: Array<{ id?: string; contentDetails?: { duration?: string } }>;
-      };
-      for (const video of videosData.items ?? []) {
-        if (typeof video.id === 'string' && typeof video.contentDetails?.duration === 'string') {
-          durations.set(video.id, parseIsoDuration(video.contentDetails.duration));
-        }
-      }
-    }
-  }
-
-  const results = items.map((item) => ({
+  return items.map((item) => ({
     videoId: item.id!.videoId!,
     title: item.snippet?.title ?? 'Untitled',
+    channelTitle: item.snippet?.channelTitle ?? '',
     thumbnailUrl: item.snippet?.thumbnails?.medium?.url ?? '',
     durationText: durations.get(item.id!.videoId!) ?? '',
   }));
+}
 
-  return new Response(JSON.stringify({ results }), {
-    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-  });
+async function handleTrending(apiKey: string, categoryId: string): Promise<VideoResult[]> {
+  const cacheKey = categoryId === '' ? 'all' : categoryId;
+  const cached = trendingCache.get(cacheKey);
+  if (cached !== undefined && Date.now() - cached.at < TRENDING_CACHE_MS) {
+    return cached.results;
+  }
+
+  const url = new URL('https://www.googleapis.com/youtube/v3/videos');
+  url.searchParams.set('part', 'snippet,contentDetails');
+  url.searchParams.set('chart', 'mostPopular');
+  url.searchParams.set('maxResults', String(MAX_RESULTS));
+  url.searchParams.set('regionCode', 'US');
+  if (categoryId !== '') {
+    url.searchParams.set('videoCategoryId', categoryId);
+  }
+  url.searchParams.set('key', apiKey);
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('upstream');
+  }
+  const data = (await response.json()) as {
+    items?: Array<{
+      id?: string;
+      snippet?: {
+        title?: string;
+        channelTitle?: string;
+        thumbnails?: { medium?: { url?: string } };
+      };
+      contentDetails?: { duration?: string };
+    }>;
+  };
+
+  const results = (data.items ?? [])
+    .filter((item) => typeof item.id === 'string')
+    .map((item) => ({
+      videoId: item.id!,
+      title: item.snippet?.title ?? 'Untitled',
+      channelTitle: item.snippet?.channelTitle ?? '',
+      thumbnailUrl: item.snippet?.thumbnails?.medium?.url ?? '',
+      durationText:
+        typeof item.contentDetails?.duration === 'string'
+          ? parseIsoDuration(item.contentDetails.duration)
+          : '',
+    }));
+
+  trendingCache.set(cacheKey, { at: Date.now(), results });
+  return results;
+}
+
+Deno.serve(async (req: Request): Promise<Response> => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  if (req.method !== 'POST') {
+    return jsonResponse({ error: 'method-not-allowed' }, 405);
+  }
+
+  const apiKey = Deno.env.get('YOUTUBE_API_KEY');
+  if (apiKey === undefined || apiKey.length === 0) {
+    return jsonResponse({ error: 'not-configured' }, 503);
+  }
+
+  let body: { kind?: unknown; query?: unknown; categoryId?: unknown; callerId?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResponse({ error: 'bad-request' }, 400);
+  }
+
+  const kind = body.kind === 'trending' ? 'trending' : 'search';
+  const callerId = typeof body.callerId === 'string' ? body.callerId.slice(0, 64) : '';
+  if (callerId.length === 0) {
+    return jsonResponse({ error: 'bad-request' }, 400);
+  }
+  if (isRateLimited(callerId)) {
+    return jsonResponse({ error: 'rate-limited' }, 429);
+  }
+
+  try {
+    if (kind === 'trending') {
+      const categoryId =
+        typeof body.categoryId === 'string' ? body.categoryId.replace(/\D/g, '').slice(0, 4) : '';
+      return jsonResponse({ results: await handleTrending(apiKey, categoryId) });
+    }
+
+    const query = typeof body.query === 'string' ? body.query.trim().slice(0, 120) : '';
+    if (query.length === 0) {
+      return jsonResponse({ error: 'bad-request' }, 400);
+    }
+    return jsonResponse({ results: await handleSearch(apiKey, query) });
+  } catch {
+    return jsonResponse({ error: 'upstream-error' }, 502);
+  }
 });

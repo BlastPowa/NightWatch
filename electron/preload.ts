@@ -48,6 +48,17 @@ const bridge: NightWatchBridge = {
       ipcRenderer.removeListener(IpcChannel.AuthCallback, listener);
     };
   },
+  onJoinLink: (callback: (code: string) => void): (() => void) => {
+    const listener = (_event: unknown, code: string): void => {
+      if (typeof code === 'string' && /^[A-Z0-9]{6}$/.test(code)) {
+        callback(code);
+      }
+    };
+    ipcRenderer.on(IpcChannel.JoinLink, listener);
+    return () => {
+      ipcRenderer.removeListener(IpcChannel.JoinLink, listener);
+    };
+  },
   log: (level: LogLevel, message: string): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.LogWrite, level, message) as Promise<void>;
   },
