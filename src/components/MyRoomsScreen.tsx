@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { extractVideoId } from '@shared/youtube';
+import { InsightsPanel } from '@/components/InsightsPanel';
 import { useAuthError } from '@/hooks/useAuth';
 import { signInWithDiscord, signOut, type AuthUser } from '@/lib/auth';
 import {
@@ -6,6 +8,7 @@ import {
   deleteRoom,
   listMyRooms,
   setRoomSchedule,
+  updateRoomSettings,
   type PersistentRoom,
 } from '@/lib/rooms/PersistentRoomService';
 
@@ -36,7 +39,45 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
   const [busy, setBusy] = useState(false);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [editSchedule, setEditSchedule] = useState('');
+  const [premiereCode, setPremiereCode] = useState<string | null>(null);
+  const [premiereLink, setPremiereLink] = useState('');
+  const [insightsCode, setInsightsCode] = useState<string | null>(null);
   const authError = useAuthError();
+
+  async function handleToggleInsights(room: PersistentRoom): Promise<void> {
+    try {
+      await updateRoomSettings(room.code, { insightsEnabled: !room.insightsEnabled });
+      refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update insights.');
+    }
+  }
+
+  async function handleSavePremiere(code: string): Promise<void> {
+    const videoId = extractVideoId(premiereLink);
+    if (videoId === null) {
+      setError('That does not look like a YouTube link.');
+      return;
+    }
+    try {
+      await updateRoomSettings(code, { premiereVideoId: videoId });
+      setPremiereCode(null);
+      setPremiereLink('');
+      refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save the premiere.');
+    }
+  }
+
+  async function handleClearPremiere(code: string): Promise<void> {
+    try {
+      await updateRoomSettings(code, { premiereVideoId: null });
+      setPremiereCode(null);
+      refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not clear the premiere.');
+    }
+  }
 
   const refresh = useCallback((): void => {
     listMyRooms()
@@ -216,6 +257,35 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
                   </button>
                   <button
                     type="button"
+                    className="button"
+                    onClick={() => void handleToggleInsights(room)}
+                    title="Anonymous session insights (viewer counts, reaction timing) — members see a notice when on"
+                  >
+                    Insights {room.insightsEnabled ? 'ON' : 'off'}
+                  </button>
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => {
+                      setPremiereCode(premiereCode === room.code ? null : room.code);
+                      setPremiereLink('');
+                    }}
+                  >
+                    Premiere
+                  </button>
+                  {room.insightsEnabled && (
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() =>
+                        setInsightsCode(insightsCode === room.code ? null : room.code)
+                      }
+                    >
+                      View insights
+                    </button>
+                  )}
+                  <button
+                    type="button"
                     className="button button-danger"
                     onClick={() => void handleDelete(room.code)}
                   >
@@ -223,6 +293,37 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
                   </button>
                 </span>
               )}
+              {premiereCode === room.code && (
+                <span className="room-row-actions room-row-premiere">
+                  <input
+                    className="input"
+                    value={premiereLink}
+                    placeholder={
+                      room.premiereVideoId !== null
+                        ? `Premiere set (youtu.be/${room.premiereVideoId}) — paste to replace`
+                        : 'Paste the premiere video link…'
+                    }
+                    onChange={(e) => setPremiereLink(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => void handleSavePremiere(room.code)}
+                  >
+                    Save
+                  </button>
+                  {room.premiereVideoId !== null && (
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={() => void handleClearPremiere(room.code)}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </span>
+              )}
+              {insightsCode === room.code && <InsightsPanel roomCode={room.code} />}
             </li>
           ))}
         </ul>

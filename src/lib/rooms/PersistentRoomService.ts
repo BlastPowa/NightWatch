@@ -1,18 +1,23 @@
 import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from '@shared/room';
 import { supabase } from '@/lib/supabase';
 
-/** A persistent room record (ADR-012). */
+/** A persistent room record (ADR-012 + Phase 17 settings). */
 export interface PersistentRoom {
   code: string;
   name: string;
   scheduledAt: string | null;
   createdAt: string;
+  insightsEnabled: boolean;
+  premiereVideoId: string | null;
 }
 
 /** Public metadata anyone with the code may see. */
 export interface RoomMeta {
   name: string;
   scheduledAt: string | null;
+  /** Members must be able to see that insights are on (ADR-014). */
+  insightsEnabled: boolean;
+  premiereVideoId: string | null;
 }
 
 interface RoomRow {
@@ -20,6 +25,8 @@ interface RoomRow {
   name: string;
   scheduled_at: string | null;
   created_at: string;
+  insights_enabled?: boolean;
+  premiere_video_id?: string | null;
 }
 
 function toRoom(row: RoomRow): PersistentRoom {
@@ -28,18 +35,40 @@ function toRoom(row: RoomRow): PersistentRoom {
     name: row.name,
     scheduledAt: row.scheduled_at,
     createdAt: row.created_at,
+    insightsEnabled: row.insights_enabled === true,
+    premiereVideoId: row.premiere_video_id ?? null,
   };
 }
+
+const ROOM_COLUMNS = 'code, name, scheduled_at, created_at, insights_enabled, premiere_video_id';
 
 export async function listMyRooms(): Promise<PersistentRoom[]> {
   const { data, error } = await supabase
     .from('rooms')
-    .select('code, name, scheduled_at, created_at')
+    .select(ROOM_COLUMNS)
     .order('created_at', { ascending: true });
   if (error !== null) {
     throw new Error(error.message);
   }
   return (data as RoomRow[]).map(toRoom);
+}
+
+/** Owner-only: update Phase 17 room settings. */
+export async function updateRoomSettings(
+  code: string,
+  settings: { insightsEnabled?: boolean; premiereVideoId?: string | null },
+): Promise<void> {
+  const patch: Record<string, unknown> = {};
+  if (settings.insightsEnabled !== undefined) {
+    patch['insights_enabled'] = settings.insightsEnabled;
+  }
+  if (settings.premiereVideoId !== undefined) {
+    patch['premiere_video_id'] = settings.premiereVideoId;
+  }
+  const { error } = await supabase.from('rooms').update(patch).eq('code', code);
+  if (error !== null) {
+    throw new Error(error.message);
+  }
 }
 
 /** Create a persistent room; retries on the (rare) code collision. */
@@ -101,11 +130,19 @@ export async function getRoomMeta(code: string): Promise<RoomMeta | null> {
   if (error !== null || !Array.isArray(data) || data.length === 0) {
     return null;
   }
-  const row = data[0] as { name?: unknown; scheduled_at?: unknown };
+  const row = data[0] as {
+    name?: unknown;
+    scheduled_at?: unknown;
+    insights_enabled?: unknown;
+    premiere_video_id?: unknown;
+  };
   return typeof row.name === 'string'
     ? {
         name: row.name,
         scheduledAt: typeof row.scheduled_at === 'string' ? row.scheduled_at : null,
+        insightsEnabled: row.insights_enabled === true,
+        premiereVideoId:
+          typeof row.premiere_video_id === 'string' ? row.premiere_video_id : null,
       }
     : null;
 }

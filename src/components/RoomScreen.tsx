@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
 import { QueuePanel } from '@/components/QueuePanel';
@@ -48,6 +49,38 @@ export function RoomScreen({
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
   const loadVideoRef = useRef<((videoId: string) => void) | null>(null);
+
+  // Opt-in session insights (Phase 17, ADR-014): record only while this
+  // client is host AND the room owner enabled insights.
+  useEffect(() => {
+    sessionRecorder.configure(room.code, meta?.insightsEnabled ?? false, selfIsHost);
+  }, [room.code, meta, selfIsHost]);
+
+  useEffect(() => {
+    return () => sessionRecorder.end();
+  }, []);
+
+  useEffect(() => {
+    if (room.members.length > 0) {
+      sessionRecorder.members(room.members.length);
+    }
+  }, [room.members.length]);
+
+  // Premiere countdown (Phase 17): tick every 30s while scheduled ahead.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const scheduledMs =
+    meta !== null && meta.scheduledAt !== null ? Date.parse(meta.scheduledAt) : null;
+  const premiereReady =
+    scheduledMs !== null && scheduledMs <= now && meta?.premiereVideoId != null;
+  const countdownMinutes =
+    scheduledMs !== null && scheduledMs > now
+      ? Math.ceil((scheduledMs - now) / 60_000)
+      : null;
 
   // Apply a Discover-page pick once the player loader is mounted (poll
   // briefly — the child registers its loader in its own mount effect).
@@ -115,13 +148,37 @@ export function RoomScreen({
         {meta !== null && (
           <span className="room-persistent">
             {meta.name}
-            {meta.scheduledAt !== null && (
+            {countdownMinutes !== null && (
+              <span className="room-schedule">
+                {' '}
+                · Premiere in{' '}
+                {countdownMinutes >= 60
+                  ? `${Math.floor(countdownMinutes / 60)}h ${countdownMinutes % 60}m`
+                  : `${countdownMinutes}m`}
+              </span>
+            )}
+            {countdownMinutes === null && meta.scheduledAt !== null && !premiereReady && (
               <span className="room-schedule">
                 {' '}
                 · Scheduled {formatScheduleBanner(meta.scheduledAt)}
               </span>
             )}
+            {meta.insightsEnabled && (
+              <span className="room-insights-note" title="The room owner enabled session insights (anonymous counts only — never chat content)">
+                {' '}
+                · Session insights on
+              </span>
+            )}
           </span>
+        )}
+        {premiereReady && selfIsHost && meta?.premiereVideoId != null && (
+          <button
+            type="button"
+            className="button button-glow"
+            onClick={() => loadVideoRef.current?.(meta.premiereVideoId as string)}
+          >
+            ▶ Start the premiere
+          </button>
         )}
         <span className={`room-status room-status-${room.status}`}>
           <span className="status-dot" aria-hidden="true" />

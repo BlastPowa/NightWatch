@@ -1,4 +1,5 @@
 import { isReactionEmoji, type ReactionEmoji, type ReactionStamp } from '@shared/reactions';
+import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import type { RoomService } from '@/lib/room/RoomService';
 
 /** Where in playback a reaction should be stamped. */
@@ -72,5 +73,7 @@ export class ReactionService {
     this.room.send('reaction:stamp', { emoji, videoId, positionSeconds }).catch(() => {
       // Ephemeral fire-and-forget; a lost reaction is acceptable.
     });
+    // Opt-in insights (Phase 17): no-ops unless recording (host + enabled).
+    sessionRecorder.reaction(positionSeconds);
   }
 }

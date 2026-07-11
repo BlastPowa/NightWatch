@@ -82,11 +82,14 @@ Completed:
 
 ✅ Phase 16 backend (Discovery Hub): trending endpoint + channelTitle in search-youtube, room_history migration/RPCs + automatic host-side recording, invite deep links (nightwatch://join/CODE) with auto-join, typed interfaces published in FEATURES_UI_BRIEF.md
 
+✅ Phase 16 shipped (Discover home grid + chat, trending/search/history, invite links)
+✅ Phase 17 (ADR-014): opt-in session insights (log-session Edge Function, host-side recorder, owner-only reads, member-visible notice), temporary insights charts, premiere events (countdown + host start button), room settings in My Rooms
+
 Current Work:
-Owner: run 0002_room_history.sql in SQL Editor; re-paste updated search-youtube function in dashboard. Codex: Discovery Hub grid UI per FEATURES_UI_BRIEF.md. Then merge + release + verify (search grid, trending, history shelf, invite links, Discord sign-in, Activity identity).
+Owner: run 0003_session_analytics.sql; deploy log-session Edge Function (no extra secrets). Then verify: insights toggle → host a session → View insights shows charts; premiere countdown/start. Codex: restyle Discovery + Insights per FEATURES_UI_BRIEF.md.
 
 Blocked:
 None
 
 Next:
-Phase 17 — Creator/Host Tools (ADR-014); Phase 18 — gamification upgrade
+Phase 18 — gamification upgrade (cross-device achievements, leaderboards, streaks)
