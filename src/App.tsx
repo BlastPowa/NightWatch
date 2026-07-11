@@ -66,6 +66,9 @@ export function App(): JSX.Element {
     document.documentElement.dataset['background'] = settings.backgroundStyle;
     document.documentElement.dataset['reduceMotion'] = String(settings.reduceMotion);
     document.documentElement.dataset['highContrast'] = String(settings.highContrast);
+    document.documentElement.dataset['reduceTransparency'] = String(settings.reduceTransparency);
+    document.documentElement.dataset['enhancedFocus'] = String(settings.enhancedFocus);
+    document.documentElement.style.setProperty('--nw-text-scale', String(settings.textScalePercent / 100));
     document.documentElement.style.setProperty('--nw-accent', settings.accent);
     document.documentElement.style.setProperty('--nw-glow-strength', `${settings.accentGlowPercent}%`);
     document.documentElement.style.setProperty('--nw-radius-lg', `${settings.cornerRadiusPx}px`);

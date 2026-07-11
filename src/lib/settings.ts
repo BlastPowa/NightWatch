@@ -49,6 +49,9 @@ export interface Settings {
   backgroundStyle: BackgroundStyle;
   reduceMotion: boolean;
   highContrast: boolean;
+  textScalePercent: number;
+  reduceTransparency: boolean;
+  enhancedFocus: boolean;
 }
 
 export const NEUTRAL_FILTERS: VideoFilters = { brightness: 100, contrast: 100, saturation: 100 };
@@ -66,6 +69,9 @@ export const DEFAULT_SETTINGS: Settings = {
   backgroundStyle: 'midnight',
   reduceMotion: false,
   highContrast: false,
+  textScalePercent: 100,
+  reduceTransparency: false,
+  enhancedFocus: true,
 };
 
 const STORAGE_KEY = 'nightwatch:settings';
@@ -103,6 +109,10 @@ function sanitize(raw: unknown): Settings {
     backgroundStyle,
     reduceMotion: typeof partial.reduceMotion === 'boolean' ? partial.reduceMotion : false,
     highContrast: typeof partial.highContrast === 'boolean' ? partial.highContrast : false,
+    textScalePercent: clamp(Number(partial.textScalePercent ?? 100) || 100, 90, 125),
+    reduceTransparency:
+      typeof partial.reduceTransparency === 'boolean' ? partial.reduceTransparency : false,
+    enhancedFocus: typeof partial.enhancedFocus === 'boolean' ? partial.enhancedFocus : true,
     chatFilterEnabled:
       typeof partial.chatFilterEnabled === 'boolean' ? partial.chatFilterEnabled : true,
     richPresenceEnabled:
