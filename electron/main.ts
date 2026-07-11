@@ -11,6 +11,7 @@ const DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 const RENDERER_INDEX = path.join(__dirname, '..', 'dist', 'index.html');
 const DIST_DIR = path.join(__dirname, '..', 'dist');
+const DEV_ICON_PATH = path.join(__dirname, '..', 'build', 'icon.ico');
 
 // Custom scheme for production: serves the renderer via app:// instead of
 // file:// so embedded YouTube iframes see a valid HTTP-like origin (fixes
@@ -102,6 +103,7 @@ function createMainWindow(): void {
     autoHideMenuBar: true,
     backgroundColor: '#0b0e14',
     title: 'NightWatch',
+    icon: app.isPackaged ? undefined : DEV_ICON_PATH,
     webPreferences: {
       preload: PRELOAD_PATH,
       contextIsolation: true,

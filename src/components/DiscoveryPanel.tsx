@@ -122,18 +122,27 @@ export function DiscoveryPanel({
 
   return (
     <div className="discovery-panel">
-      <div className="source-tabs">
+      <header className="discovery-hero">
+        <div>
+          <span className="eyebrow">NightWatch discovery</span>
+          <h2>{tab === 'trending' ? 'What everyone is watching' : tab === 'search' ? 'Find your next watch' : 'Return to room favorites'}</h2>
+          <p>Browse together, then play now or build the room queue.</p>
+        </div>
+        <div className="source-tabs" role="tablist" aria-label="Discovery views">
         {(['trending', 'search', 'history'] as const).map((t) => (
           <button
             key={t}
             type="button"
             className={`source-tab${tab === t ? ' source-tab-active' : ''}`}
             onClick={() => switchTab(t)}
+            role="tab"
+            aria-selected={tab === t}
           >
             {t === 'trending' ? 'Trending' : t === 'search' ? 'Search' : 'Previously watched'}
           </button>
         ))}
-      </div>
+        </div>
+      </header>
 
       {tab === 'search' && (
         <form className="player-form" onSubmit={(e) => void handleSearch(e)}>
@@ -167,15 +176,24 @@ export function DiscoveryPanel({
         </div>
       )}
 
-      {loading && <p className="player-viewer-note">Loading…</p>}
-      {message !== null && <p className="player-viewer-note">{message}</p>}
+      {loading && (
+        <div className="discovery-grid" aria-label="Loading videos" aria-busy="true">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div key={index} className="discovery-card discovery-skeleton" />
+          ))}
+        </div>
+      )}
+      {message !== null && <div className="discovery-empty"><span aria-hidden="true">◌</span><p>{message}</p></div>}
 
       {results.length > 0 && (
         <ul className="discovery-grid">
           {results.map((result) => (
             <li key={result.videoId} className="discovery-card">
               {result.thumbnailUrl !== '' && (
-                <img className="discovery-thumb" src={result.thumbnailUrl} alt="" />
+                <div className="discovery-thumb-wrap">
+                  <img className="discovery-thumb" src={result.thumbnailUrl} alt="" loading="lazy" />
+                  {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
+                </div>
               )}
               <div className="discovery-info">
                 <span className="discovery-title" title={result.title}>
@@ -183,7 +201,6 @@ export function DiscoveryPanel({
                 </span>
                 <span className="discovery-meta">
                   {result.channelTitle}
-                  {result.durationText !== '' && ` · ${result.durationText}`}
                 </span>
               </div>
               <div className="discovery-actions">

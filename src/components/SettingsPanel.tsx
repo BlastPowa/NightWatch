@@ -7,8 +7,6 @@ import {
   NEUTRAL_FILTERS,
   THEMES,
   settingsStore,
-  type BackgroundStyle,
-  type UiDensity,
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
 

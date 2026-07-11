@@ -40,6 +40,8 @@ Phase 14 — Persistent Community Rooms
 
 ## In Progress
 
+- Advanced cinematic UI: discovery grid, categorized settings, branded startup, responsive/accessibility polish, and automated PR/release workflow are in review on `frontend/advanced-ui-overhaul`.
+
 - Frontend cinematic polish: brand/shell implementation complete; core-flow visual QA and Figma canvas construction pending review/quota availability.
 - Phase 13: owner deploy (Cloudflare Pages) + portal config + in-Discord verification
 - Phase 12: owner release/install/update verification; high-latency drift test; Edge Function deployment pending API key

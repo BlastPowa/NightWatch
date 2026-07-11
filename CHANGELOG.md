@@ -3,6 +3,11 @@
 
 ## Unreleased
 
+### Advanced UI and workflow
+
+- Added an OTT-inspired discovery experience, advanced categorized settings, responsive density and backdrop controls, accessibility preferences, and branded startup treatment.
+- Added automatic feature validation/PR creation and an intentional Actions-driven versioned release workflow.
+
 ### Backend/platform
 
 - Phase 17 creator/host tools (ADR-014): opt-in per-room session insights (anonymized viewer-count/playback/reaction events; host-side recorder; log-session Edge Function with service-role writes; owner-only RLS reads; in-room "Session insights on" transparency notice), temporary Insights view (retention + reaction-density charts), premiere events (per-room premiere video + countdown banner + host "Start the premiere"), room settings management in My Rooms — migration 0003_session_analytics.sql
