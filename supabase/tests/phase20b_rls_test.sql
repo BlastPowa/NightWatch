@@ -130,6 +130,22 @@ begin
   msg1 := send_message(conv, 'first');
   msg2 := send_message(conv, 'second');
 
+  -- These two share a created_at exactly: now() is the TRANSACTION timestamp.
+  -- That is the tie that must not break ordering, so assert it really is a tie
+  -- — otherwise the cursor tests below would silently stop testing anything.
+  perform pg_temp.check(
+    (select count(distinct created_at) from messages where conversation_id = conv) = 1,
+    'both messages share a created_at (the tie the seq cursor must survive)'
+  );
+  perform pg_temp.check(
+    (select m2.seq > m1.seq from messages m1, messages m2 where m1.id = msg1 and m2.id = msg2),
+    'seq is monotonic even when created_at ties'
+  );
+  perform pg_temp.check(
+    (select array_agg(id order by seq desc) from get_messages(conv)) = array[msg2, msg1],
+    'messages order by seq, newest first, under a created_at tie'
+  );
+
   -- Unread cursor: Bob has not read anything, so both of Alice's count.
   perform pg_temp.act_as(bob);
   select unread_count into cnt from list_conversations() where id = conv;
@@ -138,6 +154,13 @@ begin
   perform mark_conversation_read(conv, msg1);
   select unread_count into cnt from list_conversations() where id = conv;
   perform pg_temp.check(cnt = 1, 'unread_count drops after marking read');
+
+  -- Paging backwards from msg2 must return msg1 — not skip it, not repeat it.
+  perform pg_temp.check(
+    (select array_agg(id) from get_messages(
+       conv, (select seq from messages where id = msg2), 50)) = array[msg1],
+    'seq cursor pages backwards without skipping a tied message'
+  );
 
   -- Your own messages never count as unread to you.
   perform pg_temp.act_as(alice);

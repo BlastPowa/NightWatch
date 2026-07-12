@@ -26,6 +26,13 @@ export interface Conversation {
 
 export interface Message {
   id: string;
+  /**
+   * Monotonic order key. Cursor paging uses this, not createdAt: created_at is
+   * the transaction timestamp, so two messages can share it exactly, and the
+   * UUID tiebreak is random — which made ordering (and therefore paging)
+   * non-deterministic under ties.
+   */
+  seq: number;
   senderId: string;
   displayName: string;
   kind: 'message' | 'system';
@@ -66,16 +73,17 @@ export async function listConversations(): Promise<SocialResult<Conversation[]>>
 
 /**
  * Page backwards from a fixed point rather than by offset, so pagination stays
- * stable while new messages arrive. Pass the oldest createdAt you already hold.
+ * stable while new messages arrive. Pass the lowest `seq` you already hold to
+ * fetch older messages.
  */
 export async function getMessages(
   conversationId: string,
-  before: string | null = null,
+  beforeSeq: number | null = null,
   limit = 50,
 ): Promise<SocialResult<Message[]>> {
   const { data, error } = await supabase.rpc('get_messages', {
     p_conversation: conversationId,
-    p_before: before,
+    p_before_seq: beforeSeq,
     p_limit: limit,
   });
   if (error !== null) {
@@ -87,6 +95,7 @@ export async function getMessages(
       .filter((row) => typeof row['id'] === 'string')
       .map((row) => ({
         id: str(row['id']),
+        seq: Number(row['seq'] ?? 0),
         senderId: str(row['sender_id']),
         displayName: str(row['display_name'], 'Someone'),
         kind: row['kind'] === 'system' ? 'system' : 'message',
