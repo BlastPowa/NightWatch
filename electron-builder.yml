@@ -48,3 +48,8 @@ publish:
   provider: github
   owner: BlastPowa
   repo: NightWatch
+  # electron-builder defaults to creating the GitHub release as a DRAFT, which
+  # uploads the installer and then leaves it invisible to everyone -- including
+  # the auto-updater, which only ever reads published releases. v0.1.21 built
+  # and uploaded successfully and still reached nobody. Publish outright.
+  releaseType: release
