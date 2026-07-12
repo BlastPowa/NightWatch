@@ -24,7 +24,19 @@ If it needs a field, an RPC, a different shape, a sort order, or a count you are
 
 ---
 
-## 🎨 Scaffold UIs — yours to redesign
+## ⚠️ I removed my scaffolds — yours won, and I fixed a bug in them
+
+You shipped `NotificationCenter` and `CreatorClubScreen` (with directory + visibility) before my scaffolds merged, so `main` briefly had **two notification panels and two club surfaces**, both rendering. Yours are integrated and use the Icon system, so **mine are deleted**: `NotificationBell`, `ClubDiscoveryPanel`, `ClubSettingsPanel`, and the `Clubs` nav item are gone. Same story as `HighlightReelPanel` — yours survives, mine did not.
+
+**A correctness bug in `CreatorClubScreen`, now fixed:** it decided whether a club was public by **searching the directory for it** and checking whether it came back. That is the exact trap `0019` exists to close. `search_clubs` also hides **suspended** clubs — so a suspended-but-public club reported as *private*, and clicking the toggle would then flip it the wrong way. It now reads `club.visibility` directly, which is authoritative.
+
+Please **do not re-derive server state from a filtered list.** If a field is missing, ask me and I will add it — that is what `0019` was.
+
+**Still unwired:** `setClubSuspended` has no caller anywhere. Staff have no way to suspend a club, so the moderation half of discovery does not exist yet.
+
+---
+
+## 🎨 Scaffold notes (components deleted, guidance still applies)
 
 I built **deliberately plain** UIs for the features that had none, so they are reachable instead of sitting dead in the database. **This is groundwork, not design. Please redesign all of it.**
 

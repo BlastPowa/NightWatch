@@ -15,9 +15,6 @@ import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
-import { ClubDiscoveryPanel } from '@/components/ClubDiscoveryPanel';
-import { ClubSettingsPanel } from '@/components/ClubSettingsPanel';
-import { NotificationBell } from '@/components/NotificationBell';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { TitleBar } from '@/components/TitleBar';
 import { UserCard } from '@/components/UserCard';
@@ -36,7 +33,6 @@ import {
   type GuestIdentity,
 } from '@/lib/identity';
 import type { ConnectionStatus } from '@/lib/realtime/types';
-import { getSocialCapabilities } from '@/lib/social/capabilities';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
@@ -53,7 +49,6 @@ type View =
   | 'friends'
   | 'messages'
   | 'creator'
-  | 'clubs'
   | 'settings'
   | 'card'
   | 'about';
@@ -246,21 +241,6 @@ export function App(): JSX.Element {
     [authUser],
   );
 
-  // Phase 21: the club directory is hidden until the migration is deployed and
-  // the user is signed in. Hidden, not disabled -- per the Phase 20 handoff.
-  const [clubsEnabled, setClubsEnabled] = useState(false);
-  useEffect(() => {
-    let active = true;
-    void getSocialCapabilities().then((caps) => {
-      if (active) {
-        setClubsEnabled(caps.clubDiscovery);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [authUser]);
-
   const inRoom = roomCode !== null && session !== null && identity !== null;
   const selfIsHost =
     inRoom && session.state.members.some((m) => m.id === identity.id && m.isHost);
@@ -310,7 +290,6 @@ export function App(): JSX.Element {
         </div>
 
         <nav className="side-nav">
-          <NotificationBell />
           <span className="nav-section-label">Watch</span>
           <button
             type="button"
@@ -339,15 +318,6 @@ export function App(): JSX.Element {
           {socialCapabilities.messaging && <button type="button" className={`nav-item${view === 'messages' ? ' nav-item-active' : ''}`} onClick={() => setView('messages')}><span className="nav-icon"><Icon name="message" /></span><span className="nav-label">Messages</span></button>}
           {socialCapabilities.creatorClubs && <button type="button" className={`nav-item${view === 'creator' ? ' nav-item-active' : ''}`} onClick={() => setView('creator')}><span className="nav-icon"><Icon name="creator" /></span><span className="nav-label">Creator Club</span></button>}
           <span className="nav-section-label">You</span>
-          {clubsEnabled && (
-            <button
-              type="button"
-              className={`nav-item${view === 'clubs' ? ' nav-item-active' : ''}`}
-              onClick={() => setView('clubs')}
-            >
-              <span className="nav-icon" aria-hidden="true">◎</span><span className="nav-label">Clubs</span>
-            </button>
-          )}
           <button
             type="button"
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
@@ -432,12 +402,6 @@ export function App(): JSX.Element {
               />
             </div>
           </div>
-        )}
-        {view === 'clubs' && (
-          <>
-            <ClubSettingsPanel />
-            <ClubDiscoveryPanel />
-          </>
         )}
         {view === 'settings' && <SettingsPanel user={authUser} />}
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />}
