@@ -3,6 +3,14 @@
 
 ## Unreleased
 
+### Phase 21 frontend integration
+
+- Added capability-gated public club discovery, join/open actions, and owner-controlled public/private directory listing.
+- Added notification dismissal and clear-read controls while preserving unread retention.
+- Added group membership administration with accepted-friend invites, 30-member limit feedback, role promotion/demotion, ownership transfer, removal, and leave flow.
+- Added compliant reaction-based highlight reels with official-player seeking and Markdown link export; no video downloading, clipping, proxying, or re-encoding.
+- Integrated the native Windows titlebar overlay with the cinematic shell without replacing OS window controls or Snap Layouts.
+
 ### Phase 20B social frontend
 
 - Fixed packaged Discord avatars by allowing Discord CDN images in the production CSP and adding stable initial fallbacks across every account surface.

@@ -15,7 +15,7 @@ interface RoomScreenProps {
   /** Persistent-room metadata (name/schedule), null for ephemeral rooms. */
   meta: RoomMeta | null;
   /** A video picked on the Discover page, to play or queue on arrival. */
-  pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue' } | null;
+  pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue'; positionSeconds?: number } | null;
   onPendingHandled(): void;
   onLeave(): void;
 }
@@ -49,7 +49,7 @@ export function RoomScreen({
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
-  const loadVideoRef = useRef<((videoId: string) => void) | null>(null);
+  const loadVideoRef = useRef<((videoId: string, startSeconds?: number) => void) | null>(null);
 
   // Opt-in session insights (Phase 17, ADR-014): record only while this
   // client is host AND the room owner enabled insights.
@@ -100,7 +100,7 @@ export function RoomScreen({
       }
       if (loadVideoRef.current !== null) {
         window.clearInterval(timer);
-        loadVideoRef.current(pendingVideo.videoId);
+        loadVideoRef.current(pendingVideo.videoId, pendingVideo.positionSeconds);
         onPendingHandled();
       } else if (attempts > 20) {
         window.clearInterval(timer);

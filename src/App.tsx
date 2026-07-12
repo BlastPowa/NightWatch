@@ -49,6 +49,7 @@ interface PendingVideo {
   videoId: string;
   title: string;
   mode: 'play' | 'queue';
+  positionSeconds?: number;
 }
 
 export function App(): JSX.Element {
@@ -220,6 +221,18 @@ export function App(): JSX.Element {
     [authUser],
   );
 
+  const handlePlayHighlight = useCallback(
+    (code: string, videoId: string, positionSeconds: number): void => {
+      const fallbackName = authUser?.name ?? '';
+      setIdentity((current) => current ?? (fallbackName.length > 0 ? createIdentity(fallbackName) : null));
+      setRoomCode(code);
+      setPendingVideo({ videoId, title: 'Highlight reel', mode: 'play', positionSeconds });
+      setView('main');
+      achievementTracker.record('room-joined');
+    },
+    [authUser],
+  );
+
   const inRoom = roomCode !== null && session !== null && identity !== null;
   const selfIsHost =
     inRoom && session.state.members.some((m) => m.id === identity.id && m.isHost);
@@ -261,7 +274,7 @@ export function App(): JSX.Element {
 
   return (
     <div className="app">
-      <TitleBar subtitle={inRoom ? `Room ${roomCode}` : undefined} />
+      <TitleBar subtitle={inRoom ? roomMeta?.name ?? 'Watch room' : undefined} />
       <aside className="sidebar">
         <div className="brand">
           <BrandMark />
@@ -359,7 +372,7 @@ export function App(): JSX.Element {
             <div className="browse-topbar-actions">
               <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}><Icon name="play" /></button>
               <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings"><Icon name="settings" /></button>
-              {socialCapabilities.creatorClubs && <NotificationCenter />}
+              {socialCapabilities.notifications && <NotificationCenter />}
               <button type="button" className="profile-chip" onClick={() => setView('card')} aria-label="Open your profile">
                 <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} />
                 <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
@@ -384,10 +397,10 @@ export function App(): JSX.Element {
           </div>
         )}
         {view === 'settings' && <SettingsPanel user={authUser} />}
-        {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
+        {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />}
         {view === 'friends' && socialCapabilities.friends && <FriendsScreen onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
-        {view === 'messages' && socialCapabilities.messaging && <MessagesScreen initialConversationId={selectedConversationId} />}
-        {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen />}
+        {view === 'messages' && socialCapabilities.messaging && authUser !== null && <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} />}
+        {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
         {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
         {view === 'about' && <AboutScreen />}
         {/* The room stays mounted while other views are open so the player,

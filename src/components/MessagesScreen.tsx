@@ -10,9 +10,11 @@ import {
 } from '@/lib/social/MessagingService';
 import { subscribeToConversation } from '@/lib/social/SocialRealtime';
 import { Icon } from '@/components/Icon';
+import { GroupManagementPanel } from '@/components/GroupManagementPanel';
 
 interface MessagesScreenProps {
   initialConversationId: string | null;
+  currentUserId: string;
 }
 
 function failureCopy(status: string): string {
@@ -23,7 +25,7 @@ function failureCopy(status: string): string {
   return 'Messages could not complete that action.';
 }
 
-export function MessagesScreen({ initialConversationId }: MessagesScreenProps): JSX.Element {
+export function MessagesScreen({ initialConversationId, currentUserId }: MessagesScreenProps): JSX.Element {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialConversationId);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -37,6 +39,7 @@ export function MessagesScreen({ initialConversationId }: MessagesScreenProps): 
   const [hasOlder, setHasOlder] = useState(false);
   const [sending, setSending] = useState(false);
   const [showGroupComposer, setShowGroupComposer] = useState(false);
+  const [showGroupManagement, setShowGroupManagement] = useState(false);
   const logRef = useRef<HTMLDivElement | null>(null);
 
   const selected = conversations.find((item) => item.id === selectedId) ?? null;
@@ -173,7 +176,7 @@ export function MessagesScreen({ initialConversationId }: MessagesScreenProps): 
 
       <div className="message-stage">
         {selected === null ? <div className="message-empty"><Icon name="message" size={32} /><h2>Your conversations live here</h2><p>Open an existing conversation or start one from Friends.</p></div> : <>
-          <header className="message-stage-header"><div><span className="eyebrow">{selected.kind === 'group' ? 'Group conversation' : 'Direct message'}</span><h2>{selected.title ?? 'Direct message'}</h2></div><span className="message-security"><Icon name="lock" size={14} />Membership protected</span></header>
+          <header className="message-stage-header"><div><span className="eyebrow">{selected.kind === 'group' ? 'Group conversation' : 'Direct message'}</span><h2>{selected.title ?? 'Direct message'}</h2></div><div className="message-stage-actions"><span className="message-security"><Icon name="lock" size={14} />Membership protected</span>{selected.kind === 'group' && <button type="button" className="button" onClick={() => setShowGroupManagement(true)}><Icon name="users" size={16} />Members</button>}</div></header>
           <div className="message-log" ref={logRef}>
             {hasOlder && <button type="button" className="button message-load-older" disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? 'Loading…' : 'Load earlier messages'}</button>}
             {loadingMessages && messages.length === 0 && <div className="message-empty"><span className="loader-orbit" /><p>Loading messages…</p></div>}
@@ -183,6 +186,7 @@ export function MessagesScreen({ initialConversationId }: MessagesScreenProps): 
           <form className="message-composer" onSubmit={(event) => void handleSend(event)}><input className="input" value={draft} maxLength={2000} placeholder={`Message ${selected.title ?? 'conversation'}…`} onChange={(event) => setDraft(event.target.value)} /><span className="message-character-count">{draft.length > 1800 ? `${draft.length}/2000` : ''}</span><button type="submit" className="button button-primary" disabled={sending || draft.trim() === ''}><Icon name="send" size={17} />{sending ? 'Sending…' : 'Send'}</button></form>
         </>}
         {status !== null && <p className="social-notice message-status" role="status">{status}<button type="button" onClick={() => setStatus(null)} aria-label="Dismiss message"><Icon name="close" size={14} /></button></p>}
+        {selected !== null && selected.kind === 'group' && showGroupManagement && <div className="group-management-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowGroupManagement(false); }}><GroupManagementPanel conversation={selected} currentUserId={currentUserId} onClose={() => setShowGroupManagement(false)} onChanged={refreshConversations} onLeft={() => { setSelectedId(null); setShowGroupManagement(false); void refreshConversations(); }} /></div>}
       </div>
     </section>
   );

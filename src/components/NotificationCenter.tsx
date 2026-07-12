@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   countUnreadNotifications,
+  clearReadNotifications,
+  dismissNotification,
   listNotifications,
   markAllNotificationsRead,
   markNotificationRead,
@@ -86,15 +88,30 @@ export function NotificationCenter(): JSX.Element {
     if (result.status !== 'ok') void refresh();
   }
 
+  async function dismiss(notificationId: string): Promise<void> {
+    const item = items.find((notification) => notification.id === notificationId);
+    setItems((current) => current.filter((notification) => notification.id !== notificationId));
+    if (item?.readAt === null) setUnread((current) => Math.max(0, current - 1));
+    const result = await dismissNotification(notificationId);
+    if (result.status !== 'ok') void refresh();
+  }
+
+  async function clearRead(): Promise<void> {
+    const previous = items;
+    setItems((current) => current.filter((item) => item.readAt === null));
+    const result = await clearReadNotifications();
+    if (result.status !== 'ok') { setItems(previous); setError('Read notifications could not be cleared.'); }
+  }
+
   return (
     <div className="notification-center" ref={rootRef}>
       <button type="button" className="topbar-icon notification-trigger" onClick={() => setOpen((value) => !value)} aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`} aria-expanded={open}>
         <Icon name="bell" />{unread > 0 && <b>{unread > 99 ? '99+' : unread}</b>}
       </button>
       {open && <section className="notification-popover" aria-label="Notifications">
-        <header><div><span className="eyebrow">Community pulse</span><h2>Notifications</h2></div>{unread > 0 && <button type="button" onClick={() => void markAll()}>Mark all read</button>}</header>
+        <header><div><span className="eyebrow">Community pulse</span><h2>Notifications</h2></div><div className="notification-header-actions">{items.some((item) => item.readAt !== null) && <button type="button" onClick={() => void clearRead()}>Clear read</button>}{unread > 0 && <button type="button" onClick={() => void markAll()}>Mark all read</button>}</div></header>
         {error !== null && <p className="form-error">{error}</p>}
-        {loading && items.length === 0 ? <div className="notification-loading"><span className="loader-orbit" />Loading updates…</div> : <div className="notification-list">{items.map((item) => <button key={item.id} type="button" className={`notification-item${item.readAt === null ? ' notification-item-unread' : ''}`} onClick={() => void markOne(item)}><span className="notification-glyph"><Icon name={notificationIcon(item.kind)} /></span><span><strong>{payloadText(item)}</strong><small>{new Date(item.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></span>{item.readAt === null && <i aria-label="Unread" />}</button>)}</div>}
+        {loading && items.length === 0 ? <div className="notification-loading"><span className="loader-orbit" />Loading updates…</div> : <div className="notification-list">{items.map((item) => <article key={item.id} className={`notification-item${item.readAt === null ? ' notification-item-unread' : ''}`}><button type="button" className="notification-open" onClick={() => void markOne(item)}><span className="notification-glyph"><Icon name={notificationIcon(item.kind)} /></span><span><strong>{payloadText(item)}</strong><small>{new Date(item.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></span>{item.readAt === null && <i aria-label="Unread" />}</button><button type="button" className="notification-dismiss" onClick={() => void dismiss(item.id)} aria-label="Dismiss notification"><Icon name="close" size={14} /></button></article>)}</div>}
         {!loading && items.length === 0 && <div className="notification-empty"><Icon name="bell" size={26} /><strong>You’re all caught up</strong><small>Club and bounty updates will appear here.</small></div>}
       </section>}
     </div>

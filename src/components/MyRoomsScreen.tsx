@@ -18,6 +18,7 @@ import {
 interface MyRoomsScreenProps {
   user: AuthUser | null;
   onJoinRoom(code: string): void;
+  onPlayHighlight(code: string, videoId: string, positionSeconds: number): void;
 }
 
 function formatSchedule(iso: string | null): string {
@@ -34,7 +35,7 @@ function formatSchedule(iso: string | null): string {
 }
 
 /** Persistent community rooms (Phase 14, ADR-012). Requires Discord login. */
-export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Element {
+export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScreenProps): JSX.Element {
   const [rooms, setRooms] = useState<PersistentRoom[]>([]);
   const [name, setName] = useState('');
   const [schedule, setSchedule] = useState('');
@@ -329,7 +330,7 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
                   )}
                 </span>
               )}
-              {insightsCode === room.code && <InsightsPanel roomCode={room.code} />}
+              {insightsCode === room.code && <InsightsPanel roomCode={room.code} onPlayHighlight={(videoId, seconds) => onPlayHighlight(room.code, videoId, seconds)} />}
             </li>
           ))}
         </ul>

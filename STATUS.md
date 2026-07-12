@@ -14,6 +14,8 @@ Remaining frontend integration: notification centre, group member/role controls 
 
 The historical phase ledger below is retained for evidence; older "Current Work" text is not authoritative over this update.
 
+Phase 21 integration update: the frontend branch has been rebased onto the merged platform/backend work and now wires the new capability flags, public club directory, notification dismissal, group member/role controls, reaction highlight reels, and native Windows titlebar. Typecheck and all 29 unit tests pass; production builds and packaged regression remain the merge gate.
+
 Current Phase:
 Phase 21 — finishing the gaps left inside shipped phases (backend lane: `backend/phase-21-completion`).
 

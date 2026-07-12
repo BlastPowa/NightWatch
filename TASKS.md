@@ -18,6 +18,7 @@
 - [ ] Moderated public club discovery UI after the Phase 21 service branch merges.
 - [ ] Rebase with Phase 21 titlebar/installer branch; packaged two-client regression.
 - [ ] Final rename/logo/installer art after owner supplies the exact public name.
+- [x] Phase 21 capability integration: club directory, notification retention controls, group roles/members, highlight reels, and native titlebar reconciliation.
 
 ## Current Phase
 

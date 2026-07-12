@@ -6,6 +6,7 @@ import {
   createClub,
   getBountyResults,
   getClubAudit,
+  joinClub,
   leaveClub,
   listBounties,
   listClubReports,
@@ -13,6 +14,8 @@ import {
   retractVote,
   reportContent,
   resolveReport,
+  searchClubs,
+  setClubVisibility,
   setBountyStatus,
   submitToBounty,
   type Bounty,
@@ -20,6 +23,7 @@ import {
   type Club,
   type ClubReport,
   type AuditEntry,
+  type DirectoryClub,
 } from '@/lib/social/CreatorService';
 import { Icon } from '@/components/Icon';
 
@@ -40,7 +44,11 @@ function nextStatus(bounty: Bounty): 'open' | 'judging' | 'closed' | null {
   return null;
 }
 
-export function CreatorClubScreen(): JSX.Element {
+interface CreatorClubScreenProps {
+  discoveryEnabled: boolean;
+}
+
+export function CreatorClubScreen({ discoveryEnabled }: CreatorClubScreenProps): JSX.Element {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [selectedClubId, setSelectedClubId] = useState<string | null>(null);
   const [bounties, setBounties] = useState<Bounty[]>([]);
@@ -54,6 +62,11 @@ export function CreatorClubScreen(): JSX.Element {
   const [reports, setReports] = useState<ClubReport[]>([]);
   const [audit, setAudit] = useState<AuditEntry[]>([]);
   const [moderationLoading, setModerationLoading] = useState(false);
+  const [view, setView] = useState<'board' | 'discover'>('board');
+  const [directory, setDirectory] = useState<DirectoryClub[]>([]);
+  const [publicClubIds, setPublicClubIds] = useState<Set<string>>(new Set());
+  const [directoryQuery, setDirectoryQuery] = useState('');
+  const [directoryLoading, setDirectoryLoading] = useState(false);
 
   const selectedClub = clubs.find((club) => club.id === selectedClubId) ?? null;
   const selectedBounty = bounties.find((bounty) => bounty.id === selectedBountyId) ?? null;
@@ -77,6 +90,20 @@ export function CreatorClubScreen(): JSX.Element {
     setLoading(false);
   }
 
+  async function loadDirectory(query = ''): Promise<void> {
+    if (!discoveryEnabled) return;
+    setDirectoryLoading(true);
+    const result = await searchClubs(query);
+    setDirectoryLoading(false);
+    if (result.status === 'ok') {
+      setDirectory(result.data);
+      if (query === '') setPublicClubIds(new Set(result.data.map((club) => club.id)));
+      setError(null);
+    } else {
+      setError(creatorFailure(result.status));
+    }
+  }
+
   async function refreshBounties(clubId: string): Promise<void> {
     const result = await listBounties(clubId);
     if (result.status === 'ok') {
@@ -89,6 +116,7 @@ export function CreatorClubScreen(): JSX.Element {
   }
 
   useEffect(() => { void refreshClubs(); }, []);
+  useEffect(() => { if (discoveryEnabled) void loadDirectory(); }, [discoveryEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (selectedClubId === null) { setBounties([]); return; }
     void refreshBounties(selectedClubId);
@@ -120,6 +148,27 @@ export function CreatorClubScreen(): JSX.Element {
     if (refreshed.status === 'ok') setReports(refreshed.data);
   }
 
+  async function joinDirectoryClub(club: DirectoryClub): Promise<void> {
+    if (club.isMember) {
+      setSelectedClubId(club.id);
+      setView('board');
+      return;
+    }
+    const result = await joinClub(club.id);
+    if (result.status !== 'ok') { setError(creatorFailure(result.status)); return; }
+    await refreshClubs(club.id);
+    await loadDirectory(directoryQuery.trim());
+    setView('board');
+  }
+
+  async function toggleVisibility(): Promise<void> {
+    if (selectedClub === null || selectedClub.role !== 'owner') return;
+    const isPublic = publicClubIds.has(selectedClub.id);
+    const result = await setClubVisibility(selectedClub.id, isPublic ? 'private' : 'public');
+    if (result.status !== 'ok') { setError(creatorFailure(result.status)); return; }
+    await loadDirectory();
+  }
+
   async function transition(bounty: Bounty): Promise<void> {
     const target = nextStatus(bounty);
     if (target === null || selectedClubId === null) return;
@@ -132,13 +181,13 @@ export function CreatorClubScreen(): JSX.Element {
     <div className="creator-page fade-up">
       <header className="creator-hero">
         <div><span className="eyebrow">Community studio</span><h1>Creator Club</h1><p>Turn watch-party ideas into community challenges, vote on submissions, and celebrate the videos people make together.</p></div>
-        <button type="button" className="button button-primary" onClick={() => setShowClubComposer((value) => !value)}>+ New club</button>
+        <div className="creator-hero-actions">{discoveryEnabled && <button type="button" className={view === 'discover' ? 'button button-primary' : 'button'} onClick={() => setView(view === 'discover' ? 'board' : 'discover')}><Icon name={view === 'discover' ? 'creator' : 'search'} size={16} />{view === 'discover' ? 'My clubs' : 'Discover clubs'}</button>}<button type="button" className="button button-primary" onClick={() => setShowClubComposer((value) => !value)}><Icon name="plus" size={16} />New club</button></div>
       </header>
 
       {showClubComposer && <ClubComposer onCancel={() => setShowClubComposer(false)} onCreated={(id) => { setShowClubComposer(false); void refreshClubs(id); }} onError={setError} />}
       {error !== null && <p className="form-error" role="status">{error}</p>}
 
-      <div className="creator-workspace">
+      {view === 'discover' && discoveryEnabled ? <ClubDirectory query={directoryQuery} onQuery={setDirectoryQuery} clubs={directory} loading={directoryLoading} onSearch={() => void loadDirectory(directoryQuery.trim())} onOpen={(club) => void joinDirectoryClub(club)} /> : <div className="creator-workspace">
         <aside className="creator-club-rail card">
           <div className="creator-section-heading"><div><span className="eyebrow">Your spaces</span><h2>Joined clubs</h2></div><span>{clubs.length}</span></div>
           {loading ? <div className="creator-loading"><span className="loader-orbit" />Loading clubs…</div> : clubs.map((club) => (
@@ -152,7 +201,7 @@ export function CreatorClubScreen(): JSX.Element {
 
         <main className="creator-board card">
           {selectedClub === null ? <div className="creator-empty creator-empty-large"><Icon name="sparkle" size={30} /><strong>Your creator board is ready</strong><small>Create a club to start collecting and judging community video ideas.</small></div> : <>
-            <header className="creator-board-header"><div><span className="eyebrow">{selectedClub.role} · {selectedClub.memberCount} members</span><h2>{selectedClub.name}</h2><p>{selectedClub.description || 'A cinematic space for community ideas.'}</p></div><div className="creator-board-actions">{selectedClub.role !== 'member' && <button type="button" className="button button-primary" onClick={() => setShowBountyComposer((value) => !value)}>Create bounty</button>}{selectedClub.role !== 'owner' && <button type="button" className="button" onClick={() => void leaveClub(selectedClub.id).then((result) => result.status === 'ok' ? refreshClubs() : setError(creatorFailure(result.status)))}>Leave</button>}</div></header>
+            <header className="creator-board-header"><div><span className="eyebrow">{selectedClub.role} · {selectedClub.memberCount} members</span><h2>{selectedClub.name}</h2><p>{selectedClub.description || 'A cinematic space for community ideas.'}</p></div><div className="creator-board-actions">{discoveryEnabled && selectedClub.role === 'owner' && <button type="button" className="button" onClick={() => void toggleVisibility()}><Icon name={publicClubIds.has(selectedClub.id) ? 'lock' : 'search'} size={15} />{publicClubIds.has(selectedClub.id) ? 'Make private' : 'List publicly'}</button>}{selectedClub.role !== 'member' && <button type="button" className="button button-primary" onClick={() => setShowBountyComposer((value) => !value)}>Create bounty</button>}{selectedClub.role !== 'owner' && <button type="button" className="button" onClick={() => void leaveClub(selectedClub.id).then((result) => result.status === 'ok' ? refreshClubs() : setError(creatorFailure(result.status)))}>Leave</button>}</div></header>
             {showBountyComposer && <BountyComposer clubId={selectedClub.id} onCancel={() => setShowBountyComposer(false)} onCreated={() => { setShowBountyComposer(false); void refreshBounties(selectedClub.id); }} onError={setError} />}
             <div className="creator-tabs">{(['active','submissions','completed', ...(selectedClub.role !== 'member' ? ['moderation' as const] : [])] as const).map((value) => <button key={value} type="button" className={tab === value ? 'creator-tab creator-tab-active' : 'creator-tab'} onClick={() => setTab(value)}>{value === 'active' ? 'Active bounties' : value === 'submissions' ? 'With submissions' : value === 'moderation' ? 'Moderation' : 'Completed'}</button>)}</div>
             {tab === 'moderation' ? <ModerationBoard reports={reports} audit={audit} loading={moderationLoading} onResolve={resolve} /> : <><div className="bounty-list">{visibleBounties.map((bounty, index) => <article key={bounty.id} className={`bounty-card${bounty.id === selectedBountyId ? ' bounty-card-active' : ''}`} onClick={() => setSelectedBountyId(bounty.id)}><span className="bounty-rank">{String(index + 1).padStart(2,'0')}</span><div className="bounty-copy"><span><span className={`bounty-status bounty-status-${bounty.status}`}>{bounty.status}</span>{bounty.closesAt !== null && <small>Ends {new Date(bounty.closesAt).toLocaleDateString()}</small>}</span><h3>{bounty.title}</h3><p>{bounty.brief || 'No additional brief.'}</p><small>{bounty.submissionCount} submission{bounty.submissionCount === 1 ? '' : 's'}</small></div><div className="bounty-actions">{selectedClub.role !== 'member' && nextStatus(bounty) !== null && <button type="button" className="button" onClick={(event) => { event.stopPropagation(); void transition(bounty); }}>Move to {nextStatus(bounty)}</button>}<button type="button" className="button button-primary" onClick={(event) => { event.stopPropagation(); setSelectedBountyId(bounty.id); }}>Open</button></div></article>)}</div>{visibleBounties.length === 0 && <div className="creator-empty"><Icon name="creator" size={26} /><strong>Nothing in this view</strong><small>New challenges and submissions will appear here.</small></div>}</>}
@@ -162,9 +211,14 @@ export function CreatorClubScreen(): JSX.Element {
         <aside className="creator-detail card">
           {selectedBounty === null ? <div className="creator-empty creator-empty-large"><Icon name="chevron-right" size={28} /><strong>Select a bounty</strong><small>Open a challenge to see its submissions and voting state.</small></div> : <BountyDetail bounty={selectedBounty} results={results} onRefresh={() => { void getBountyResults(selectedBounty.id).then((result) => { if (result.status === 'ok') setResults(result.data); }); if (selectedClubId !== null) void refreshBounties(selectedClubId); }} onError={setError} />}
         </aside>
-      </div>
+      </div>}
     </div>
   );
+}
+
+function ClubDirectory({ query, onQuery, clubs, loading, onSearch, onOpen }: { query: string; onQuery(value: string): void; clubs: readonly DirectoryClub[]; loading: boolean; onSearch(): void; onOpen(club: DirectoryClub): void }): JSX.Element {
+  function submit(event: FormEvent): void { event.preventDefault(); onSearch(); }
+  return <section className="club-directory card" aria-labelledby="club-directory-title"><header className="club-directory-header"><div><span className="eyebrow">Public communities</span><h2 id="club-directory-title">Find your next watch circle</h2><p>Only owner-listed, moderation-ready clubs appear here.</p></div><form className="club-directory-search" onSubmit={submit}><Icon name="search" size={18} /><input value={query} placeholder="Search club names and descriptions" onChange={(event) => onQuery(event.target.value)} aria-label="Search public clubs" />{query !== '' && <button type="button" onClick={() => { onQuery(''); }} aria-label="Clear club search"><Icon name="close" size={14} /></button>}<button type="submit" className="button button-primary">Search</button></form></header>{loading ? <div className="creator-loading creator-loading-large"><span className="loader-orbit" />Searching public clubs…</div> : <div className="club-directory-grid">{clubs.map((club) => <article key={club.id} className="directory-club-card"><div className="directory-club-art"><span>{club.name.slice(0,2).toUpperCase()}</span><Icon name="creator" size={32} /></div><div className="directory-club-copy"><span className="eyebrow">{club.memberCount} members</span><h3>{club.name}</h3><p>{club.description || 'A NightWatch creator community.'}</p><button type="button" className={club.isMember ? 'button' : 'button button-primary'} onClick={() => onOpen(club)}>{club.isMember ? 'Open club' : 'Join club'}<Icon name="chevron-right" size={15} /></button></div></article>)}</div>}{!loading && clubs.length === 0 && <div className="creator-empty creator-empty-large"><Icon name="search" size={30} /><strong>No public clubs found</strong><small>Try a broader search, or create a club and list it publicly.</small></div>}</section>;
 }
 
 function ClubComposer({ onCancel, onCreated, onError }: { onCancel(): void; onCreated(id: string): void; onError(message: string): void }): JSX.Element {

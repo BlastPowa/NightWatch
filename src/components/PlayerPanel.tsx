@@ -25,7 +25,7 @@ interface PlayerPanelProps {
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   /** Hands the parent a loader so other panels (queue) can start videos. */
-  exposeLoadVideo?: (loader: (videoId: string) => void) => void;
+  exposeLoadVideo?: (loader: (videoId: string, startSeconds?: number) => void) => void;
 }
 
 /**
@@ -48,6 +48,7 @@ export function PlayerPanel({
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
   const takeNextRef = useRef(takeNextFromQueue);
+  const pendingSeekRef = useRef<number | null>(null);
   takeNextRef.current = takeNextFromQueue;
 
   const [url, setUrl] = useState('');
@@ -84,6 +85,15 @@ export function PlayerPanel({
       onReady: () => player.setVolume(settingsStore.get().volumePercent),
       onStateChange: (state) => {
         engineRef.current?.handleLocalStateChange(state);
+        if (
+          pendingSeekRef.current !== null &&
+          isHostRef.current &&
+          (state === 'playing' || state === 'cued' || state === 'buffering')
+        ) {
+          const target = pendingSeekRef.current;
+          pendingSeekRef.current = null;
+          engineRef.current?.seekTo(target);
+        }
         // Opt-in insights (Phase 17): the recorder no-ops unless enabled.
         if (isHostRef.current && (state === 'playing' || state === 'paused')) {
           sessionRecorder.playback(
@@ -201,15 +211,16 @@ export function PlayerPanel({
     loadVideo(id);
   }
 
-  function loadVideo(id: string): void {
+  function loadVideo(id: string, startSeconds?: number): void {
     achievementTracker.record('video-loaded');
+    pendingSeekRef.current = typeof startSeconds === 'number' && startSeconds > 0 ? startSeconds : null;
     engineRef.current?.loadVideo(id);
   }
 
   const exposeLoadVideoRef = useRef(exposeLoadVideo);
   exposeLoadVideoRef.current = exposeLoadVideo;
   useEffect(() => {
-    exposeLoadVideoRef.current?.((id) => loadVideo(id));
+    exposeLoadVideoRef.current?.((id, startSeconds) => loadVideo(id, startSeconds));
     // loadVideo is stable in behavior (uses refs internally).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

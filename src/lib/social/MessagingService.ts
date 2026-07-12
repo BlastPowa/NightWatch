@@ -25,6 +25,17 @@ export interface Conversation {
   unreadCount: number;
 }
 
+/**
+ * An active member of a conversation. Display names intentionally do not live
+ * here: player_stats is private under RLS, so callers should resolve names only
+ * from relationships the viewer may already see (for example getSocialGraph).
+ */
+export interface ConversationMember {
+  userId: string;
+  role: MemberRole;
+  joinedAt: string;
+}
+
 export interface Message {
   id: string;
   /**
@@ -70,6 +81,42 @@ export async function listConversations(): Promise<SocialResult<Conversation[]>>
         unreadCount: Number(row['unread_count'] ?? 0),
       })),
   );
+}
+
+/**
+ * List the active roster through conversation_members' member-select policy.
+ * RLS permits this only while the caller is themselves an active member; it
+ * does not broaden access to private player_stats rows.
+ */
+export async function listConversationMembers(
+  conversationId: string,
+): Promise<SocialResult<ConversationMember[]>> {
+  const { data, error } = await supabase
+    .from('conversation_members')
+    .select('user_id, role, joined_at')
+    .eq('conversation_id', conversationId)
+    .is('left_at', null)
+    .order('joined_at', { ascending: true });
+  if (error !== null) {
+    return toFailure(error);
+  }
+
+  const members: ConversationMember[] = [];
+  for (const row of Array.isArray(data) ? (data as Record<string, unknown>[]) : []) {
+    const role = row['role'];
+    if (
+      typeof row['user_id'] !== 'string' ||
+      (role !== 'owner' && role !== 'moderator' && role !== 'member')
+    ) {
+      continue;
+    }
+    members.push({
+      userId: row['user_id'],
+      role,
+      joinedAt: str(row['joined_at']),
+    });
+  }
+  return ok(members);
 }
 
 /**
