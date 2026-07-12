@@ -10,6 +10,7 @@
 - Added persistent direct/group Messages UI with unread counts, sequence-safe paging state, realtime delivery, soft-delete tombstones, group creation, and direct-message launch from Friends.
 - Replaced exposed horizontal video scrollbars with accessible left/right shelf controls, smooth page-sized movement, and snap-aligned media cards.
 - Added consent-based friend presence controls with privacy-first defaults and no room-code exposure.
+- Added privacy-safe presence heartbeats and live friend status labels without exposing party access codes.
 - Added persistent Moment Notes below the official player with private/friends/party visibility, emoji stamps, filters, edit/delete, and host-synchronized seeking.
 - Added server-validated achievement profile borders with a cinematic profile studio and selected-border preview.
 - Added a capability-gated Creator Club workspace with club creation, bounty lifecycle, YouTube submissions, and one-vote-per-bounty judging.

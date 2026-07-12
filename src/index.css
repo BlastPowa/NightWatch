@@ -2458,6 +2458,10 @@ input {
 .notification-empty > span { color: var(--nw-accent); font-size: 1.5rem; }
 .notification-empty small { font-size: .64rem; }
 [data-reduce-transparency='true'] .notification-popover, [data-reduce-transparency='true'] .notification-popover > header { background: var(--nw-bg-raised); backdrop-filter: none; }
+.person-avatar { position: relative; }
+.presence-dot { position: absolute; right: -1px; bottom: -1px; width: 10px; height: 10px; border: 2px solid var(--nw-bg-raised); border-radius: 50%; background: #67f0a2; box-shadow: 0 0 10px color-mix(in srgb,#67f0a2 65%,transparent); }
+.presence-in_party { background: var(--nw-accent); box-shadow: 0 0 10px color-mix(in srgb,var(--nw-accent) 70%,transparent); }
+.presence-watching { background: #ffb85c; }
 .member-count { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--nw-accent) 14%, var(--nw-bg-sunken)); color: var(--nw-accent); font-size: .75rem; }
 .members-collapsible { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--nw-border); }
 .members-collapsible > summary { margin-bottom: .65rem; color: var(--nw-text); font-size: .86rem; font-weight: 700; }

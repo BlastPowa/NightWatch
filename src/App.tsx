@@ -25,6 +25,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
 import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
 import { createDirectConversation } from '@/lib/social/MessagingService';
+import { heartbeat } from '@/lib/social/PresenceService';
 import {
   createIdentity,
   loadIdentity,
@@ -221,6 +222,18 @@ export function App(): JSX.Element {
   const inRoom = roomCode !== null && session !== null && identity !== null;
   const selfIsHost =
     inRoom && session.state.members.some((m) => m.id === identity.id && m.isHost);
+
+  // Consent is enforced server-side. Heartbeats carry only a coarse state and
+  // never a private room code; opted-out accounts remain invisible.
+  useEffect(() => {
+    if (authUser === null) return;
+    const publish = (): void => { void heartbeat(inRoom ? 'in_party' : 'online'); };
+    publish();
+    const timer = window.setInterval(publish, 45_000);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [authUser, inRoom]);
 
   /** Discover-page pick: route into a room (existing or new) with it. */
   const handleDiscoverPick = useCallback(
