@@ -21,11 +21,13 @@ Opus owns Electron/window/platform and installer work. Codex owns React/CSS Brow
 - Consume final logo/wordmark/background assets from the frontend brand pack. Do not introduce network-loaded installer assets.
 - Verify clean install, upgrade from v0.1.18+, silent auto-update, uninstall, shortcut repair, per-user install, and cancelled installation.
 
-## Public rename compatibility
+## Public rename — CANCELLED (2026-07-12)
 
-- Public display name, wordmark, executable description, shortcuts, installer copy, Discord art, and About copy may change.
-- Keep internal app ID, GitHub repo/update feed, Supabase project/schema, localStorage keys, and `nightwatch://` protocol for the first rename release. Add a later compatibility migration only if the owner insists on changing internals.
-- Do not implement rename until the owner supplies the exact public name and confirms trademark/domain checks.
+**NightWatch is the final name.** The owner has cancelled the rename.
+
+Do no rename-compatibility work: no brand-neutral naming, no indirection layer for the display name, no holding back on the wordmark. Treat "NightWatch" as permanent in the display name, wordmark, executable description, shortcuts, installer copy, Discord art, and About copy — as well as in the app ID, update feed, Supabase project, localStorage keys, and the `nightwatch://` protocol, which were never going to change anyway.
+
+Anything in this file that assumed a pending rename is void.
 
 ## YouTube/player boundary
 

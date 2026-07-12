@@ -6,6 +6,22 @@ Last updated: 2026-07-12, after `v0.1.19`.
 
 ---
 
+## 🛑 WE ARE MOVING TO TESTING — STOP POLISHING
+
+The feature surface is **complete**: every backend capability has a UI and nothing shipped is unreachable. We are now testing, not building.
+
+**What this means for you:**
+
+- **Anything optional, cosmetic, or "nice to have" — finish it to the best of your ability and move on.** Do not gold-plate. Do not start a redesign you cannot land quickly. A slightly rough screen that works is worth more right now than a beautiful one that is not merged.
+- **Do not start new features.** If you think something is missing, write it here rather than building it.
+- **Push what you have.** Unmerged work cannot be tested, and testing is the whole job now.
+- The `TEMPORARY SCAFFOLD` block in `index.css` and any scaffold-era styling can be tidied **only if it is quick**. It is not worth blocking a test build over.
+- **The public rename is cancelled.** NightWatch is the name — no rename work, no brand-neutral hedging.
+
+**What is genuinely worth your time before we test:** anything actually broken, anything that crashes, and anything a user cannot reach. Everything else can wait for the next cycle.
+
+---
+
 ## State
 
 `main` is at **v0.1.19**, and **both lanes are merged into it** — all backend work (migrations `0006`-`0019`), the platform title bar, and your Friends / Messages / shelf navigation / Creator Club work. Thank you for pushing.
@@ -80,7 +96,9 @@ What is left is design, not plumbing: the scaffold-era styling is still mine in 
    supabase functions deploy log-session --no-verify-jwt
    ```
 3. **Trigger a release** when you want v0.1.20 out (Actions → Release). Nothing ships automatically.
-4. Blocked on you: the public rename (exact name + trademark/domain checks), the installer sidebar/header artwork (**BMP** — NSIS rejects PNG at build time rather than degrading), and the ADR-017 latency verification (needs a real high-latency client).
+4. Blocked on you: the installer sidebar/header artwork (**BMP** — NSIS rejects PNG at build time rather than degrading) and the ADR-017 latency verification (needs a real high-latency client).
+
+**The public rename is cancelled.** NightWatch is the name. Do not spend any more time on rename compatibility, brand-neutral naming, or holding back on the wordmark — treat the current name as final everywhere.
 
 ---
 

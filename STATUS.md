@@ -10,7 +10,7 @@ Implemented on the active frontend branch: Discord avatar/CSP repair, Friends, r
 
 Current shell pass: reusable local SVG icons now replace prototype glyphs across the sidebar, Browse, Settings, room actions, and notifications. Video shelves and the category rail use explicit arrow controls with smooth snapping instead of visible scrollbars.
 
-Remaining frontend integration: notification centre, group member/role controls and centred system messages from migration `0014`, friend profile/presence views, creator moderation/report/audit, exact Figma visual inspection after quota reset, final public rename/logo after the owner selects a name, and packaged two-client/update regression.
+Remaining frontend integration: notification centre, group member/role controls and centred system messages from migration `0014`, friend profile/presence views, creator moderation/report/audit, and packaged two-client/update regression. (The public rename is cancelled — NightWatch is the final name.)
 
 The historical phase ledger below is retained for evidence; older "Current Work" text is not authoritative over this update.
 
@@ -116,7 +116,7 @@ Completed:
 ✅ Phase 21 (features) — club discovery with moderation (0015), highlight reels (0016), unwinnable-border fix (0017), notification dismissal + retention (0018, applied)
 
 Current Work:
-Owner: merge `backend/phase-21-completion` and redeploy the `log-session` Edge Function (highlights return nothing without it); hand-verify the installer round trip. Realtime publication VERIFIED 2026-07-12 — messages, friend_requests, and notifications are all in `supabase_realtime`; the backend has no unverified assumptions left. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).
+Owner: merge `backend/phase-21-completion` and redeploy the `log-session` Edge Function (highlights return nothing without it); hand-verify the installer round trip. Realtime publication VERIFIED 2026-07-12 — messages, friend_requests, and notifications are all in `supabase_realtime`; the backend has no unverified assumptions left. Blocked on owner: the installer sidebar/header BMPs (brand pack). The public rename is CANCELLED — NightWatch is the final name.
 
 Codex: building the Phase 20 UI on `frontend/phase-20b-profile-social` — FriendsScreen, MessagesScreen, and a capabilities hook are in flight. See `CODEX_HANDOFF.md`.
 
@@ -130,6 +130,7 @@ What remains is not backend code:
 - Merge both branches and cut a release. Everything both lanes built is invisible to users until then.
 - Redeploy the `log-session` Edge Function (highlights return nothing without it).
 - Codex: build the UIs for the features that have none — notifications above all.
-- Owner-only: the public rename (exact name + trademark/domain checks), the installer BMPs (brand pack), and the international latency verification (ADR-017, needs a real high-latency client).
+- Owner-only: the installer BMPs (brand pack) and the international latency verification (ADR-017, needs a real high-latency client).
+- The public rename is CANCELLED. NightWatch is the final name; no rename work remains anywhere.
 
 No phase is scheduled after 21. Candidates, none committed: mobile/web reach (the Activity build already proves the renderer runs outside Electron), or a Pro tier (ADR-015 — documented, never scheduled).
