@@ -118,6 +118,18 @@ export function CreatorClubScreen({ discoveryEnabled }: CreatorClubScreenProps):
   useEffect(() => { void refreshClubs(); }, []);
   useEffect(() => { if (discoveryEnabled) void loadDirectory(); }, [discoveryEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
+    if (!discoveryEnabled || selectedClub === null || selectedClub.role !== 'owner') return;
+    void searchClubs(selectedClub.name).then((result) => {
+      if (result.status !== 'ok') return;
+      const isPublic = result.data.some((club) => club.id === selectedClub.id);
+      setPublicClubIds((current) => {
+        const next = new Set(current);
+        if (isPublic) next.add(selectedClub.id); else next.delete(selectedClub.id);
+        return next;
+      });
+    });
+  }, [discoveryEnabled, selectedClubId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
     if (selectedClubId === null) { setBounties([]); return; }
     void refreshBounties(selectedClubId);
   }, [selectedClubId]);
