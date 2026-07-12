@@ -132,3 +132,29 @@ export function subscribeToFriendRequests(onChange: () => void): () => void {
     void supabase.removeChannel(channel);
   };
 }
+
+/**
+ * Live notifications (0013). RLS restricts `notifications` to rows addressed to
+ * you, so no filter is needed — you cannot subscribe to someone else's bell.
+ *
+ * INSERT only. Mark-read is an UPDATE the client itself just made, so replaying
+ * it would only fight the optimistic state the UI already applied.
+ *
+ * Like friend requests, this carries no payload beyond "something arrived":
+ * re-read listNotifications()/countUnreadNotifications() rather than acting on
+ * the raw row, so the badge stays consistent with what the list actually shows.
+ */
+export function subscribeToNotifications(onArrive: () => void): () => void {
+  const channel: RealtimeChannel = supabase
+    .channel('social:notifications')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'notifications' },
+      () => onArrive(),
+    )
+    .subscribe();
+
+  return () => {
+    void supabase.removeChannel(channel);
+  };
+}

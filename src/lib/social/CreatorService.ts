@@ -66,6 +66,21 @@ export interface AuditEntry {
   createdAt: string;
 }
 
+/**
+ * The kinds 0013 currently emits. `kind` stays a plain string on the wire so an
+ * older client meeting a newer server renders an unknown kind blandly rather
+ * than crashing — switch on these, but always keep a default branch.
+ */
+export type NotificationKind =
+  | 'bounty.open'
+  | 'bounty.judging'
+  | 'bounty.closed'
+  | 'bounty.cancelled'
+  | 'submission.accepted'
+  | 'submission.rejected'
+  | 'club.role'
+  | 'report.resolved';
+
 export interface AppNotification {
   id: string;
   kind: string;
@@ -359,4 +374,17 @@ export async function listNotifications(limit = 50): Promise<SocialResult<AppNot
 
 export function markNotificationRead(notificationId: string): Promise<SocialResult<void>> {
   return transition('mark_notification_read', { p_notification: notificationId });
+}
+
+export function markAllNotificationsRead(): Promise<SocialResult<void>> {
+  return transition('mark_all_notifications_read', {});
+}
+
+/** Badge count. Cheap enough to call on a realtime nudge rather than a poll. */
+export async function countUnreadNotifications(): Promise<SocialResult<number>> {
+  const { data, error } = await supabase.rpc('count_unread_notifications');
+  if (error !== null) {
+    return toFailure(error);
+  }
+  return ok(Number(data ?? 0));
 }

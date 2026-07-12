@@ -72,6 +72,6 @@ Then open a PR against `main`. Nothing else to run.
 
 ## Honest caveats
 
-- **Notifications are a table with no writer.** The schema, RLS, and read/mark-read RPCs exist, but nothing *emits* a notification yet (e.g. "your submission was accepted"). Wiring emitters into the bounty/submission transitions is a small follow-up — say the word.
+- ~~**Notifications are a table with no writer.**~~ **Fixed in Phase 20D** (`0013_notification_emitters.sql`, same branch) — see `PHASE_20D_BACKEND_STATUS.md`. `0013` still needs to be applied to the database.
 - **Clubs have no discovery.** You can create, join by id, and list your own; there is no public club directory or invite flow. Deliberate — a directory needs its own moderation story.
 - **`creator_reports.target_id` is `text`, not a typed FK**, because it points at four different tables. Nothing enforces that the target exists.
