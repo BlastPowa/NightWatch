@@ -10,17 +10,15 @@
 -- transition rather than reimplemented per function. Forgetting it in one
 -- place would silently defeat blocking everywhere.
 
--- ---------------------------------------------------------------------------
--- Consent alignment.
--- ---------------------------------------------------------------------------
--- Phase 18 shipped share_stats defaulting TRUE. The handoff mandates presence
--- consent defaults FALSE. Two opt-in surfaces with opposite defaults is how
--- privacy incidents happen, so share_stats is flipped and existing rows are
--- reset: all sharing in NightWatch is now explicitly opted into. Existing
--- leaderboard/co-watcher visibility goes dark until users re-consent, which is
--- the intended outcome, not a regression to fix.
-alter table public.player_stats alter column share_stats set default false;
-update public.player_stats set share_stats = false where share_stats = true;
+-- LOCK ORDER. Everything that touches the EXISTING player_stats table is
+-- deferred to the end of this file. ALTER TABLE takes an AccessExclusiveLock
+-- for the remainder of the transaction, so taking it up front means holding it
+-- while we create a dozen unrelated objects — long enough for PostgREST, the
+-- dashboard, or a running client to deadlock against us. Creating the new
+-- objects first keeps that lock window as short as possible.
+--
+-- lock_timeout makes a busy table fail fast and cleanly instead of deadlocking.
+set lock_timeout = '10s';
 
 -- ---------------------------------------------------------------------------
 -- Friends, blocks, presence consent.
@@ -175,9 +173,6 @@ create table public.player_border_unlocks (
   unlocked_at timestamptz not null default now(),
   primary key (user_id, border_id)
 );
-
-alter table public.player_stats
-  add column selected_border_id text references public.profile_borders (id);
 
 insert into public.profile_borders (id, label, required_achievement_id) values
   ('default', 'Default', null),
@@ -351,6 +346,24 @@ as $$
   from video_moment_notes
   where author_id = p_user and created_at > now() - interval '1 minute';
 $$;
+
+-- ---------------------------------------------------------------------------
+-- player_stats changes — LAST, so the AccessExclusiveLock on this live,
+-- actively-read table is held for as little of the transaction as possible.
+-- ---------------------------------------------------------------------------
+
+-- Both column changes in one statement = one table rewrite, one lock.
+alter table public.player_stats
+  add column selected_border_id text references public.profile_borders (id),
+  alter column share_stats set default false;
+
+-- Consent alignment. Phase 18 shipped share_stats defaulting TRUE; the handoff
+-- mandates presence consent defaults FALSE. Two opt-in surfaces with opposite
+-- defaults is how privacy incidents happen, so existing rows are reset too:
+-- all sharing in NightWatch is now explicitly opted into. Leaderboard and
+-- co-watcher visibility goes dark until users re-consent — intended, and the
+-- one step of this migration that cannot be undone.
+update public.player_stats set share_stats = false where share_stats = true;
 
 -- ---------------------------------------------------------------------------
 -- ROLLBACK
