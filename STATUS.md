@@ -1,6 +1,6 @@
 # Current Status
 
-Frontend Track: Advanced UI overhaul and GitHub workflow automation implemented on `frontend/advanced-ui-overhaul`; awaiting automated PR checks and owner visual review before `v0.1.15`.
+Frontend Track: `v0.1.15` is released. Browse/watch-room visual overhaul is active on `frontend/browse-room-overhaul`; typecheck, Activity build, and Electron package pass locally.
 
 Parallel Frontend Track: Cinematic midnight brand and shell implementation is in progress on `frontend/nightwatch-cinematic`. The Figma target file exists; canvas construction is paused at discovery because the Starter-plan MCP quota was reached.
 

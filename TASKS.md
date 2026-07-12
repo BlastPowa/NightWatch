@@ -40,6 +40,10 @@ Phase 14 — Persistent Community Rooms
 
 ## In Progress
 
+- Browse/watch-room overhaul: cinematic featured title, fuller responsive YouTube-style library grid, progressive result reveal, player-first room hierarchy, and clearer queue/chat/member modules on `frontend/browse-room-overhaul`.
+- Backend handoff: paginate `search-youtube` trending/search results (currently hard-capped at 12) so Browse can expose 36–48 results without multiplying automatic quota usage; deploy the updated Edge Function after review.
+- Feature PR automation hardening: treat an already-merged branch as a successful no-op instead of a failed PR-creation run.
+
 - Advanced cinematic UI: discovery grid, categorized settings, branded startup, responsive/accessibility polish, and automated PR/release workflow are in review on `frontend/advanced-ui-overhaul`.
 
 - Frontend cinematic polish: brand/shell implementation complete; core-flow visual QA and Figma canvas construction pending review/quota availability.

@@ -7,6 +7,9 @@
 
 - Added an OTT-inspired discovery experience, advanced categorized settings, responsive density and backdrop controls, accessibility preferences, and branded startup treatment.
 - Added automatic feature validation/PR creation and an intentional Actions-driven versioned release workflow.
+- Rebuilt Browse around a cinematic featured title, channel-forward media cards, responsive shelves, and progressive result reveal; reshaped the room around a player-first stage with clearer queue, conversation, member, and host/viewer hierarchy.
+- Fixed feature validation reporting a failure when its branch had already been merged before the PR-opening step completed.
+- Added graceful thumbnail fallbacks for removed, private, or temporarily unavailable YouTube preview images.
 
 ### Backend/platform
 
