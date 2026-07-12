@@ -69,6 +69,8 @@ Everything below is **deployed, tested, and callable, with zero UI**. A user can
 
 6. **Creator moderation queue + audit log.** `listClubReports()`, `resolveReport()`, `getClubAudit()`, `reportContent()`. Staff-only. Reports can already be *filed* by anyone through the API — nobody can *work the queue* without this.
 
+7. **Notification dismissal** (`0018`, new). `dismissNotification(id)` removes one for good; `clearReadNotifications()` clears everything already read and never touches unread. Give the bell a dismiss affordance and a "clear read" action — until then mark-as-read is the only disposal there is, and the bell's history is permanent.
+
 **Gate each one on its capability flag** (all default false, and **hide** rather than disable):
 
 ```ts
@@ -247,6 +249,16 @@ Gate every surface on `getSocialCapabilities()` and **hide**, do not disable, an
 3. **Merge `backend/phase-21-completion`.** CI opens the PR automatically on push. Contains: `0014` (already applied), `set_conversation_role`, the vitest suite + CI gate, the custom title bar, and the branded installer.
 4. **Verify the installer by hand** before the next release: clean install, upgrade from v0.1.18, silent auto-update, uninstall, and cancelled install. Automated tests cannot cover this and a broken installer is the one bug every user hits.
 5. **Blocked on you:** the public rename (needs the exact name plus trademark/domain checks) and the installer sidebar/header BMPs (need the brand pack). Neither is startable without you.
+
+---
+
+## Notification retention (`0018`) — new, needs applying
+
+0013 gave notifications a writer but no way out: the table grew without bound (one row per member per bounty opened, forever) and a user could not dismiss anything, because there was a SELECT and an UPDATE policy and **no DELETE policy**.
+
+Retention is deliberately asymmetric: **read** notifications expire after 30 days, **unread** are kept for 90. Deleting something a user never saw is destroying information, not tidying up.
+
+`prune_notifications()` is **service_role only** — a client being able to trigger a mass DELETE is not a thing that should be possible. It runs from pg_cron or a scheduled Edge Function; if it is never scheduled nothing breaks, the table just keeps growing as it does today. This makes cleanup possible, not automatic.
 
 ---
 

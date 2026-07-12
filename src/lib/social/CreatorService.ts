@@ -440,6 +440,16 @@ export function markAllNotificationsRead(): Promise<SocialResult<void>> {
   return transition('mark_all_notifications_read', {});
 }
 
+/** Remove one notification from your bell for good. */
+export function dismissNotification(notificationId: string): Promise<SocialResult<void>> {
+  return transition('dismiss_notification', { p_notification: notificationId });
+}
+
+/** Clear everything you have already read. Never touches unread. */
+export function clearReadNotifications(): Promise<SocialResult<void>> {
+  return transition('clear_read_notifications', {});
+}
+
 /** Badge count. Cheap enough to call on a realtime nudge rather than a poll. */
 export async function countUnreadNotifications(): Promise<SocialResult<number>> {
   const { data, error } = await supabase.rpc('count_unread_notifications');
