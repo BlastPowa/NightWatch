@@ -3587,3 +3587,130 @@ input {
     min-height: 220px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Phase 23: profiles, block management, room invitations.
+   Frontend lane: restyle freely. The data logic sits in the components' hooks,
+   so the markup can be replaced without touching a service call.
+--------------------------------------------------------------------------- */
+
+.person-avatar-button {
+  position: relative;
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.person-avatar-button:hover { filter: brightness(1.12); }
+
+.profile-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 80;
+  width: min(380px, calc(100vw - 32px));
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border: 1px solid var(--nw-border, rgba(255, 255, 255, 0.09));
+  border-radius: 14px;
+  background: var(--nw-surface, #131824);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+.profile-card-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  border: 0;
+  background: none;
+  color: var(--nw-text-dim, rgba(230, 232, 238, 0.55));
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.profile-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.profile-card-head h3 { margin: 0; font-size: 1.05rem; }
+.profile-card-head small { color: var(--nw-text-dim, rgba(230, 232, 238, 0.55)); }
+
+.profile-card-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-card-stats {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.profile-card-stats li {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.profile-card-stats strong { font-size: 0.92rem; }
+.profile-card-stats span { font-size: 0.68rem; color: var(--nw-text-dim, rgba(230, 232, 238, 0.5)); }
+
+.profile-card-section { margin-bottom: 14px; }
+.profile-card-section h4 { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--nw-text-dim, rgba(230, 232, 238, 0.5)); }
+
+.profile-card-achievements,
+.profile-card-rooms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.profile-card-achievements li,
+.profile-card-rooms li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.74rem;
+}
+
+.profile-card-actions { display: flex; gap: 8px; }
+.profile-card-empty { margin: 12px 0 0; color: var(--nw-text-dim, rgba(230, 232, 238, 0.55)); font-size: 0.84rem; }
+
+.relation-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+
+.relation-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--nw-border, rgba(255, 255, 255, 0.07));
+  border-radius: 10px;
+  background: var(--nw-surface, #131824);
+}
+
+.relation-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.relation-copy small { color: var(--nw-text-dim, rgba(230, 232, 238, 0.5)); font-size: 0.72rem; }
+.relation-actions { display: flex; gap: 6px; }
+.relation-empty { color: var(--nw-text-dim, rgba(230, 232, 238, 0.55)); font-size: 0.84rem; }
+.room-invites { margin-bottom: 20px; }
