@@ -8,6 +8,7 @@
 - Fixed packaged Discord avatars by allowing Discord CDN images in the production CSP and adding stable initial fallbacks across every account surface.
 - Added capability-gated Friends navigation with accepted friends, incoming/outgoing requests, co-watcher suggestions, realtime refresh, and working lifecycle actions.
 - Added persistent direct/group Messages UI with unread counts, sequence-safe paging state, realtime delivery, soft-delete tombstones, group creation, and direct-message launch from Friends.
+- Replaced exposed horizontal video scrollbars with accessible left/right shelf controls, smooth page-sized movement, and snap-aligned media cards.
 
 ### Phase 20A — Browse and player shell
 

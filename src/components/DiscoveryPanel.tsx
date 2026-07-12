@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type SyntheticEvent } from 'react';
 import { getTrending, searchYouTube, type SearchResult } from '@/lib/search/SearchService';
 import { listHistory } from '@/lib/rooms/HistoryService';
 
@@ -193,9 +193,14 @@ interface ShelfProps {
 }
 
 function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
+  const trackRef = useRef<HTMLUListElement | null>(null);
+  function move(direction: -1 | 1): void {
+    const track = trackRef.current;
+    if (track !== null) track.scrollBy({ left: direction * Math.max(280, track.clientWidth * 0.82), behavior: 'smooth' });
+  }
   return <section className="video-shelf" aria-labelledby={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>
-    <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><span>{items.length} videos</span></header>
-    <ul className="shelf-track">
+    <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><div className="shelf-controls"><span>{items.length} videos</span><button type="button" onClick={() => move(-1)} aria-label={`Scroll ${title} left`}>‹</button><button type="button" onClick={() => move(1)} aria-label={`Scroll ${title} right`}>›</button></div></header>
+    <ul className="shelf-track" ref={trackRef}>
       {items.map((result) => <li key={result.videoId} className="media-card">
         <div className="media-thumb">
           <img src={result.thumbnailUrl} alt="" loading="lazy" onError={onImageError} />
