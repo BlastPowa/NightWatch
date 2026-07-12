@@ -247,8 +247,14 @@ export function PlayerPanel({
       </div>
 
       <TimelineMarkers markers={markers} durationSeconds={durationSeconds} />
-
-      <ReactionBar disabled={!hasVideo} onReact={send} />
+      <div className="player-community-bar">
+        <div className="player-community-copy">
+          <span className="eyebrow">Room reactions</span>
+          <strong>{hasVideo ? 'Mark this moment' : 'Reactions unlock with a video'}</strong>
+          <small>{markers.length > 0 ? `${markers.length} moment${markers.length === 1 ? '' : 's'} marked on the timeline` : 'Your reactions appear below the video, never over its controls.'}</small>
+        </div>
+        <ReactionBar disabled={!hasVideo} onReact={send} />
+      </div>
     </div>
   );
 }

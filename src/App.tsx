@@ -243,6 +243,7 @@ export function App(): JSX.Element {
         </div>
 
         <nav className="side-nav">
+          <span className="nav-section-label">Watch</span>
           <button
             type="button"
             className={`nav-item${view === 'discover' ? ' nav-item-active' : ''}`}
@@ -266,6 +267,7 @@ export function App(): JSX.Element {
               <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">Parties</span>
             </button>
           )}
+          <span className="nav-section-label">You</span>
           <button
             type="button"
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
@@ -299,6 +301,12 @@ export function App(): JSX.Element {
             </span>
           </div>
         )}
+
+        <button type="button" className="sidebar-profile" onClick={() => setView('card')} aria-label="Open your NightWatch profile">
+          {authUser?.avatarUrl ? <img src={authUser.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span className="sidebar-profile-avatar" aria-hidden="true">{(authUser?.name ?? identity?.displayName ?? 'G').slice(0, 1).toUpperCase()}</span>}
+          <span className="sidebar-profile-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
+          <span className="sidebar-profile-more" aria-hidden="true">›</span>
+        </button>
 
         <div className="side-footer">
           <span className={`status-indicator status-${connectionStatus}`}>
