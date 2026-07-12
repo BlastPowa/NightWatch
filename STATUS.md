@@ -97,10 +97,13 @@ Completed:
 ✅ Phase 20B — friends, blocks, presence consent, DMs/groups, moment notes, profile borders (migrations 0006–0010, applied; RLS test green)
 ✅ Phase 20C — creator clubs, bounties, submissions, voting, moderation queue, append-only audit log (0011–0012, applied; test green)
 ✅ Phase 20D — notification emitters + bell, with realtime (0013, applied; test green)
-🔶 Phase 21 — system messages (0014, **written, not yet applied**), set_conversation_role RPC, vitest suite + CI gate
+✅ Phase 21 (backend) — group system messages (0014, applied), set_conversation_role RPC, vitest suite + CI gate
+✅ Phase 21 (platform) — custom title bar (native overlay controls, so Snap Layouts survives), typed window IPC, branded assisted installer
 
 Current Work:
-Owner: apply `supabase/migrations/0014_system_messages.sql`, run `supabase/tests/phase21_system_messages_test.sql`, and confirm `0010` really is in the realtime publication (never verified against the database). Codex: build the Phase 20 UI — see `CODEX_HANDOFF.md`.
+Owner: merge `backend/phase-21-completion`; confirm `0010` is in the realtime publication (still never verified against the database); hand-verify the installer round trip. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).
+
+Codex: building the Phase 20 UI on `frontend/phase-20b-profile-social` — FriendsScreen, MessagesScreen, and a capabilities hook are in flight. See `CODEX_HANDOFF.md`.
 
 Blocked:
 None. But nothing from Phase 20 is user-visible until the frontend lane ships.
