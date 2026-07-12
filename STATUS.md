@@ -1,11 +1,15 @@
 # Current Status
 
-Frontend Track: `v0.1.16` is released. Phase 20A professional Browse/player shell is active on `frontend/phase-20a-browse-player`; social and Creator Club navigation remains gated on the Phase 20 backend capabilities.
-
-Parallel Frontend Track: Cinematic midnight brand and shell implementation is in progress on `frontend/nightwatch-cinematic`. The Figma target file exists; canvas construction is paused at discovery because the Starter-plan MCP quota was reached.
+**Released: `v0.1.18`.** See `CODEX_HANDOFF.md` for the live working state — it is kept current and supersedes this file where they disagree.
 
 Current Phase:
-Phase 14 — Persistent Community Rooms
+Phase 21 — finishing the gaps left inside shipped phases (backend lane: `backend/phase-21-completion`).
+
+**The critical gap:** `v0.1.18` ships eight migrations and eight social services that **no user can reach**. There is no Phase 20 UI in `main` — no friends list, DMs, moment notes, borders, clubs, bounties, or notification bell. Every capability flag is false because nothing renders behind it. The backend is not the bottleneck; the UI is.
+
+Frontend Track: Phase 20A Browse/player shell is on `frontend/phase-20a-browse-player`, still unmerged.
+
+Parallel Frontend Track: Cinematic midnight brand/shell on `frontend/nightwatch-cinematic`, still unmerged. Figma canvas construction is paused at discovery — the Starter-plan MCP quota was reached.
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -87,11 +91,19 @@ Completed:
 ✅ Phase 16 shipped (Discover home grid + chat, trending/search/history, invite links)
 ✅ Phase 17 (ADR-014): opt-in session insights (log-session Edge Function, host-side recorder, owner-only reads, member-visible notice), temporary insights charts, premiere events (countdown + host start button), room settings in My Rooms
 
+✅ Phase 18 — gamification upgrade (cross-device achievements via CloudSync, leaderboards, room streaks/milestones)
+✅ Phase 19 — room invites, RSVPs, scheduled-room surface, co-watcher suggestions
+✅ Search/browse paging (search-youtube Edge Function: 48-result cached fetch, zero-quota Show More, daily unit budget)
+✅ Phase 20B — friends, blocks, presence consent, DMs/groups, moment notes, profile borders (migrations 0006–0010, applied; RLS test green)
+✅ Phase 20C — creator clubs, bounties, submissions, voting, moderation queue, append-only audit log (0011–0012, applied; test green)
+✅ Phase 20D — notification emitters + bell, with realtime (0013, applied; test green)
+🔶 Phase 21 — system messages (0014, **written, not yet applied**), set_conversation_role RPC, vitest suite + CI gate
+
 Current Work:
-Owner: run 0003_session_analytics.sql; deploy log-session Edge Function (no extra secrets). Then verify: insights toggle → host a session → View insights shows charts; premiere countdown/start. Codex: restyle Discovery + Insights per FEATURES_UI_BRIEF.md.
+Owner: apply `supabase/migrations/0014_system_messages.sql`, run `supabase/tests/phase21_system_messages_test.sql`, and confirm `0010` really is in the realtime publication (never verified against the database). Codex: build the Phase 20 UI — see `CODEX_HANDOFF.md`.
 
 Blocked:
-None
+None. But nothing from Phase 20 is user-visible until the frontend lane ships.
 
 Next:
-Phase 18 — gamification upgrade (cross-device achievements, leaderboards, streaks)
+No phases are scheduled after 21. Everything beyond it is unscoped — mobile/web reach, or a Pro tier (ADR-015, documented but never scheduled). Do not start one while Phase 20 remains invisible.

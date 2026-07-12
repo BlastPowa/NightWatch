@@ -251,41 +251,45 @@ Not started until the Electron MVP (Phases 1–12) is complete.
 
 ---
 
-# Post-MVP Differentiation Backlog (Phases 14+, not yet scheduled)
+# Post-MVP Phases 14+ (all shipped except where noted)
 
-Answers "why NightWatch over Discord Watch Together / YouTube" — see PRODUCT_REQUIREMENTS.md §2.1 and §14 for full detail. Priority order confirmed by the project owner:
+Answers "why NightWatch over Discord Watch Together / YouTube" — see PRODUCT_REQUIREMENTS.md §2.1 and §14. The numbering below drifted from the phases actually built; this section now reflects what shipped. `STATUS.md` and `CODEX_HANDOFF.md` are the authoritative current state.
 
 ## Phase 14 — Persistent Community Rooms
 
-Status: Backlog (ADR-012)
-
-- Permanent/reusable room links
-- Scheduled watch parties
-- Cross-Discord-server room access
-- First feature requiring a Postgres-backed room record — see ARCHITECTURE.md §9.1
+Status: **Complete** (ADR-012) — `rooms` table + RLS, Discord PKCE login, My Rooms, reusable codes, scheduling.
 
 ## Phase 15 — Collaborative Queue & Voting
 
-Status: Backlog (ADR-013)
+Status: **Complete** (ADR-013) — host-authoritative queue, vote-to-reorder, auto-advance.
 
-- Shared video queue, voting/reordering, auto-advance
-- Stays within the existing Realtime Broadcast model
+## Phase 16 — Discovery Hub
 
-## Phase 16 — Creator/Host Tools
+Status: **Complete** — trending/search, room history, invite deep links.
 
-Status: Backlog (ADR-014)
+## Phase 17 — Creator/Host Tools
 
-- Host analytics (watch-time retention, reaction density by timestamp)
-- Highlight-reel export
-- Premiere-style scheduled events
-- Requires opt-in telemetry persistence — never default-on
+Status: **Complete** (ADR-014) — opt-in session insights, premiere events. **Highlight-reel export was scoped here and never built** — the one outstanding item.
 
-## Phase 17 — Deeper Social & Gamification
+## Phase 18 — Deeper Gamification
 
-Status: Backlog
+Status: **Complete** — cross-device achievements (CloudSync), leaderboards, watch streaks.
 
-- Cross-device Engagement Dashboard (Postgres + RLS upgrade of Phase 10's local version)
-- Cross-friend-group leaderboards, watch streaks, shared achievements
+## Phase 19 — Room Invites & RSVPs
+
+Status: **Complete** — invites, RSVPs, co-watcher suggestions.
+
+## Phase 20 — Social, Messaging, Moments, Creator Club
+
+Status: **Backend complete** (migrations 0006–0013, all applied, all tests green). **No UI exists.** See PHASE_20_UI_BACKEND_HANDOFF.md for the spec and CODEX_HANDOFF.md for what remains.
+
+## Phase 21 — Closing the gaps
+
+Status: In progress — group system messages (0014), `set_conversation_role` (a real hole: group roles could never be set), unit tests + CI gate.
+
+## Unscheduled
+
+No phase is scheduled after 21. Candidates, none committed: mobile/web reach (the Activity build already proves the renderer runs outside Electron), club discovery, highlight-reel export, notification digests.
 
 ## Monetization Ideas (documented only — ADR-015, not a scheduled phase)
 

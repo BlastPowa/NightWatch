@@ -185,6 +185,23 @@ export function removeGroupMember(
   return transition('remove_group_member', { p_conversation: conversationId, p_user: userId });
 }
 
+/**
+ * Promote or demote a group moderator. Owner-only: letting moderators appoint
+ * moderators is how a group gets taken over by whoever was trusted first.
+ * Ownership itself moves through transferOwnership, not this.
+ */
+export function setConversationRole(
+  conversationId: string,
+  userId: string,
+  role: 'moderator' | 'member',
+): Promise<SocialResult<void>> {
+  return transition('set_conversation_role', {
+    p_conversation: conversationId,
+    p_user: userId,
+    p_role: role,
+  });
+}
+
 /** The owner cannot leave — transfer ownership first. */
 export function leaveConversation(conversationId: string): Promise<SocialResult<void>> {
   return transition('leave_conversation', { p_conversation: conversationId });
