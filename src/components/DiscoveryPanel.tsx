@@ -1,10 +1,5 @@
 import { useEffect, useState, type FormEvent, type SyntheticEvent } from 'react';
-import {
-  getTrending,
-  searchYouTube,
-  TRENDING_CATEGORIES,
-  type SearchResult,
-} from '@/lib/search/SearchService';
+import { getTrending, searchYouTube, type SearchResult } from '@/lib/search/SearchService';
 import { listHistory } from '@/lib/rooms/HistoryService';
 
 interface DiscoveryPanelProps {
@@ -15,89 +10,96 @@ interface DiscoveryPanelProps {
   onQueueAdd(videoId: string, title: string): boolean;
 }
 
-type DiscoveryTab = 'search' | 'trending' | 'history';
+type BrowseMode = 'trending' | 'search' | 'history';
+type Category = { id: string; label: string; icon: string; query?: string };
+
+const CATEGORIES: readonly Category[] = [
+  { id: '', label: 'All', icon: '✦' },
+  { id: '10', label: 'Music', icon: '♫' },
+  { id: '20', label: 'Gaming', icon: '◆' },
+  { id: 'live', label: 'Live', icon: '●', query: 'live now' },
+  { id: '1', label: 'Film', icon: '▰' },
+  { id: '24', label: 'Entertainment', icon: '★' },
+  { id: '23', label: 'Comedy', icon: '☺' },
+  { id: '17', label: 'Sports', icon: '◉' },
+  { id: '25', label: 'News', icon: '▤' },
+  { id: '27', label: 'Education', icon: '◈' },
+  { id: '28', label: 'Science & Tech', icon: '⌘' },
+  { id: '19', label: 'Travel', icon: '⌁' },
+  { id: '26', label: 'How-to', icon: '◇' },
+  { id: '15', label: 'Pets', icon: '♧' },
+  { id: '2', label: 'Autos', icon: '◍' },
+];
 
 const OUTCOME_MESSAGE: Record<string, string> = {
-  'not-configured': 'Search is not set up yet (Edge Function not deployed).',
-  'rate-limited': 'Daily limit reached — try again tomorrow.',
-  error: 'Could not load videos. Check your connection.',
+  'not-configured': 'Video discovery is not configured yet.',
+  'rate-limited': 'The daily discovery limit has been reached. Try again tomorrow.',
+  error: 'Videos could not be loaded. Check your connection and retry.',
 };
 
-/**
- * TEMPORARY Discovery Hub grid (Phase 16) — functional placeholder for the
- * frontend lane to restyle. Search / Trending / Previously-watched with
- * Play now (host) and Add to queue (everyone).
- */
-export function DiscoveryPanel({
-  callerId,
-  isHost,
-  roomCode,
-  onPlayNow,
-  onQueueAdd,
-}: DiscoveryPanelProps): JSX.Element {
-  const [tab, setTab] = useState<DiscoveryTab>('trending');
+export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
+  const [mode, setMode] = useState<BrowseMode>('trending');
   const [query, setQuery] = useState('');
+  const [activeQuery, setActiveQuery] = useState('');
   const [category, setCategory] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [history, setHistory] = useState<SearchResult[]>([]);
   const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [queuedId, setQueuedId] = useState<string | null>(null);
-  const [visibleCount, setVisibleCount] = useState(11);
-  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [queuedId, setQueuedId] = useState<string | null>(null);
 
-  async function runTrending(categoryId: string): Promise<void> {
+  async function loadTrending(categoryId: string): Promise<void> {
+    setMode('trending');
     setLoading(true);
     setMessage(null);
     setNextToken(null);
-    const outcome = await getTrending(categoryId, callerId);
+    const selected = CATEGORIES.find((item) => item.id === categoryId);
+    const outcome = selected?.query
+      ? await searchYouTube(selected.query, callerId)
+      : await getTrending(categoryId, callerId);
     setLoading(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
       setNextToken(outcome.nextPageToken);
-      setMessage(outcome.results.length === 0 ? 'Nothing trending right now.' : null);
+      setMessage(outcome.results.length === 0 ? 'Nothing is available in this category right now.' : null);
     } else {
       setResults([]);
-      setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'Failed.');
+      setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'Videos could not be loaded.');
     }
   }
 
-  async function runHistory(): Promise<void> {
-    setLoading(true);
-    setMessage(null);
-    setNextToken(null);
+  async function loadHistory(): Promise<void> {
+    if (roomCode === '') {
+      setHistory([]);
+      return;
+    }
     const entries = await listHistory(roomCode);
-    setLoading(false);
-    setResults(
-      entries.map((entry) => ({
-        videoId: entry.videoId,
-        title: entry.title,
-        channelTitle: '',
-        thumbnailUrl: `https://i.ytimg.com/vi/${entry.videoId}/mqdefault.jpg`,
-        durationText: '',
-      })),
-    );
-    setMessage(
-      entries.length === 0
-        ? 'No history yet — persistent rooms remember what you watch.'
-        : null,
-    );
+    setHistory(entries.map((entry) => ({
+      videoId: entry.videoId,
+      title: entry.title,
+      channelTitle: 'Watched with this room',
+      thumbnailUrl: `https://i.ytimg.com/vi/${entry.videoId}/mqdefault.jpg`,
+      durationText: '',
+    })));
   }
 
   async function handleSearch(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (loading || query.trim().length === 0) {
-      return;
-    }
+    const clean = query.trim();
+    if (clean.length === 0 || loading) return;
+    setMode('search');
+    setActiveQuery(clean);
     setLoading(true);
     setMessage(null);
     setNextToken(null);
-    const outcome = await searchYouTube(query, callerId);
+    const outcome = await searchYouTube(clean, callerId);
     setLoading(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
       setNextToken(outcome.nextPageToken);
-      setMessage(outcome.results.length === 0 ? 'No results.' : null);
+      setMessage(outcome.results.length === 0 ? `No videos found for “${clean}”.` : null);
     } else {
       setResults([]);
       setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'Search failed.');
@@ -105,213 +107,110 @@ export function DiscoveryPanel({
   }
 
   async function handleShowMore(): Promise<void> {
-    if (nextToken === null || loadingMore) {
-      return;
-    }
+    if (nextToken === null || loadingMore) return;
     setLoadingMore(true);
-    const outcome =
-      tab === 'trending'
-        ? await getTrending(category, callerId, nextToken)
-        : await searchYouTube(query, callerId, nextToken);
+    const selected = CATEGORIES.find((item) => item.id === category);
+    const outcome = mode === 'search'
+      ? await searchYouTube(activeQuery, callerId, nextToken)
+      : selected?.query
+        ? await searchYouTube(selected.query, callerId, nextToken)
+        : await getTrending(category, callerId, nextToken);
     setLoadingMore(false);
-
     if (outcome.status !== 'ok') {
-      setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'Could not load more.');
+      setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'More videos could not be loaded.');
       return;
     }
-    // A page can overlap a previous one if trending shifted between fetches.
     setResults((current) => {
-      const seen = new Set(current.map((r) => r.videoId));
-      return [...current, ...outcome.results.filter((r) => !seen.has(r.videoId))];
+      const seen = new Set(current.map((item) => item.videoId));
+      return [...current, ...outcome.results.filter((item) => !seen.has(item.videoId))];
     });
     setNextToken(outcome.nextPageToken);
   }
 
-  function switchTab(next: DiscoveryTab): void {
-    setTab(next);
-    setResults([]);
-    setMessage(null);
-    setVisibleCount(11);
-    if (next === 'trending') {
-      void runTrending(category);
-    } else if (next === 'history') {
-      void runHistory();
-    }
-  }
+  useEffect(() => { void Promise.all([loadTrending(''), loadHistory()]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void loadHistory(); }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Initial load: trending.
-  useEffect(() => {
-    void runTrending('');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function handleQueue(result: SearchResult): void {
+  function queue(result: SearchResult): void {
     if (onQueueAdd(result.videoId, result.title)) {
       setQueuedId(result.videoId);
-      window.setTimeout(() => setQueuedId(null), 1500);
+      window.setTimeout(() => setQueuedId(null), 1400);
     }
   }
 
-  const featured = tab === 'trending' ? results[0] : undefined;
-  const libraryResults = featured === undefined ? results : results.slice(1);
-  const visibleResults = libraryResults.slice(0, visibleCount);
-
-  function handleThumbnailError(event: SyntheticEvent<HTMLImageElement>): void {
+  function thumbnailError(event: SyntheticEvent<HTMLImageElement>): void {
     event.currentTarget.hidden = true;
     event.currentTarget.parentElement?.classList.add('thumbnail-unavailable');
   }
 
+  const firstShelf = results.slice(0, 8);
+  const secondShelf = results.slice(8, 16);
+  const remainingShelf = results.slice(16);
+
   return (
-    <div className="discovery-panel">
-      <header className="discovery-hero">
-        <div>
-          <span className="eyebrow">NightWatch discovery</span>
-          <h2>{tab === 'trending' ? 'What everyone is watching' : tab === 'search' ? 'Find your next watch' : 'Return to room favorites'}</h2>
-          <p>Browse together, then play now or build the room queue.</p>
-        </div>
-        <div className="source-tabs" role="tablist" aria-label="Discovery views">
-        {(['trending', 'search', 'history'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            className={`source-tab${tab === t ? ' source-tab-active' : ''}`}
-            onClick={() => switchTab(t)}
-            role="tab"
-            aria-selected={tab === t}
-          >
-            {t === 'trending' ? 'Trending' : t === 'search' ? 'Search' : 'Previously watched'}
+    <div className="browse-hub">
+      <form className="browse-search" role="search" onSubmit={(event) => void handleSearch(event)}>
+        <span aria-hidden="true">⌕</span>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search videos, creators, and topics" aria-label="Search videos" />
+        {query !== '' && <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="Clear search">×</button>}
+        <button type="submit" className="button button-primary" disabled={loading || query.trim() === ''}>{loading && mode === 'search' ? 'Searching…' : 'Search'}</button>
+      </form>
+
+      <nav className="browse-categories" aria-label="Video categories">
+        {CATEGORIES.map((item) => (
+          <button key={item.id} type="button" className={mode === 'trending' && category === item.id ? 'category-pill category-pill-active' : 'category-pill'} onClick={() => { setCategory(item.id); void loadTrending(item.id); }}>
+            <span aria-hidden="true">{item.icon}</span>{item.label}
           </button>
         ))}
-        </div>
-      </header>
+      </nav>
 
-      {featured !== undefined && !loading && (
-        <section className="discovery-feature" aria-labelledby="featured-title">
-          <img src={featured.thumbnailUrl} alt="" className="discovery-feature-art" onError={handleThumbnailError} />
-          <div className="discovery-feature-shade" />
-          <div className="discovery-feature-content">
-            <span className="eyebrow">Featured tonight</span>
-            <h3 id="featured-title">{featured.title}</h3>
-            <p>{featured.channelTitle || 'Trending on YouTube'}</p>
-            <div className="discovery-feature-actions">
-              {isHost && <button type="button" className="button button-primary button-lg" onClick={() => onPlayNow(featured.videoId)}>▶ Play now</button>}
-              <button type="button" className="button button-lg" onClick={() => handleQueue(featured)}>{queuedId === featured.videoId ? 'Added to queue ✓' : '+ Add to queue'}</button>
-            </div>
-          </div>
-        </section>
-      )}
+      <div className="browse-view-tabs" role="tablist" aria-label="Browse views">
+        <button type="button" role="tab" aria-selected={mode !== 'history'} className={mode !== 'history' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
+        <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={() => { setMode('history'); setMessage(history.length === 0 ? 'This room has no watch history yet.' : null); }}>Previously watched</button>
+      </div>
 
-      {tab === 'search' && (
-        <form className="player-form" onSubmit={(e) => void handleSearch(e)}>
-          <input
-            className="input"
-            value={query}
-            placeholder="Search YouTube…"
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <button type="submit" className="button" disabled={loading}>
-            {loading ? 'Searching…' : 'Search'}
-          </button>
-        </form>
-      )}
+      {loading && <BrowseLoading />}
+      {!loading && message !== null && <div className="discovery-empty" role="status"><span aria-hidden="true">◌</span><strong>{message}</strong><button type="button" className="button" onClick={() => void loadTrending(category)}>Try again</button></div>}
 
-      {tab === 'trending' && (
-        <div className="category-chips">
-          {TRENDING_CATEGORIES.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={`source-tab${category === c.id ? ' source-tab-active' : ''}`}
-              onClick={() => {
-                setCategory(c.id);
-                void runTrending(c.id);
-              }}
-            >
-              {c.label}
-            </button>
-          ))}
+      {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+
+      {!loading && mode !== 'history' && results.length > 0 && (
+        <div className="browse-shelves">
+          {history.length > 0 && <VideoShelf title="Continue watching" eyebrow="Pick up together" items={history.slice(0, 8)} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+          <VideoShelf title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={firstShelf} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
+          {secondShelf.length > 0 && <VideoShelf title="More to explore" eyebrow="Keep the party going" items={secondShelf} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+          {remainingShelf.length > 0 && <VideoShelf title="Fresh picks" eyebrow="More from NightWatch discovery" items={remainingShelf} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
         </div>
       )}
 
-      {loading && (
-        <div className="discovery-loading" aria-label="Loading videos" aria-busy="true">
-          <div className="orbit-loader" aria-hidden="true"><span /><span /><span /></div>
-        <div className="discovery-grid">
-          {Array.from({ length: 8 }, (_, index) => (
-            <div key={index} className="discovery-card discovery-skeleton" />
-          ))}
-        </div>
-        </div>
-      )}
-      {message !== null && <div className="discovery-empty"><span aria-hidden="true">◌</span><p>{message}</p></div>}
-
-      {libraryResults.length > 0 && (
-        <section className="discovery-library" aria-labelledby="library-title">
-          <div className="shelf-heading">
-            <div><span className="eyebrow">Watch together</span><h3 id="library-title">{tab === 'history' ? 'Previously watched' : tab === 'search' ? `Results for “${query}”` : 'Trending now'}</h3></div>
-            <span>{libraryResults.length} videos</span>
-          </div>
-        <ul className="discovery-grid">
-          {visibleResults.map((result) => (
-            <li key={result.videoId} className="discovery-card">
-              {result.thumbnailUrl !== '' && (
-                <div className="discovery-thumb-wrap">
-                  <img className="discovery-thumb" src={result.thumbnailUrl} alt="" loading="lazy" onError={handleThumbnailError} />
-                  {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
-                </div>
-              )}
-              <div className="discovery-info">
-                <span className="channel-avatar" aria-hidden="true">{(result.channelTitle || result.title).slice(0, 1).toUpperCase()}</span>
-                <span className="discovery-copy">
-                <span className="discovery-title" title={result.title}>
-                  {result.title}
-                </span>
-                <span className="discovery-meta">
-                  {result.channelTitle}
-                </span>
-                </span>
-              </div>
-              <div className="discovery-actions">
-                {isHost && (
-                  <button
-                    type="button"
-                    className="button button-primary discovery-btn"
-                    onClick={() => onPlayNow(result.videoId)}
-                  >
-                    ▶ Play
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="button discovery-btn"
-                  onClick={() => handleQueue(result)}
-                >
-                  {queuedId === result.videoId ? 'Queued ✓' : '+ Queue'}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-        {visibleCount < libraryResults.length && (
-          <button type="button" className="button browse-more" onClick={() => setVisibleCount((count) => count + 12)}>
-            Show more videos
-          </button>
-        )}
-        </section>
-      )}
-
-      {nextToken !== null && !loading && (
-        <div className="discovery-more">
-          <button
-            type="button"
-            className="button discovery-more-btn"
-            onClick={() => void handleShowMore()}
-            disabled={loadingMore}
-          >
-            {loadingMore ? 'Loading…' : 'Show more'}
-          </button>
-        </div>
-      )}
+      {nextToken !== null && !loading && mode !== 'history' && <button type="button" className="button browse-load-more" onClick={() => void handleShowMore()} disabled={loadingMore}>{loadingMore ? 'Loading more…' : 'Load more videos'}</button>}
     </div>
   );
+}
+
+interface ShelfProps {
+  title: string; eyebrow: string; items: readonly SearchResult[]; isHost: boolean; queuedId: string | null;
+  onPlay(videoId: string): void; onQueue(result: SearchResult): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void;
+}
+
+function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
+  return <section className="video-shelf" aria-labelledby={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>
+    <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><span>{items.length} videos</span></header>
+    <ul className="shelf-track">
+      {items.map((result) => <li key={result.videoId} className="media-card">
+        <div className="media-thumb">
+          <img src={result.thumbnailUrl} alt="" loading="lazy" onError={onImageError} />
+          {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
+          <div className="media-card-actions">
+            {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId)} aria-label={`Play ${result.title}`}>▶</button>}
+            <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queuedId === result.videoId ? 'Queued ✓' : '+ Queue'}</button>
+          </div>
+        </div>
+        <div className="media-card-copy"><span className="channel-avatar" aria-hidden="true">{(result.channelTitle || result.title).slice(0, 1).toUpperCase()}</span><span><strong title={result.title}>{result.title}</strong><small>{result.channelTitle || 'YouTube'}</small></span></div>
+      </li>)}
+    </ul>
+  </section>;
+}
+
+function BrowseLoading(): JSX.Element {
+  return <div className="browse-loading" aria-busy="true" aria-label="Loading videos"><div className="orbit-loader" aria-hidden="true"><span /><span /><span /></div><div className="shelf-track">{Array.from({ length: 5 }, (_, index) => <div key={index} className="media-card media-card-skeleton" />)}</div></div>;
 }

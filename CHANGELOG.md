@@ -3,6 +3,12 @@
 
 ## Unreleased
 
+### Phase 20A — Browse and player shell
+
+- Replaced the featured-billboard Browse page with persistent video search, fifteen working category filters, paginated cinematic shelves, room-history continuation, and compact media actions.
+- Expanded the working navigation language to Browse, Room, Parties, Profile, Settings, and About while keeping backend-gated social and creator destinations hidden.
+- Refined the watch room with collapsible Queue and Members modules, a player-first hierarchy, and a consolidated chat surface without double borders.
+
 ### Advanced UI and workflow
 
 - Added an OTT-inspired discovery experience, advanced categorized settings, responsive density and backdrop controls, accessibility preferences, and branded startup treatment.

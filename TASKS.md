@@ -40,6 +40,9 @@ Phase 14 — Persistent Community Rooms
 
 ## In Progress
 
+- Phase 20A: persistent search, expanded category rail, cinematic video shelves, room-history continuation, collapsible room modules, and chat border correction implemented on `frontend/phase-20a-browse-player`.
+- Phase 20B/20C: backend contract delivered in `PHASE_20_UI_BACKEND_HANDOFF.md`; frontend navigation remains hidden until capabilities report deployed support.
+
 - Browse/watch-room overhaul: cinematic featured title, fuller responsive YouTube-style library grid, progressive result reveal, player-first room hierarchy, and clearer queue/chat/member modules on `frontend/browse-room-overhaul`.
 - Shell/lobby polish: icon-led responsive navigation, cinematic create/join workspace, clearer queue voting hierarchy, and purposeful chat empty state implemented; visual review pending.
 - Settings phase: macOS-style Appearance surface, glow actions, tactile switches, orbit loader, text scaling, transparency/focus accessibility controls, and playback presets implemented; cross-theme visual review pending.

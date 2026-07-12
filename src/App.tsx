@@ -3,7 +3,6 @@ import type { AppInfo } from '@shared/ipc';
 import { generateRoomCode } from '@shared/room';
 import { AboutScreen } from '@/components/AboutScreen';
 import { BrandMark } from '@/components/BrandMark';
-import { ChatPanel } from '@/components/ChatPanel';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { HomeScreen } from '@/components/HomeScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
@@ -264,7 +263,7 @@ export function App(): JSX.Element {
               className={`nav-item${view === 'rooms' ? ' nav-item-active' : ''}`}
               onClick={() => setView('rooms')}
             >
-              <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">My Rooms</span>
+              <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">Parties</span>
             </button>
           )}
           <button
@@ -272,7 +271,7 @@ export function App(): JSX.Element {
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
             onClick={() => setView('card')}
           >
-            <span className="nav-icon" aria-hidden="true">◇</span><span className="nav-label">My Card</span>
+            <span className="nav-icon" aria-hidden="true">◇</span><span className="nav-label">Profile</span>
           </button>
           <button
             type="button"
@@ -330,9 +329,8 @@ export function App(): JSX.Element {
           </header>
         )}
         {view === 'discover' && (
-          <div className="discover-layout fade-up">
-            <div className="discover-main card">
-              <h1 className="page-title">Browse</h1>
+          <div className="discover-layout discover-layout-full fade-up">
+            <div className="discover-main">
               <DiscoveryPanel
                 callerId={identity?.id ?? 'anonymous'}
                 isHost={inRoom ? selfIsHost : true}
@@ -344,15 +342,6 @@ export function App(): JSX.Element {
                 }}
               />
             </div>
-            {session !== null && identity !== null && (
-              <aside className="room-aside card">
-                <ChatPanel
-                  service={session.service}
-                  members={session.state.members}
-                  selfName={identity.displayName}
-                />
-              </aside>
-            )}
           </div>
         )}
         {view === 'settings' && <SettingsPanel user={authUser} />}
