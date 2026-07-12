@@ -13,6 +13,7 @@
 - Added privacy-safe presence heartbeats and live friend status labels without exposing party access codes.
 - Replaced prototype glyph controls with a dependency-free NightWatch SVG icon system across navigation, Browse categories, shelf controls, media actions, Settings, room actions, and notifications.
 - Replaced the category scrollbar with accessible left/right category controls and smooth snap-aligned navigation.
+- Rebuilt Messages as a proper workspace with conversation search, a collapsible group creator, stable older-message paging, live near-bottom scrolling, centred system notices, delivery feedback, and responsive compact navigation.
 - Added persistent Moment Notes below the official player with private/friends/party visibility, emoji stamps, filters, edit/delete, and host-synchronized seeking.
 - Added server-validated achievement profile borders with a cinematic profile studio and selected-border preview.
 - Added a capability-gated Creator Club workspace with club creation, bounty lifecycle, YouTube submissions, and one-vote-per-bounty judging.
