@@ -39,10 +39,15 @@ $branches = git for-each-ref --format='%(refname:short)' refs/remotes/origin |
 $anyUnmerged = $false
 
 foreach ($branch in $branches) {
-  $ahead = @(git log --oneline "$mainRef..$branch").Count
+  # `git cherry` marks a commit '-' when an equivalent patch is already on main.
+  # Plain `git log main..branch` cannot see that: auto-merge SQUASHES, which
+  # rewrites the commit, so the original is not an ancestor of main and every
+  # merged branch would be reported as still outstanding forever.
+  $unmerged = @(git cherry $mainRef $branch | Where-Object { $_ -like '+*' })
+  $ahead = $unmerged.Count
   $behind = @(git log --oneline "$branch..$mainRef").Count
 
-  # Fully merged and not moving: nothing to say about it.
+  # Fully merged (or squash-merged) and not moving: nothing to say about it.
   if ($ahead -eq 0) { continue }
 
   $anyUnmerged = $true
@@ -59,9 +64,10 @@ foreach ($branch in $branches) {
     Write-Host "  BEHIND main by $behind commit(s) - rebase before merging" -ForegroundColor Red
   }
 
-  $log = git log --oneline --no-merges "$mainRef..$branch"
-  foreach ($line in $log) {
-    Write-Host ('    ' + $line) -ForegroundColor DarkGray
+  foreach ($entry in $unmerged) {
+    $sha = ($entry -replace '^\+\s*', '').Trim()
+    $subject = git log -1 --format='%h %s' $sha
+    Write-Host ('    ' + $subject) -ForegroundColor DarkGray
   }
 }
 
