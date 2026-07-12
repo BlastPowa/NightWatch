@@ -43,20 +43,14 @@ async function detect(): Promise<SocialCapabilities> {
     return NONE;
   }
 
-  const [friends, messaging, momentNotes] = await Promise.all([
+  const [friends, messaging, momentNotes, creatorClubs] = await Promise.all([
     probe('get_social_graph', {}),
     probe('list_conversations', {}),
     probe('list_moment_notes', { p_video_id: 'AAAAAAAAAAA' }),
+    probe('list_my_clubs', {}),
   ]);
 
-  return {
-    friends,
-    messaging,
-    momentNotes,
-    // Phase 20C is not built. It stays false until its migrations, RLS, RPCs,
-    // moderation, and tests ship.
-    creatorClubs: false,
-  };
+  return { friends, messaging, momentNotes, creatorClubs };
 }
 
 /** Cached after the first successful probe; safe to call from render paths. */

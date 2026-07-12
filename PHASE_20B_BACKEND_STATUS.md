@@ -1,8 +1,10 @@
 # Phase 20B — Backend Status (for the frontend lane)
 
 Branch: `backend/phase-20b-social`, based on `origin/main` @ v0.1.16.
-Backend lane: **complete. Migrations 0006–0009 applied, acceptance test green.**
-Phase 20C: **not started** (deliberately — the handoff gates it on 20B being done).
+Backend lane: **complete. Migrations 0006–0009 applied, acceptance test green.** Realtime added (`0010`).
+
+**Phase 20C** (creator clubs/bounties) is built on a stacked branch,
+`backend/phase-20c-creator` — see `PHASE_20C_BACKEND_STATUS.md`. **Merge 20B first.**
 
 ---
 
