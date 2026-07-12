@@ -2950,3 +2950,115 @@ input {
 .notification-dismiss:hover {
   color: var(--nw-text);
 }
+
+/* ---------------------------------------------------------------------------
+   TEMPORARY SCAFFOLD — Phase 21 (club directory + highlights).
+
+   FRONTEND LANE: this is groundwork, not design. It is intentionally plain and
+   uses no clever layout, so replacing it is a rewrite rather than a fight.
+   Delete this whole block when you restyle; the components carry notes on which
+   BEHAVIOUR must survive the redesign (the rest is yours).
+--------------------------------------------------------------------------- */
+
+.club-directory,
+.highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.club-directory-search {
+  display: flex;
+  gap: 8px;
+}
+
+.club-directory-search input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--nw-border, rgba(255, 255, 255, 0.09));
+  border-radius: 8px;
+  background: var(--nw-surface, #131824);
+  color: var(--nw-text);
+}
+
+.club-directory-list,
+.highlights-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.club-directory-item,
+.highlights-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--nw-border, rgba(255, 255, 255, 0.08));
+  border-radius: 10px;
+  background: var(--nw-surface, #131824);
+}
+
+.club-directory-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.club-directory-copy p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--nw-text-dim, rgba(230, 232, 238, 0.6));
+}
+
+.club-directory-copy small {
+  display: block;
+  color: var(--nw-text-dim, rgba(230, 232, 238, 0.5));
+  font-size: 0.72rem;
+}
+
+.club-directory-member {
+  font-size: 0.76rem;
+  color: var(--nw-text-dim, rgba(230, 232, 238, 0.55));
+}
+
+.club-directory-empty,
+.highlights-empty {
+  margin: 8px 0;
+  color: var(--nw-text-dim, rgba(230, 232, 238, 0.55));
+  font-size: 0.84rem;
+}
+
+.highlights-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.highlights-head h3 {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.highlights-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.highlights-count {
+  flex: 1;
+  color: var(--nw-text-dim, rgba(230, 232, 238, 0.55));
+  font-size: 0.78rem;
+}
+
+.club-settings {
+  margin-bottom: 20px;
+}
+
+.club-settings-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}

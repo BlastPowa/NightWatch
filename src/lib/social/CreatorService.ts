@@ -25,7 +25,13 @@ export interface Club {
   ownerId: string;
   role: ClubRole;
   memberCount: number;
+  /** 'public' means listed in the directory. Clubs start private (0015). */
+  visibility: ClubVisibility;
+  /** Suspended clubs leave the directory and stop accepting joins. */
+  suspended: boolean;
 }
+
+export type ClubVisibility = 'private' | 'public';
 
 export interface Bounty {
   id: string;
@@ -121,6 +127,8 @@ export async function listMyClubs(): Promise<SocialResult<Club[]>> {
           ? row['role']
           : 'member') as ClubRole,
         memberCount: Number(row['member_count'] ?? 0),
+        visibility: row['visibility'] === 'public' ? 'public' : 'private',
+        suspended: row['suspended'] === true,
       })),
   );
 }
