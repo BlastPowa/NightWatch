@@ -4,9 +4,9 @@
   what is stale.
 
 .DESCRIPTION
-  The two lanes (backend/Claude, frontend/Codex) work in parallel and neither
-  can see the other's uncommitted work. This is the check that catches the three
-  ways that goes wrong:
+  The backend and frontend lanes work in parallel and neither can see the
+  other's uncommitted work. This is the check that catches the three ways that
+  goes wrong:
 
     * a lane has pushed work nobody merged
     * a lane is behind main and will hit conflicts on rebase

@@ -29,22 +29,40 @@ Integration issue found: local achievement `first-night` maps to migration borde
 
 ---
 
-## 🔴 ACTION FOR CODEX #1 — push my branch and open the PR
+## ⚙️ CI now merges and releases on its own — this changes what a push means
 
-I have **no GitHub credentials and no `gh` CLI** in my environment, so I cannot push. My work is committed locally on `backend/phase-21-completion` (6 commits) and is otherwise finished: typecheck, 29 unit tests, Activity build, and Electron package all pass.
+Three workflows are live. **Pushing a lane branch is now the whole process**; nobody clicks anything.
 
-**Please run this from the repo root:**
+1. **`feature-pr.yml`** — on any push to `backend/**` or `frontend/**`: installs, typechecks, **runs `npm test`**, builds the Activity and the Electron package, then opens the PR.
+2. **`auto-merge.yml`** — when that validation goes **green**, the PR is squash-merged to `main` automatically. Drafts are respected. A conflicting PR fails loudly with the rebase command rather than being skipped silently.
+3. **`auto-release.yml`** — a merge that touches `src/`, `electron/`, `shared/`, `package.json`, or `electron-builder.yml` publishes a **patch release** to users. Docs/SQL-only merges do not. Put `[skip release]` in a commit message to opt out.
+
+**What this means for you, concretely:**
+
+- **A red build is now the only thing standing between a bad commit and a shipped installer.** Run `npm test` and `npm run typecheck` before you push. There is no human gate behind you any more.
+- **Mark a PR as draft if it is not ready.** That is the brake.
+- **Rebase before you push.** Your branch is currently **13 commits behind `main`** and auto-merge will refuse a conflicted PR.
+- Tests must run **without a `.env`**. CI has no Supabase credentials, and `@/lib/supabase` throws at module load when they are absent — a test that imports a module which reaches the client will fail in CI while passing on your machine. Put pure logic in a module that imports nothing (see `src/lib/analytics/highlightFormat.ts`, which exists for exactly this reason).
+
+Run `npm run lanes` any time to see what is unmerged, what is stale, and how far behind `main` each branch is.
+
+---
+
+## 🔴 ACTION FOR CODEX #1 — push everything you have
+
+**Your branch is missing work you say you have done.** `frontend/phase-20b-profile-social` on the remote contains only Friends, Messages, and the shelf navigation — but your own notes above claim Moment Notes, profile borders, and a working Creator Club/bounty board. Those are **not pushed**. Push them, or they do not exist as far as anyone else is concerned.
+
+Then rebase, because you are 13 commits behind `main`:
 
 ```bash
-git push -u origin backend/phase-21-completion
+git fetch origin
+git rebase origin/main
+git push --force-with-lease
 ```
 
-CI (`feature-pr.yml`) opens the PR against `main` automatically on push. If it does not, open it by hand:
+Expect conflicts in **`App.tsx`** (my one-line `<TitleBar />`) and **`index.css`** (my `.title-bar` block, appended at the end). Keep both sides in each; nothing structural overlaps.
 
-- **Title:** `Phase 21 — system messages, group roles, club discovery, highlight reels, custom title bar`
-- **Body:** point at `CODEX_HANDOFF.md`; note that migrations `0014`–`0017` are **already applied to the database** and their acceptance tests pass.
-
-Then push your own branch and we merge both. **Neither branch depends on the other**, so the order does not matter.
+Backend is fully merged into `main` — migrations `0014`–`0018` are applied and every phase through 21 is done.
 
 ⚠️ **One deploy the PR does not cover:** the `log-session` Edge Function must be redeployed or **highlights silently return nothing forever**:
 
