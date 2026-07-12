@@ -23,6 +23,58 @@ Integration issue found: local achievement `first-night` maps to migration borde
 
 ---
 
+## 🔴 ACTION FOR CODEX #1 — push my branch and open the PR
+
+I have **no GitHub credentials and no `gh` CLI** in my environment, so I cannot push. My work is committed locally on `backend/phase-21-completion` (6 commits) and is otherwise finished: typecheck, 29 unit tests, Activity build, and Electron package all pass.
+
+**Please run this from the repo root:**
+
+```bash
+git push -u origin backend/phase-21-completion
+```
+
+CI (`feature-pr.yml`) opens the PR against `main` automatically on push. If it does not, open it by hand:
+
+- **Title:** `Phase 21 — system messages, group roles, club discovery, highlight reels, custom title bar`
+- **Body:** point at `CODEX_HANDOFF.md`; note that migrations `0014`–`0017` are **already applied to the database** and their acceptance tests pass.
+
+Then push your own branch and we merge both. **Neither branch depends on the other**, so the order does not matter.
+
+⚠️ **One deploy the PR does not cover:** the `log-session` Edge Function must be redeployed or **highlights silently return nothing forever**:
+
+```bash
+supabase functions deploy log-session --no-verify-jwt
+```
+
+---
+
+## 🔴 ACTION FOR CODEX #2 — build the UIs for what is still unreachable
+
+Everything below is **deployed, tested, and callable, with zero UI**. A user cannot reach any of it. Ranked by how much is being wasted:
+
+1. **Notification centre / bell.** `0013` has been live since v0.1.18 and *nothing renders it*. Clubs, bounties, and moderation all emit notifications into a void. This is the single biggest waste in the codebase.
+   `countUnreadNotifications()`, `listNotifications()`, `markNotificationRead()`, `markAllNotificationsRead()`, `subscribeToNotifications()`. Switch on `kind` but **always keep a default branch** — `kind` is a plain string so an older client meeting a newer server degrades instead of crashing.
+
+2. **Club discovery.** `searchClubs()` / `setClubVisibility()` / `setClubSuspended()`. Needs: a browse/search view, an owner toggle to list the club publicly, and a staff suspend control. Clubs are **private by default**, so without the toggle nobody can ever be found.
+
+3. **Highlight reels.** `getSessionHighlights()` + `exportHighlightsMarkdown()`. Surface on the room-owner Insights panel. **Play** = seek the existing IFrame player. **Export** = copy Markdown to the clipboard. **Never** add a "download clip" affordance — see the compliance note below; there is nothing to download, by design.
+
+4. **Group member & role controls.** `setConversationRole(id, userId, 'moderator' | 'member')` — owner-only. Without this UI, `role` is unreachable and every group is owner-plus-members forever.
+
+5. **Centred `kind === 'system'` messages** — `0014` is applied and emitting them *now*. Until you render them, they appear as blank/odd chat bubbles.
+
+6. **Creator moderation queue + audit log.** `listClubReports()`, `resolveReport()`, `getClubAudit()`, `reportContent()`. Staff-only. Reports can already be *filed* by anyone through the API — nobody can *work the queue* without this.
+
+**Gate each one on its capability flag** (all default false, and **hide** rather than disable):
+
+```ts
+const caps = await getSocialCapabilities();
+// friends, messaging, momentNotes, creatorClubs,
+// notifications, clubDiscovery, highlights   ← the last three are new
+```
+
+---
+
 ## Backend replies to your three asks (2026-07-12, later)
 
 **1. The border id mismatch — fixed, and you were right.** `0017_fix_border_achievement_id.sql`. The catalog required achievement `first-room`; the tracker has only ever awarded `first-night`, so `unlock_border` compared against something that could never be in `player_achievements`. That border was **unwinnable by anyone, ever**, and it failed silently rather than erroring, which is why it survived this long.
@@ -179,13 +231,12 @@ Gate every surface on `getSocialCapabilities()` and **hide**, do not disable, an
 
 ## Owner actions (Blast)
 
-1. ~~Apply `0014`~~ — **done.**
-1b. **Apply `0015`, `0016`, and `0017`**, then run `supabase/tests/phase21_discovery_highlights_test.sql`. Expect `ALL PHASE 21 DISCOVERY + HIGHLIGHT TESTS PASSED`. It rolls back — safe against the live project.
-1c. **Redeploy the `log-session` Edge Function** — it now records which video a reaction belongs to, and highlights are empty without it:
+1. ~~Apply `0014`, `0015`, `0016`, `0017`~~ — **all applied.** Migrations are done; nothing is outstanding in the database.
+1b. **Redeploy the `log-session` Edge Function.** Not covered by any PR, and **highlights return nothing forever without it** — it now records which video a reaction belongs to:
    ```
    supabase functions deploy log-session --no-verify-jwt
    ```
-   (No new secrets.) Sessions recorded before this deploy have no video attribution and will never produce highlights; that is unavoidable and the code drops them rather than guessing.
+   (No new secrets.) Sessions recorded before this deploy have no video attribution and can never produce highlights; the code drops them rather than guessing.
 2. **Confirm `0010` really is in the realtime publication.** It was merged in code and I have never seen it verified against the database. If it is missing, every realtime subscription connects and then silently receives nothing — no error anywhere.
    ```sql
    select tablename from pg_publication_tables
