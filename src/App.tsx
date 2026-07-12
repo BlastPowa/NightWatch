@@ -7,6 +7,7 @@ import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { HomeScreen } from '@/components/HomeScreen';
 import { FriendsScreen } from '@/components/FriendsScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
+import { MessagesScreen } from '@/components/MessagesScreen';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
@@ -21,6 +22,7 @@ import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
 import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
+import { createDirectConversation } from '@/lib/social/MessagingService';
 import {
   createIdentity,
   loadIdentity,
@@ -37,7 +39,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'discover' | 'rooms' | 'friends' | 'settings' | 'card' | 'about';
+type View = 'main' | 'discover' | 'rooms' | 'friends' | 'messages' | 'settings' | 'card' | 'about';
 
 interface PendingVideo {
   videoId: string;
@@ -57,6 +59,7 @@ export function App(): JSX.Element {
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
   const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     return achievementTracker.onUnlock((achievement) => {
@@ -276,6 +279,7 @@ export function App(): JSX.Element {
             </button>
           )}
           {socialCapabilities.friends && <button type="button" className={`nav-item${view === 'friends' ? ' nav-item-active' : ''}`} onClick={() => setView('friends')}><span className="nav-icon" aria-hidden="true">♧</span><span className="nav-label">Friends</span></button>}
+          {socialCapabilities.messaging && <button type="button" className={`nav-item${view === 'messages' ? ' nav-item-active' : ''}`} onClick={() => setView('messages')}><span className="nav-icon" aria-hidden="true">▱</span><span className="nav-label">Messages</span></button>}
           <span className="nav-section-label">You</span>
           <button
             type="button"
@@ -363,7 +367,8 @@ export function App(): JSX.Element {
         )}
         {view === 'settings' && <SettingsPanel user={authUser} />}
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
-        {view === 'friends' && socialCapabilities.friends && <FriendsScreen />}
+        {view === 'friends' && socialCapabilities.friends && <FriendsScreen onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
+        {view === 'messages' && socialCapabilities.messaging && <MessagesScreen initialConversationId={selectedConversationId} />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
         {view === 'about' && <AboutScreen />}
         {/* The room stays mounted while other views are open so the player,

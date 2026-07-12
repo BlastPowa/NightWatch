@@ -4,7 +4,7 @@ import { subscribeToFriendRequests } from '@/lib/social/SocialRealtime';
 
 const EMPTY: SocialGraph = { friends: [], incoming: [], outgoing: [], suggestions: [] };
 
-export function FriendsScreen(): JSX.Element {
+export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }): JSX.Element {
   const [graph, setGraph] = useState<SocialGraph>(EMPTY);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export function FriendsScreen(): JSX.Element {
     {message !== null && <p className="social-notice" role="status">{message}</p>}
     {loading ? <div className="social-loading"><div className="orbit-loader" aria-hidden="true"><span /><span /><span /></div><span>Loading your circle…</span></div> : <div className="social-sections">
       {graph.incoming.length > 0 && <RelationSection title="Friend requests" subtitle="People waiting for your response" items={graph.incoming} renderActions={(person) => <><button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => acceptFriendRequest(person.userId), `${person.displayName} is now your friend.`)}>Accept</button><button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => declineFriendRequest(person.userId), 'Request declined.')}>Decline</button></>} />}
-      <RelationSection title="Your friends" subtitle="Accepted NightWatch connections" items={graph.friends} empty="Watch together in persistent rooms to discover people you know." renderActions={(person) => <button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => removeFriend(person.userId), `${person.displayName} was removed.`)}>Remove</button>} />
+      <RelationSection title="Your friends" subtitle="Accepted NightWatch connections" items={graph.friends} empty="Watch together in persistent rooms to discover people you know." renderActions={(person) => <><button className="button button-primary" onClick={() => onMessage(person.userId)}>Message</button><button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => removeFriend(person.userId), `${person.displayName} was removed.`)}>Remove</button></>} />
       {graph.suggestions.length > 0 && <RelationSection title="People you watched with" subtitle="Suggestions are not friends until they accept" items={graph.suggestions} renderActions={(person) => <button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => sendFriendRequest(person.userId), `Request sent to ${person.displayName}.`)}>Add friend</button>} />}
       {graph.outgoing.length > 0 && <RelationSection title="Sent requests" subtitle="Waiting for a response" items={graph.outgoing} renderActions={(person) => <button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => cancelFriendRequest(person.userId), 'Request cancelled.')}>Cancel request</button>} />}
     </div>}
