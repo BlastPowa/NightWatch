@@ -4,6 +4,8 @@
 
 Last updated: 2026-07-12. Backend branch in flight: `backend/phase-21-completion`.
 
+Frontend shell update: Codex has added a dependency-free SVG icon system and explicit arrow navigation for both video shelves and the category rail. This is merge-independent and does not change platform, IPC, Realtime, or Supabase contracts. Preserve `Icon.tsx` and the new Browse controls when resolving the later `App.tsx`/`index.css` rebase.
+
 ## Frontend correction — current state after the original handoff
 
 The older sections below describe the state of released `main`, not the active frontend branch. `frontend/phase-20b-profile-social` is based on v0.1.18 and now contains capability-gated Friends, persistent Messages, consent-based presence settings, Moment Notes, achievement profile borders, polished shelf arrows, and a working Creator Club/bounty board. These features remain unreleased until that PR merges.
