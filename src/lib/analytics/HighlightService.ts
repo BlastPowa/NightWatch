@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { Highlight } from '@/lib/analytics/highlightFormat';
 
 /**
  * Highlight reels (Phase 21, closing the Phase 16 gap).
@@ -13,15 +14,18 @@ import { supabase } from '@/lib/supabase';
  * exactly the mistake this comment exists to prevent — if a future change makes
  * bytes of video move through NightWatch, it is out of policy (CLAUDE.md), not
  * merely out of scope.
+ *
+ * The pure formatting lives in ./highlightFormat, which imports nothing: this
+ * module reaches the Supabase client, and that throws at load when env vars are
+ * absent, which would make anything importing it untestable in CI.
  */
 
-export interface Highlight {
-  videoId: string;
-  /** Where the clip starts — already pulled back by a lead-in server-side. */
-  positionSeconds: number;
-  /** How many reactions landed in this window. The ranking signal. */
-  reactionCount: number;
-}
+export {
+  exportHighlightsMarkdown,
+  formatTimestamp,
+  highlightLink,
+  type Highlight,
+} from '@/lib/analytics/highlightFormat';
 
 /**
  * Highlights for one recorded session. Room owner only, enforced server-side.
@@ -46,37 +50,4 @@ export async function getSessionHighlights(
       positionSeconds: Number(row['position_seconds'] ?? 0),
       reactionCount: Number(row['reaction_count'] ?? 0),
     }));
-}
-
-/** "1:04:07" / "4:07" — YouTube's own convention, so it reads as expected. */
-export function formatTimestamp(totalSeconds: number): string {
-  const seconds = Math.max(0, Math.floor(totalSeconds));
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  const mm = hours > 0 ? String(minutes).padStart(2, '0') : String(minutes);
-  return `${hours > 0 ? `${hours}:` : ''}${mm}:${String(secs).padStart(2, '0')}`;
-}
-
-/** A deep link into the original video at the highlight. Never a media URL. */
-export function highlightLink(highlight: Highlight): string {
-  return `https://www.youtube.com/watch?v=${highlight.videoId}&t=${Math.floor(
-    highlight.positionSeconds,
-  )}s`;
-}
-
-/**
- * The exported reel: Markdown, because it pastes into a Discord message, a
- * YouTube description, or a stream's show notes without conversion — which is
- * what people actually do with a highlight list.
- */
-export function exportHighlightsMarkdown(highlights: readonly Highlight[]): string {
-  if (highlights.length === 0) {
-    return '# Highlights\n\nNo highlights — the room never reacted in a cluster.\n';
-  }
-  const lines = highlights.map((highlight) => {
-    const reactions = highlight.reactionCount === 1 ? '1 reaction' : `${highlight.reactionCount} reactions`;
-    return `- [${formatTimestamp(highlight.positionSeconds)}](${highlightLink(highlight)}) — ${reactions}`;
-  });
-  return `# Highlights\n\n${lines.join('\n')}\n`;
 }

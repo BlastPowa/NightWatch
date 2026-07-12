@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+// Imports the PURE module, not HighlightService. HighlightService reaches the
+// Supabase client, which throws at module load when env vars are absent — that
+// is exactly how this suite broke CI once. Do not "tidy" this back.
 import {
   exportHighlightsMarkdown,
   formatTimestamp,
   highlightLink,
   type Highlight,
-} from './HighlightService';
+} from './highlightFormat';
 
 const highlight = (over: Partial<Highlight> = {}): Highlight => ({
   videoId: 'dQw4w9WgXcQ',
