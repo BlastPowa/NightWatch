@@ -3,12 +3,17 @@
  * localStorage only — never synced to other members or any backend.
  */
 
-export type ThemeId = 'electric-teal' | 'shiny-gold' | 'legacy';
+export type ThemeId = 'electric-teal' | 'shiny-gold' | 'legacy' | 'moonlit-violet' | 'crimson-theatre' | 'oceanic' | 'evergreen' | 'rose-noir';
 
 export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'electric-teal', label: 'Electric Teal' },
   { id: 'shiny-gold', label: 'Shiny Gold' },
   { id: 'legacy', label: 'Legacy' },
+  { id: 'moonlit-violet', label: 'Moonlit Violet' },
+  { id: 'crimson-theatre', label: 'Crimson Theatre' },
+  { id: 'oceanic', label: 'Oceanic' },
+  { id: 'evergreen', label: 'Evergreen' },
+  { id: 'rose-noir', label: 'Rose Noir' },
 ];
 
 export interface VideoFilters {

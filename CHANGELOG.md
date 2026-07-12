@@ -13,6 +13,7 @@
 - Redesigned the app navigation, create/join lobby, queue interactions, and chat empty state with a more cinematic media-app hierarchy and compact icon navigation.
 - Expanded accessibility with interface text scaling, reduced transparency, and enhanced keyboard focus; added playback volume shortcuts and Neutral/Cinema/Vivid picture presets.
 - Refined Settings with macOS-inspired glass depth, luminous accent actions, tactile switches, and a reduced-motion-aware orbit loading treatment.
+- Expanded Atmosphere from three themes to eight with Moonlit Violet, Crimson Theatre, Oceanic, Evergreen, and Rose Noir presets.
 
 ### Backend/platform
 

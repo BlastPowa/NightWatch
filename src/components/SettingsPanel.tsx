@@ -29,6 +29,11 @@ const THEME_PREVIEW: Record<string, string> = {
   'electric-teal': 'linear-gradient(135deg,#080b16 50%,#173443 50%)',
   'shiny-gold': 'linear-gradient(135deg,#0f0c06 50%,#4b3a0c 50%)',
   legacy: 'linear-gradient(135deg,#1b1e24 50%,#3a4254 50%)',
+  'moonlit-violet': 'linear-gradient(135deg,#0c0918 50%,#39295f 50%)',
+  'crimson-theatre': 'linear-gradient(135deg,#120708 50%,#5b2027 50%)',
+  oceanic: 'linear-gradient(135deg,#04111b 50%,#164b68 50%)',
+  evergreen: 'linear-gradient(135deg,#06110e 50%,#1d4a3b 50%)',
+  'rose-noir': 'linear-gradient(135deg,#120912 50%,#512640 50%)',
 };
 
 export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
