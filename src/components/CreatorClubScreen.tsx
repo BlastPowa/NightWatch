@@ -15,6 +15,7 @@ import {
   reportContent,
   resolveReport,
   searchClubs,
+  setClubSuspended,
   setClubVisibility,
   setBountyStatus,
   submitToBounty,
@@ -159,6 +160,14 @@ export function CreatorClubScreen({ discoveryEnabled }: CreatorClubScreenProps):
     setView('board');
   }
 
+  async function toggleSuspended(): Promise<void> {
+    if (selectedClub === null || selectedClub.role === 'member') return;
+    const result = await setClubSuspended(selectedClub.id, !selectedClub.suspended);
+    if (result.status !== 'ok') { setError(creatorFailure(result.status)); return; }
+    await refreshClubs();
+    if (discoveryEnabled) await loadDirectory();
+  }
+
   async function toggleVisibility(): Promise<void> {
     if (selectedClub === null || selectedClub.role !== 'owner') return;
     // Read the club's own visibility (0019), never "is it in the directory".
@@ -204,7 +213,8 @@ export function CreatorClubScreen({ discoveryEnabled }: CreatorClubScreenProps):
 
         <main className="creator-board card">
           {selectedClub === null ? <div className="creator-empty creator-empty-large"><Icon name="sparkle" size={30} /><strong>Your creator board is ready</strong><small>Create a club to start collecting and judging community video ideas.</small></div> : <>
-            <header className="creator-board-header"><div><span className="eyebrow">{selectedClub.role} · {selectedClub.memberCount} members</span><h2>{selectedClub.name}</h2><p>{selectedClub.description || 'A cinematic space for community ideas.'}</p></div><div className="creator-board-actions">{discoveryEnabled && selectedClub.role === 'owner' && <button type="button" className="button" onClick={() => void toggleVisibility()}><Icon name={selectedClub.visibility === 'public' ? 'lock' : 'search'} size={15} />{selectedClub.visibility === 'public' ? 'Make private' : 'List publicly'}</button>}{selectedClub.role !== 'member' && <button type="button" className="button button-primary" onClick={() => setShowBountyComposer((value) => !value)}>Create bounty</button>}{selectedClub.role !== 'owner' && <button type="button" className="button" onClick={() => void leaveClub(selectedClub.id).then((result) => result.status === 'ok' ? refreshClubs() : setError(creatorFailure(result.status)))}>Leave</button>}</div></header>
+            <header className="creator-board-header"><div><span className="eyebrow">{selectedClub.role} · {selectedClub.memberCount} members</span><h2>{selectedClub.name}</h2><p>{selectedClub.description || 'A cinematic space for community ideas.'}</p></div><div className="creator-board-actions">{discoveryEnabled && selectedClub.role === 'owner' && <button type="button" className="button" onClick={() => void toggleVisibility()}><Icon name={selectedClub.visibility === 'public' ? 'lock' : 'search'} size={15} />{selectedClub.visibility === 'public' ? 'Make private' : 'List publicly'}</button>}{selectedClub.role !== 'member' && <button type="button" className="button button-primary" onClick={() => setShowBountyComposer((value) => !value)}>Create bounty</button>}{selectedClub.role !== 'member' && <button type="button" className="button" onClick={() => void toggleSuspended()} title={selectedClub.suspended ? 'Reopen this club to new members' : 'Hide this club and stop all new joins, including from existing invite links'}><Icon name={selectedClub.suspended ? 'search' : 'lock'} size={15} />{selectedClub.suspended ? 'Reinstate' : 'Suspend'}</button>}{selectedClub.role !== 'owner' && <button type="button" className="button" onClick={() => void leaveClub(selectedClub.id).then((result) => result.status === 'ok' ? refreshClubs() : setError(creatorFailure(result.status)))}>Leave</button>}</div></header>
+            {selectedClub.suspended && <p className="creator-suspended-notice">This club is suspended: it is hidden from the directory and is not accepting new members, including anyone holding an existing invite link.</p>}
             {showBountyComposer && <BountyComposer clubId={selectedClub.id} onCancel={() => setShowBountyComposer(false)} onCreated={() => { setShowBountyComposer(false); void refreshBounties(selectedClub.id); }} onError={setError} />}
             <div className="creator-tabs">{(['active','submissions','completed', ...(selectedClub.role !== 'member' ? ['moderation' as const] : [])] as const).map((value) => <button key={value} type="button" className={tab === value ? 'creator-tab creator-tab-active' : 'creator-tab'} onClick={() => setTab(value)}>{value === 'active' ? 'Active bounties' : value === 'submissions' ? 'With submissions' : value === 'moderation' ? 'Moderation' : 'Completed'}</button>)}</div>
             {tab === 'moderation' ? <ModerationBoard reports={reports} audit={audit} loading={moderationLoading} onResolve={resolve} /> : <><div className="bounty-list">{visibleBounties.map((bounty, index) => <article key={bounty.id} className={`bounty-card${bounty.id === selectedBountyId ? ' bounty-card-active' : ''}`} onClick={() => setSelectedBountyId(bounty.id)}><span className="bounty-rank">{String(index + 1).padStart(2,'0')}</span><div className="bounty-copy"><span><span className={`bounty-status bounty-status-${bounty.status}`}>{bounty.status}</span>{bounty.closesAt !== null && <small>Ends {new Date(bounty.closesAt).toLocaleDateString()}</small>}</span><h3>{bounty.title}</h3><p>{bounty.brief || 'No additional brief.'}</p><small>{bounty.submissionCount} submission{bounty.submissionCount === 1 ? '' : 's'}</small></div><div className="bounty-actions">{selectedClub.role !== 'member' && nextStatus(bounty) !== null && <button type="button" className="button" onClick={(event) => { event.stopPropagation(); void transition(bounty); }}>Move to {nextStatus(bounty)}</button>}<button type="button" className="button button-primary" onClick={(event) => { event.stopPropagation(); setSelectedBountyId(bounty.id); }}>Open</button></div></article>)}</div>{visibleBounties.length === 0 && <div className="creator-empty"><Icon name="creator" size={26} /><strong>Nothing in this view</strong><small>New challenges and submissions will appear here.</small></div>}</>}

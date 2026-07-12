@@ -3062,3 +3062,15 @@ input {
   gap: 8px;
   flex: none;
 }
+
+/* A suspended club is closed, not merely delisted — say so where staff will
+   see it, not only in a tooltip they may never hover. */
+.creator-suspended-notice {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 170, 90, 0.35);
+  background: rgba(255, 170, 90, 0.08);
+  color: var(--nw-text);
+  font-size: 0.78rem;
+}
