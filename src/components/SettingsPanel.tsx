@@ -29,6 +29,11 @@ const THEME_PREVIEW: Record<string, string> = {
   'electric-teal': 'linear-gradient(135deg,#080b16 50%,#173443 50%)',
   'shiny-gold': 'linear-gradient(135deg,#0f0c06 50%,#4b3a0c 50%)',
   legacy: 'linear-gradient(135deg,#1b1e24 50%,#3a4254 50%)',
+  'moonlit-violet': 'linear-gradient(135deg,#0c0918 50%,#39295f 50%)',
+  'crimson-theatre': 'linear-gradient(135deg,#120708 50%,#5b2027 50%)',
+  oceanic: 'linear-gradient(135deg,#04111b 50%,#164b68 50%)',
+  evergreen: 'linear-gradient(135deg,#06110e 50%,#1d4a3b 50%)',
+  'rose-noir': 'linear-gradient(135deg,#120912 50%,#512640 50%)',
 };
 
 export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
@@ -97,8 +102,9 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
 
         {section === 'playback' && (
           <><SettingsHeader title="Playback" description="Local controls applied through the official player API and safe CSS filters." /><section className="settings-grid settings-grid-two">
-            <div className="card settings-card"><h2>Volume</h2><RangeSetting label="Player volume" value={settings.volumePercent} min={0} max={100} unit="%" onChange={(volumePercent) => settingsStore.update({ volumePercent })} /></div>
-            <div className="card settings-card"><h2>Video image</h2>{(['brightness','contrast','saturation'] as const).map((key) => <RangeSetting key={key} label={key} value={settings.videoFilters[key]} min={50} max={150} unit="%" onChange={(value) => settingsStore.update({ videoFilters: { [key]: value } })} />)}<button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Reset video image</button></div>
+            <div className="card settings-card"><h2>Sound</h2><p>Sets your local player volume without changing anyone else’s.</p><RangeSetting label="Player volume" value={settings.volumePercent} min={0} max={100} unit="%" onChange={(volumePercent) => settingsStore.update({ volumePercent })} /><div className="quick-actions"><button type="button" className="button" onClick={() => settingsStore.update({ volumePercent: 0 })}>Mute</button><button type="button" className="button" onClick={() => settingsStore.update({ volumePercent: 50 })}>50%</button><button type="button" className="button" onClick={() => settingsStore.update({ volumePercent: 100 })}>Full</button></div></div>
+            <div className="card settings-card"><h2>Picture preset</h2><p>Safe local filters around the official YouTube player.</p><div className="preset-actions"><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Neutral</button><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: { brightness: 92, contrast: 112, saturation: 105 } })}>Cinema</button><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: { brightness: 105, contrast: 108, saturation: 120 } })}>Vivid</button></div></div>
+            <div className="card settings-card settings-card-wide"><h2>Fine-tune video image</h2>{(['brightness','contrast','saturation'] as const).map((key) => <RangeSetting key={key} label={key} value={settings.videoFilters[key]} min={50} max={150} unit="%" onChange={(value) => settingsStore.update({ videoFilters: { [key]: value } })} />)}<button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Reset video image</button></div>
           </section></>
         )}
 
@@ -107,7 +113,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'accessibility' && (
-          <><SettingsHeader title="Accessibility" description="Make motion and contrast comfortable for you." /><section className="settings-grid"><ToggleCard title="Reduce motion" description="Minimize entrances, shimmer, hover movement, and reaction travel." checked={settings.reduceMotion} onChange={(reduceMotion) => settingsStore.update({ reduceMotion })} /><ToggleCard title="Higher contrast" description="Strengthen text and borders across every theme." checked={settings.highContrast} onChange={(highContrast) => settingsStore.update({ highContrast })} /></section></>
+          <><SettingsHeader title="Accessibility" description="Tune readability, motion, transparency, and keyboard focus for this device." /><section className="settings-grid settings-grid-two"><div className="card settings-card settings-card-wide"><h2>Text size</h2><p>Scale NightWatch interface text without changing the YouTube player.</p><RangeSetting label="Interface text" value={settings.textScalePercent} min={90} max={125} unit="%" onChange={(textScalePercent) => settingsStore.update({ textScalePercent })} /></div><ToggleCard title="Reduce motion" description="Minimize entrances, shimmer, hover movement, and reaction travel." checked={settings.reduceMotion} onChange={(reduceMotion) => settingsStore.update({ reduceMotion })} /><ToggleCard title="Higher contrast" description="Strengthen text and borders across every theme." checked={settings.highContrast} onChange={(highContrast) => settingsStore.update({ highContrast })} /><ToggleCard title="Reduce transparency" description="Replace glass and translucent surfaces with solid backgrounds." checked={settings.reduceTransparency} onChange={(reduceTransparency) => settingsStore.update({ reduceTransparency })} /><ToggleCard title="Enhanced keyboard focus" description="Show a stronger focus ring when navigating controls with a keyboard." checked={settings.enhancedFocus} onChange={(enhancedFocus) => settingsStore.update({ enhancedFocus })} /></section></>
         )}
 
         {section === 'account' && (
@@ -115,7 +121,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'data' && (
-          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, and accessibility presentation.</p><button type="button" className="button" onClick={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast })}>Reset appearance</button></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><button type="button" className="button button-danger" onClick={() => settingsStore.update(DEFAULT_SETTINGS)}>Reset all settings</button></div></section></>
+          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, and accessibility presentation.</p><button type="button" className="button" onClick={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })}>Reset appearance</button></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><button type="button" className="button button-danger" onClick={() => settingsStore.update(DEFAULT_SETTINGS)}>Reset all settings</button></div></section></>
         )}
       </div>
     </div>

@@ -10,6 +10,11 @@
 - Rebuilt Browse around a cinematic featured title, channel-forward media cards, responsive shelves, and progressive result reveal; reshaped the room around a player-first stage with clearer queue, conversation, member, and host/viewer hierarchy.
 - Fixed feature validation reporting a failure when its branch had already been merged before the PR-opening step completed.
 - Added graceful thumbnail fallbacks for removed, private, or temporarily unavailable YouTube preview images.
+- Redesigned the app navigation, create/join lobby, queue interactions, and chat empty state with a more cinematic media-app hierarchy and compact icon navigation.
+- Expanded accessibility with interface text scaling, reduced transparency, and enhanced keyboard focus; added playback volume shortcuts and Neutral/Cinema/Vivid picture presets.
+- Refined Settings with macOS-inspired glass depth, luminous accent actions, tactile switches, and a reduced-motion-aware orbit loading treatment.
+- Expanded Atmosphere from three themes to eight with Moonlit Violet, Crimson Theatre, Oceanic, Evergreen, and Rose Noir presets.
+- Added a Browse profile toolbar with working room/settings shortcuts and robust Discord avatar metadata fallbacks.
 
 ### Backend/platform
 

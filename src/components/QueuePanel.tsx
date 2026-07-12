@@ -43,7 +43,7 @@ export function QueuePanel({
   return (
     <div className="queue-panel">
       <div className="queue-header">
-        <h2 className="settings-heading">Up next — vote to reorder</h2>
+        <p className="queue-guidance">Vote to shape what plays next</p>
         <span className="queue-count">
           {queue.entries.length > 0 ? queue.entries.length : ''}
         </span>

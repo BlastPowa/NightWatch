@@ -232,10 +232,13 @@ export function DiscoveryPanel({
       )}
 
       {loading && (
-        <div className="discovery-grid" aria-label="Loading videos" aria-busy="true">
+        <div className="discovery-loading" aria-label="Loading videos" aria-busy="true">
+          <div className="orbit-loader" aria-hidden="true"><span /><span /><span /></div>
+        <div className="discovery-grid">
           {Array.from({ length: 8 }, (_, index) => (
             <div key={index} className="discovery-card discovery-skeleton" />
           ))}
+        </div>
         </div>
       )}
       {message !== null && <div className="discovery-empty"><span aria-hidden="true">◌</span><p>{message}</p></div>}

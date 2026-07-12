@@ -66,6 +66,9 @@ export function App(): JSX.Element {
     document.documentElement.dataset['background'] = settings.backgroundStyle;
     document.documentElement.dataset['reduceMotion'] = String(settings.reduceMotion);
     document.documentElement.dataset['highContrast'] = String(settings.highContrast);
+    document.documentElement.dataset['reduceTransparency'] = String(settings.reduceTransparency);
+    document.documentElement.dataset['enhancedFocus'] = String(settings.enhancedFocus);
+    document.documentElement.style.setProperty('--nw-text-scale', String(settings.textScalePercent / 100));
     document.documentElement.style.setProperty('--nw-accent', settings.accent);
     document.documentElement.style.setProperty('--nw-glow-strength', `${settings.accentGlowPercent}%`);
     document.documentElement.style.setProperty('--nw-radius-lg', `${settings.cornerRadiusPx}px`);
@@ -236,14 +239,14 @@ export function App(): JSX.Element {
             className={`nav-item${view === 'discover' ? ' nav-item-active' : ''}`}
             onClick={() => setView('discover')}
           >
-            Browse
+            <span className="nav-icon" aria-hidden="true">⌂</span><span className="nav-label">Browse</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'main' ? ' nav-item-active' : ''}`}
             onClick={() => setView('main')}
           >
-            {inRoom ? 'Room' : 'Join'}
+            <span className="nav-icon" aria-hidden="true">▶</span><span className="nav-label">{inRoom ? 'Room' : 'Join'}</span>
           </button>
           {isElectron && (
             <button
@@ -251,7 +254,7 @@ export function App(): JSX.Element {
               className={`nav-item${view === 'rooms' ? ' nav-item-active' : ''}`}
               onClick={() => setView('rooms')}
             >
-              My Rooms
+              <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">My Rooms</span>
             </button>
           )}
           <button
@@ -259,21 +262,21 @@ export function App(): JSX.Element {
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
             onClick={() => setView('card')}
           >
-            My Card
+            <span className="nav-icon" aria-hidden="true">◇</span><span className="nav-label">My Card</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'settings' ? ' nav-item-active' : ''}`}
             onClick={() => setView('settings')}
           >
-            Settings
+            <span className="nav-icon" aria-hidden="true">⚙</span><span className="nav-label">Settings</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'about' ? ' nav-item-active' : ''}`}
             onClick={() => setView('about')}
           >
-            About
+            <span className="nav-icon" aria-hidden="true">i</span><span className="nav-label">About</span>
           </button>
         </nav>
 
@@ -303,6 +306,19 @@ export function App(): JSX.Element {
       </aside>
 
       <main className="content">
+        {view === 'discover' && (
+          <header className="browse-topbar">
+            <div className="browse-topbar-title"><span className="eyebrow">NightWatch</span><strong>Browse</strong></div>
+            <div className="browse-topbar-actions">
+              <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}>▶</button>
+              <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings">⚙</button>
+              <button type="button" className="profile-chip" onClick={() => setView(authUser !== null && isElectron ? 'rooms' : 'settings')} aria-label="Open account settings">
+                {authUser?.avatarUrl ? <img src={authUser.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{(authUser?.name ?? identity?.displayName ?? 'G').slice(0, 1).toUpperCase()}</span>}
+                <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
+              </button>
+            </div>
+          </header>
+        )}
         {view === 'discover' && (
           <div className="discover-layout fade-up">
             <div className="discover-main card">

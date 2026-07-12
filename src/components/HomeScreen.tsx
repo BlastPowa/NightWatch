@@ -49,15 +49,18 @@ export function HomeScreen({
   }
 
   return (
-    <section className="hero fade-up" aria-labelledby="home-title">
-      <span className="eyebrow hero-eyebrow">Your private screening room</span>
-      <h1 id="home-title" className="hero-title">NightWatch</h1>
-      <p className="hero-tagline">Watch together. Perfectly in sync.</p>
-      <p className="hero-support">
-        Open a room, invite your friends, and keep every play, pause, and reaction on the same beat.
-      </p>
+    <section className="lobby fade-up" aria-labelledby="home-title">
+      <div className="lobby-story">
+        <span className="eyebrow hero-eyebrow">Your private screening room</span>
+        <h1 id="home-title" className="hero-title">Tonight is better together.</h1>
+        <p className="hero-support">Open a room, invite your people, and keep every play, pause, queue pick, and reaction on the same beat.</p>
+        <div className="lobby-features" aria-label="NightWatch room features">
+          <span><b>Live</b> playback sync</span><span><b>Shared</b> queue and voting</span><span><b>Private</b> room codes</span>
+        </div>
+      </div>
 
-      <div className="card home-card">
+      <div className="card home-card lobby-card">
+        <div className="lobby-card-heading"><span className="eyebrow">Start watching</span><h2>{lockedRoom ? 'Join this watch party' : 'Create or join a room'}</h2><p>Your display name is only shown to people in the room.</p></div>
         <label className="field">
           <span className="field-label">Display name</span>
           <input
@@ -75,12 +78,12 @@ export function HomeScreen({
         </label>
 
         <button type="button" className="button button-primary button-lg" onClick={handleCreate}>
-          {lockedRoom ? 'Join the Watch Party' : 'Create Room'}
+          {lockedRoom ? 'Join the watch party' : 'Create a new room'}
         </button>
 
         {!lockedRoom && (
           <>
-            <div className="divider">or join with a code</div>
+            <div className="divider">Have an invite?</div>
 
             <form className="join-form" onSubmit={handleJoin}>
               <input
@@ -96,7 +99,7 @@ export function HomeScreen({
                 }}
               />
               <button type="submit" className="button">
-                Join
+                Join room
               </button>
             </form>
           </>
