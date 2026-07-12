@@ -6,6 +6,7 @@ import { QueuePanel } from '@/components/QueuePanel';
 import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
+import { Icon } from '@/components/Icon';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -14,7 +15,7 @@ interface RoomScreenProps {
   /** Persistent-room metadata (name/schedule), null for ephemeral rooms. */
   meta: RoomMeta | null;
   /** A video picked on the Discover page, to play or queue on arrival. */
-  pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue' } | null;
+  pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue'; positionSeconds?: number } | null;
   onPendingHandled(): void;
   onLeave(): void;
 }
@@ -48,7 +49,7 @@ export function RoomScreen({
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
-  const loadVideoRef = useRef<((videoId: string) => void) | null>(null);
+  const loadVideoRef = useRef<((videoId: string, startSeconds?: number) => void) | null>(null);
 
   // Opt-in session insights (Phase 17, ADR-014): record only while this
   // client is host AND the room owner enabled insights.
@@ -99,7 +100,7 @@ export function RoomScreen({
       }
       if (loadVideoRef.current !== null) {
         window.clearInterval(timer);
-        loadVideoRef.current(pendingVideo.videoId);
+        loadVideoRef.current(pendingVideo.videoId, pendingVideo.positionSeconds);
         onPendingHandled();
       } else if (attempts > 20) {
         window.clearInterval(timer);
@@ -177,7 +178,7 @@ export function RoomScreen({
             className="button button-glow"
             onClick={() => loadVideoRef.current?.(meta.premiereVideoId as string)}
           >
-            ▶ Start the premiere
+            <Icon name="play" size={16} /> Start the premiere
           </button>
         )}
         <span className={`room-status room-status-${room.status}`}>
@@ -196,6 +197,7 @@ export function RoomScreen({
             service={service}
             isHost={selfIsHost}
             roomCode={room.code}
+            allowRoomMomentNotes={meta !== null}
             takeNextFromQueue={queue.popNext}
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;

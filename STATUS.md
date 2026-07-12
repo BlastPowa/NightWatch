@@ -2,6 +2,20 @@
 
 **Released: `v0.1.18`.** See `CODEX_HANDOFF.md` for the live working state — it is kept current and supersedes this file where they disagree.
 
+## 2026-07-12 authoritative update
+
+Released baseline: `v0.1.18` (`16baf3a`). Active frontend: `frontend/phase-20b-profile-social`, based on v0.1.18.
+
+Implemented on the active frontend branch: Discord avatar/CSP repair, Friends, realtime Messages, shelf-arrow navigation, consent-based presence settings, Moment Notes, achievement profile borders, and Creator Club/bounty UI. Every social destination remains hidden until its deployed capability probe passes. Strict typecheck passes; production build verification is the current gate.
+
+Current shell pass: reusable local SVG icons now replace prototype glyphs across the sidebar, Browse, Settings, room actions, and notifications. Video shelves and the category rail use explicit arrow controls with smooth snapping instead of visible scrollbars.
+
+Remaining frontend integration: notification centre, group member/role controls and centred system messages from migration `0014`, friend profile/presence views, creator moderation/report/audit, exact Figma visual inspection after quota reset, final public rename/logo after the owner selects a name, and packaged two-client/update regression.
+
+The historical phase ledger below is retained for evidence; older "Current Work" text is not authoritative over this update.
+
+Phase 21 integration update: the frontend branch has been rebased onto the merged platform/backend work and now wires the new capability flags, public club directory, notification dismissal, group member/role controls, reaction highlight reels, and native Windows titlebar. Typecheck and all 29 unit tests pass; production builds and packaged regression remain the merge gate.
+
 Current Phase:
 Phase 21 — finishing the gaps left inside shipped phases (backend lane: `backend/phase-21-completion`).
 

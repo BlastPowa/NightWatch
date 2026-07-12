@@ -7,6 +7,9 @@ import { recordWatch } from '@/lib/rooms/HistoryService';
 import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
+import { MomentNotesPanel } from '@/components/MomentNotesPanel';
+import { useAuth } from '@/hooks/useAuth';
+import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
 import { useReactions } from '@/hooks/useReactions';
 import { useSettings } from '@/hooks/useSettings';
 import { YouTubePlayer } from '@/lib/player/YouTubePlayer';
@@ -18,10 +21,11 @@ interface PlayerPanelProps {
   service: RoomService;
   isHost: boolean;
   roomCode: string;
+  allowRoomMomentNotes: boolean;
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   /** Hands the parent a loader so other panels (queue) can start videos. */
-  exposeLoadVideo?: (loader: (videoId: string) => void) => void;
+  exposeLoadVideo?: (loader: (videoId: string, startSeconds?: number) => void) => void;
 }
 
 /**
@@ -34,6 +38,7 @@ export function PlayerPanel({
   service,
   isHost,
   roomCode,
+  allowRoomMomentNotes,
   takeNextFromQueue,
   exposeLoadVideo,
 }: PlayerPanelProps): JSX.Element {
@@ -43,16 +48,20 @@ export function PlayerPanel({
   const isHostRef = useRef(isHost);
   isHostRef.current = isHost;
   const takeNextRef = useRef(takeNextFromQueue);
+  const pendingSeekRef = useRef<number | null>(null);
   takeNextRef.current = takeNextFromQueue;
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
+  const [currentSeconds, setCurrentSeconds] = useState(0);
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
   const videoIdRef = useRef<string | null>(null);
   videoIdRef.current = videoId;
   const settings = useSettings();
+  const authUser = useAuth();
+  const socialCapabilities = useSocialCapabilities(authUser !== null);
 
   const { bursts, markers, send, removeBurst } = useReactions(
     service,
@@ -76,6 +85,15 @@ export function PlayerPanel({
       onReady: () => player.setVolume(settingsStore.get().volumePercent),
       onStateChange: (state) => {
         engineRef.current?.handleLocalStateChange(state);
+        if (
+          pendingSeekRef.current !== null &&
+          isHostRef.current &&
+          (state === 'playing' || state === 'cued' || state === 'buffering')
+        ) {
+          const target = pendingSeekRef.current;
+          pendingSeekRef.current = null;
+          engineRef.current?.seekTo(target);
+        }
         // Opt-in insights (Phase 17): the recorder no-ops unless enabled.
         if (isHostRef.current && (state === 'playing' || state === 'paused')) {
           sessionRecorder.playback(
@@ -151,6 +169,7 @@ export function PlayerPanel({
     }
     const timer = window.setInterval(() => {
       setDurationSeconds(playerRef.current?.getDuration() ?? 0);
+      setCurrentSeconds(playerRef.current?.getCurrentTime() ?? 0);
       if (playerRef.current?.getState() === 'playing') {
         achievementTracker.tickWatch(1);
       }
@@ -192,15 +211,16 @@ export function PlayerPanel({
     loadVideo(id);
   }
 
-  function loadVideo(id: string): void {
+  function loadVideo(id: string, startSeconds?: number): void {
     achievementTracker.record('video-loaded');
+    pendingSeekRef.current = typeof startSeconds === 'number' && startSeconds > 0 ? startSeconds : null;
     engineRef.current?.loadVideo(id);
   }
 
   const exposeLoadVideoRef = useRef(exposeLoadVideo);
   exposeLoadVideoRef.current = exposeLoadVideo;
   useEffect(() => {
-    exposeLoadVideoRef.current?.((id) => loadVideo(id));
+    exposeLoadVideoRef.current?.((id, startSeconds) => loadVideo(id, startSeconds));
     // loadVideo is stable in behavior (uses refs internally).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -262,6 +282,18 @@ export function PlayerPanel({
         </div>
         <ReactionBar disabled={!hasVideo} onReact={send} />
       </div>
+      {hasVideo && authUser !== null && socialCapabilities.momentNotes && (
+        <MomentNotesPanel
+          videoId={videoId}
+          roomCode={roomCode}
+          durationSeconds={durationSeconds}
+          currentSeconds={currentSeconds}
+          currentUserId={authUser.id}
+          isHost={isHost}
+          allowRoomVisibility={allowRoomMomentNotes}
+          onSeek={(seconds) => engineRef.current?.seekTo(seconds)}
+        />
+      )}
     </div>
   );
 }

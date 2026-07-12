@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
 import type { QueueBinding } from '@/hooks/useQueue';
+import { Icon } from '@/components/Icon';
 
 interface QueuePanelProps {
   queue: QueueBinding;
@@ -54,7 +55,7 @@ export function QueuePanel({
             title="Skip to the top-voted video now"
             onClick={onPlayNext}
           >
-            ▶ Play next
+            <Icon name="play" size={16} /> Play next
           </button>
         )}
       </div>

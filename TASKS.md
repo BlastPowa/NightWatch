@@ -1,5 +1,25 @@
 # Development Tasks
 
+## 2026-07-12 active frontend gate
+
+- [x] Discord avatar CSP and resilient fallback.
+- [x] Friends lifecycle and persistent direct/group Messages.
+- [x] Accessible shelf arrows replacing exposed media scrollbars.
+- [x] Local SVG icon system and category-rail arrow navigation replacing prototype glyphs and exposed scrollbars.
+- [x] Professional Messages workspace with search, group composer, sequence pagination, realtime scroll behavior, system notices, and responsive layouts.
+- [x] Consent-based friend presence settings.
+- [x] Moment Notes with privacy filters, edit/delete, and host-synchronized seek.
+- [x] Server-validated achievement profile borders.
+- [x] Capability-gated Creator Club, bounty lifecycle, submissions, and voting.
+- [x] Notification centre and unknown-kind-safe feed.
+- [ ] Group membership/roles and centred `0014` system notices.
+- [ ] Friend public profile/presence detail.
+- [x] Creator report submission, staff moderation queue, resolution controls, and audit history.
+- [ ] Moderated public club discovery UI after the Phase 21 service branch merges.
+- [ ] Rebase with Phase 21 titlebar/installer branch; packaged two-client regression.
+- [ ] Final rename/logo/installer art after owner supplies the exact public name.
+- [x] Phase 21 capability integration: club directory, notification retention controls, group roles/members, highlight reels, and native titlebar reconciliation.
+
 ## Current Phase
 
 Phase 14 — Persistent Community Rooms
@@ -39,6 +59,9 @@ Phase 14 — Persistent Community Rooms
 
 
 ## In Progress
+
+- Phase 20B frontend: Discord avatar repair, Friends lifecycle, and persistent realtime Messages implemented on `frontend/phase-20b-profile-social`; presence preferences, group member management, moment notes, and profile borders remain next.
+- Phase 21 design/platform: public rename awaits the selected name; Figma node `2235:2839` inspection is quota-blocked; custom Windows title bar and assisted NSIS installer contract delivered to Opus.
 
 - Phase 20A: persistent search, expanded category rail, cinematic video shelves, room-history continuation, collapsible room modules, and chat border correction implemented on `frontend/phase-20a-browse-player`.
 - Phase 20B/20C: backend contract delivered in `PHASE_20_UI_BACKEND_HANDOFF.md`; frontend navigation remains hidden until capabilities report deployed support.

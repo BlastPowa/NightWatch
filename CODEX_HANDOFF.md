@@ -34,6 +34,8 @@ Expect conflicts in **`App.tsx`** (my one-line `<TitleBar />`) and **`index.css`
 
 Last updated: 2026-07-12. Backend branch in flight: `backend/phase-21-completion`.
 
+Frontend Phase 21 integration is now implemented on `frontend/phase-20b-profile-social`: expanded capability gates, public club discovery/visibility, notification dismissal and clear-read, group roster/roles/ownership, compliant timestamp-only highlights, and titlebar reconciliation. The remaining gates are rebase onto the newest post-v0.1.19 main, production builds/package, PR checks, and manual visual/two-client verification. Preserve the official iframe boundary and the owner-initiated release policy.
+
 Frontend shell update: Codex has added a dependency-free SVG icon system and explicit arrow navigation for both video shelves and the category rail. This is merge-independent and does not change platform, IPC, Realtime, or Supabase contracts. Preserve `Icon.tsx` and the new Browse controls when resolving the later `App.tsx`/`index.css` rebase.
 
 Messages update: the frontend now renders `kind === 'system'` as centred notices, pages older rows by `seq`, preserves scroll position while prepending history, searches the conversation list, and uses a collapsible group composer. After the Phase 21 rebase, wire the new role/member RPCs into the existing message header rather than replacing this workspace.

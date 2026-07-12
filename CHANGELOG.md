@@ -3,6 +3,31 @@
 
 ## Unreleased
 
+### Phase 21 frontend integration
+
+- Added capability-gated public club discovery, join/open actions, and owner-controlled public/private directory listing.
+- Added notification dismissal and clear-read controls while preserving unread retention.
+- Added group membership administration with accepted-friend invites, 30-member limit feedback, role promotion/demotion, ownership transfer, removal, and leave flow.
+- Added compliant reaction-based highlight reels with official-player seeking and Markdown link export; no video downloading, clipping, proxying, or re-encoding.
+- Integrated the native Windows titlebar overlay with the cinematic shell without replacing OS window controls or Snap Layouts.
+
+### Phase 20B social frontend
+
+- Fixed packaged Discord avatars by allowing Discord CDN images in the production CSP and adding stable initial fallbacks across every account surface.
+- Added capability-gated Friends navigation with accepted friends, incoming/outgoing requests, co-watcher suggestions, realtime refresh, and working lifecycle actions.
+- Added persistent direct/group Messages UI with unread counts, sequence-safe paging state, realtime delivery, soft-delete tombstones, group creation, and direct-message launch from Friends.
+- Replaced exposed horizontal video scrollbars with accessible left/right shelf controls, smooth page-sized movement, and snap-aligned media cards.
+- Added consent-based friend presence controls with privacy-first defaults and no room-code exposure.
+- Added privacy-safe presence heartbeats and live friend status labels without exposing party access codes.
+- Replaced prototype glyph controls with a dependency-free NightWatch SVG icon system across navigation, Browse categories, shelf controls, media actions, Settings, room actions, and notifications.
+- Replaced the category scrollbar with accessible left/right category controls and smooth snap-aligned navigation.
+- Rebuilt Messages as a proper workspace with conversation search, a collapsible group creator, stable older-message paging, live near-bottom scrolling, centred system notices, delivery feedback, and responsive compact navigation.
+- Added Creator Club human moderation: member report submission, staff-only report queue, action/dismiss controls, and append-only audit history.
+- Added persistent Moment Notes below the official player with private/friends/party visibility, emoji stamps, filters, edit/delete, and host-synchronized seeking.
+- Added server-validated achievement profile borders with a cinematic profile studio and selected-border preview.
+- Added a capability-gated Creator Club workspace with club creation, bounty lifecycle, YouTube submissions, and one-vote-per-bounty judging.
+- Added a realtime notification centre with unread counts, safe unknown-event fallback copy, and individual or bulk read controls.
+
 ### Phase 20A — Browse and player shell
 
 - Replaced the featured-billboard Browse page with persistent video search, fifteen working category filters, paginated cinematic shelves, room-history continuation, and compact media actions.

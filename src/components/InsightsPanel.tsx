@@ -5,9 +5,11 @@ import {
   type SessionEvent,
   type SessionSummary,
 } from '@/lib/analytics/InsightsService';
+import { HighlightReelPanel } from '@/components/HighlightReelPanel';
 
 interface InsightsPanelProps {
   roomCode: string;
+  onPlayHighlight(videoId: string, positionSeconds: number): void;
 }
 
 function formatSession(session: SessionSummary): string {
@@ -30,7 +32,7 @@ function formatSession(session: SessionSummary): string {
  * frontend lane. Retention = presence samples over the session; reaction
  * density = reactions bucketed along video position.
  */
-export function InsightsPanel({ roomCode }: InsightsPanelProps): JSX.Element {
+export function InsightsPanel({ roomCode, onPlayHighlight }: InsightsPanelProps): JSX.Element {
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [events, setEvents] = useState<SessionEvent[]>([]);
@@ -128,6 +130,10 @@ export function InsightsPanel({ roomCode }: InsightsPanelProps): JSX.Element {
 
       {selected !== null && memberSamples.length === 0 && reactions.length === 0 && (
         <p className="user-sub">No events recorded in this session.</p>
+      )}
+
+      {selected !== null && (
+        <HighlightReelPanel sessionId={selected} onSeek={onPlayHighlight} />
       )}
     </div>
   );

@@ -26,6 +26,22 @@ export interface PresencePreferences {
   shareActivity: boolean;
 }
 
+/** Read the caller's consent flags. Missing rows use the privacy-first defaults. */
+export async function getPresencePreferences(): Promise<SocialResult<PresencePreferences>> {
+  const { data, error } = await supabase
+    .from('presence_preferences')
+    .select('share_online, share_activity')
+    .maybeSingle();
+  if (error !== null) {
+    return toFailure(error);
+  }
+  const row = data as { share_online?: unknown; share_activity?: unknown } | null;
+  return ok({
+    shareOnline: row?.share_online === true,
+    shareActivity: row?.share_activity === true,
+  });
+}
+
 function toStatus(value: unknown): PresenceStatus {
   return value === 'online' || value === 'watching' || value === 'in_party' ? value : 'offline';
 }

@@ -3,6 +3,7 @@ import type { RoomMember } from '@shared/room';
 import { useChat } from '@/hooks/useChat';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { RoomService } from '@/lib/room/RoomService';
+import { Icon } from '@/components/Icon';
 
 interface ChatPanelProps {
   service: RoomService;
@@ -45,7 +46,7 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
   return (
     <div className="chat-panel">
       <div className="chat-log" ref={logRef} onScroll={handleScroll}>
-        {entries.length === 0 && <div className="chat-empty"><span aria-hidden="true">✦</span><strong>Start the conversation</strong><p>Reactions are great. Words work too.</p></div>}
+        {entries.length === 0 && <div className="chat-empty"><Icon name="message" size={26} /><strong>Start the conversation</strong><p>Reactions are great. Words work too.</p></div>}
         {entries.map((entry) =>
           entry.kind === 'system' ? (
             <p key={entry.id} className="chat-system">
