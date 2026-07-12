@@ -51,6 +51,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
   const [nextToken, setNextToken] = useState<string | null>(null);
   const [queuedId, setQueuedId] = useState<string | null>(null);
   const categoryRef = useRef<HTMLElement | null>(null);
+  const requestGenerationRef = useRef(0);
   const [categoryEdges, setCategoryEdges] = useState({ left: false, right: true });
 
   useEffect(() => {
@@ -72,14 +73,17 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
   }
 
   async function loadTrending(categoryId: string): Promise<void> {
+    const generation = ++requestGenerationRef.current;
     setMode('trending');
     setLoading(true);
+    setLoadingMore(false);
     setMessage(null);
     setNextToken(null);
     const selected = CATEGORIES.find((item) => item.id === categoryId);
     const outcome = selected?.query
       ? await searchYouTube(selected.query, callerId)
       : await getTrending(categoryId, callerId);
+    if (generation !== requestGenerationRef.current) return;
     setLoading(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
@@ -91,31 +95,40 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
     }
   }
 
-  async function loadHistory(): Promise<void> {
+  async function loadHistory(): Promise<SearchResult[]> {
     if (roomCode === '') {
       setHistory([]);
-      return;
+      return [];
     }
     const entries = await listHistory(roomCode);
-    setHistory(entries.map((entry) => ({
+    const nextHistory = entries.map((entry) => ({
       videoId: entry.videoId,
       title: entry.title,
       channelTitle: 'Watched with this room',
       thumbnailUrl: `https://i.ytimg.com/vi/${entry.videoId}/mqdefault.jpg`,
       durationText: '',
-    })));
+    }));
+    setHistory(nextHistory);
+    return nextHistory;
   }
 
   async function handleSearch(event: FormEvent): Promise<void> {
     event.preventDefault();
     const clean = query.trim();
     if (clean.length === 0 || loading) return;
+    await loadSearch(clean);
+  }
+
+  async function loadSearch(clean: string): Promise<void> {
+    const generation = ++requestGenerationRef.current;
     setMode('search');
     setActiveQuery(clean);
     setLoading(true);
+    setLoadingMore(false);
     setMessage(null);
     setNextToken(null);
     const outcome = await searchYouTube(clean, callerId);
+    if (generation !== requestGenerationRef.current) return;
     setLoading(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
@@ -129,6 +142,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
 
   async function handleShowMore(): Promise<void> {
     if (nextToken === null || loadingMore) return;
+    const generation = requestGenerationRef.current;
     setLoadingMore(true);
     const selected = CATEGORIES.find((item) => item.id === category);
     const outcome = mode === 'search'
@@ -136,6 +150,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
       : selected?.query
         ? await searchYouTube(selected.query, callerId, nextToken)
         : await getTrending(category, callerId, nextToken);
+    if (generation !== requestGenerationRef.current) return;
     setLoadingMore(false);
     if (outcome.status !== 'ok') {
       setMessage(OUTCOME_MESSAGE[outcome.status] ?? 'More videos could not be loaded.');
@@ -146,6 +161,33 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
       return [...current, ...outcome.results.filter((item) => !seen.has(item.videoId))];
     });
     setNextToken(outcome.nextPageToken);
+  }
+
+  async function retryCurrentView(): Promise<void> {
+    if (mode === 'search' && activeQuery !== '') {
+      await loadSearch(activeQuery);
+      return;
+    }
+    if (mode === 'history') {
+      const generation = ++requestGenerationRef.current;
+      setLoading(true);
+      setMessage(null);
+      const refreshedHistory = await loadHistory();
+      if (generation !== requestGenerationRef.current) return;
+      setLoading(false);
+      setMessage(refreshedHistory.length === 0 ? 'This room has no watch history yet.' : null);
+      return;
+    }
+    await loadTrending(category);
+  }
+
+  function showHistory(): void {
+    ++requestGenerationRef.current;
+    setMode('history');
+    setLoading(false);
+    setLoadingMore(false);
+    setNextToken(null);
+    setMessage(history.length === 0 ? 'This room has no watch history yet.' : null);
   }
 
   useEffect(() => { void Promise.all([loadTrending(''), loadHistory()]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -200,11 +242,11 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
 
       <div className="browse-view-tabs" role="tablist" aria-label="Browse views">
         <button type="button" role="tab" aria-selected={mode !== 'history'} className={mode !== 'history' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
-        <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={() => { setMode('history'); setMessage(history.length === 0 ? 'This room has no watch history yet.' : null); }}>Previously watched</button>
+        <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={showHistory}>Previously watched</button>
       </div>
 
       {loading && <BrowseLoading />}
-      {!loading && message !== null && <div className="discovery-empty" role="status"><Icon name="search" size={28} /><strong>{message}</strong><button type="button" className="button" onClick={() => void loadTrending(category)}>Try again</button></div>}
+      {!loading && message !== null && <div className="discovery-empty" role="status"><Icon name="search" size={28} /><strong>{message}</strong><button type="button" className="button" onClick={() => void retryCurrentView()}>{mode === 'history' ? 'Refresh history' : 'Try again'}</button></div>}
 
       {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 

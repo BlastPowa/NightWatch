@@ -1,6 +1,6 @@
 # Phase 21 Platform/Brand Handoff for Opus
 
-Frontend reference: Figma `YIrCEGqx0THUJOpmoYScYj`, node `2235:2839` (exact MCP inspection pending quota reset). Public product rename is pending the owner's chosen name.
+Frontend reference: Figma `YIrCEGqx0THUJOpmoYScYj`, node `2235:2839` (exact MCP inspection pending quota reset). NightWatch is the final product name; the rename is cancelled.
 
 ## Ownership
 

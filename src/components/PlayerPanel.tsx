@@ -8,6 +8,7 @@ import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
 import { MomentNotesPanel } from '@/components/MomentNotesPanel';
+import { Icon } from '@/components/Icon';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
 import { useReactions } from '@/hooks/useReactions';
@@ -57,6 +58,8 @@ export function PlayerPanel({
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
+  const [reactionsOpen, setReactionsOpen] = useState(true);
+  const [momentsOpen, setMomentsOpen] = useState(true);
   const videoIdRef = useRef<string | null>(null);
   videoIdRef.current = videoId;
   const settings = useSettings();
@@ -277,25 +280,41 @@ export function PlayerPanel({
       </div>
 
       <TimelineMarkers markers={markers} durationSeconds={durationSeconds} />
-      <div className="player-community-bar">
-        <div className="player-community-copy">
-          <span className="eyebrow">Room reactions</span>
-          <strong>{hasVideo ? 'Mark this moment' : 'Reactions unlock with a video'}</strong>
-          <small>{markers.length > 0 ? `${markers.length} moment${markers.length === 1 ? '' : 's'} marked on the timeline` : 'Your reactions appear below the video, never over its controls.'}</small>
+      <details className="room-module room-collapsible player-community-module" open={reactionsOpen} onToggle={(event) => setReactionsOpen(event.currentTarget.open)}>
+        <summary>
+          <span><span className="eyebrow">Live moments</span><strong>Reactions</strong></span>
+          <Icon name="chevron-right" size={18} className="room-summary-chevron" />
+        </summary>
+        <div className="room-module-body">
+          <div className="player-community-bar">
+            <div className="player-community-copy">
+              <span className="eyebrow">Room reactions</span>
+              <strong>{hasVideo ? 'Mark this moment' : 'Reactions unlock with a video'}</strong>
+              <small>{markers.length > 0 ? `${markers.length} moment${markers.length === 1 ? '' : 's'} marked on the timeline` : 'Your reactions appear below the video, never over its controls.'}</small>
+            </div>
+            <ReactionBar disabled={!hasVideo} onReact={send} />
+          </div>
         </div>
-        <ReactionBar disabled={!hasVideo} onReact={send} />
-      </div>
+      </details>
       {hasVideo && authUser !== null && socialCapabilities.momentNotes && (
-        <MomentNotesPanel
-          videoId={videoId}
-          roomCode={roomCode}
-          durationSeconds={durationSeconds}
-          currentSeconds={currentSeconds}
-          currentUserId={authUser.id}
-          isHost={isHost}
-          allowRoomVisibility={allowRoomMomentNotes}
-          onSeek={(seconds) => engineRef.current?.seekTo(seconds)}
-        />
+        <details className="room-module room-collapsible player-moments-module" open={momentsOpen} onToggle={(event) => setMomentsOpen(event.currentTarget.open)}>
+          <summary>
+            <span><span className="eyebrow">Shared timeline</span><strong>Moment notes</strong></span>
+            <Icon name="chevron-right" size={18} className="room-summary-chevron" />
+          </summary>
+          <div className="room-module-body">
+            <MomentNotesPanel
+              videoId={videoId}
+              roomCode={roomCode}
+              durationSeconds={durationSeconds}
+              currentSeconds={currentSeconds}
+              currentUserId={authUser.id}
+              isHost={isHost}
+              allowRoomVisibility={allowRoomMomentNotes}
+              onSeek={(seconds) => engineRef.current?.seekTo(seconds)}
+            />
+          </div>
+        </details>
       )}
     </div>
   );

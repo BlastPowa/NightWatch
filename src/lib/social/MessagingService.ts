@@ -1,4 +1,5 @@
 import { cacheDisplayName } from '@/lib/social/SocialRealtime';
+import { prepareOutgoingMessage } from '@/lib/chat/messageFilter';
 import { ok, toFailure, type SocialResult } from '@/lib/social/types';
 import { supabase } from '@/lib/supabase';
 
@@ -181,9 +182,10 @@ export async function sendMessage(
   conversationId: string,
   body: string,
 ): Promise<SocialResult<string>> {
+  const clean = prepareOutgoingMessage(body, 2_000);
   const { data, error } = await supabase.rpc('send_message', {
     p_conversation: conversationId,
-    p_body: body,
+    p_body: clean,
   });
   if (error !== null) {
     return toFailure(error);
@@ -197,7 +199,10 @@ async function transition(fn: string, args: Record<string, unknown>): Promise<So
 }
 
 export function editMessage(messageId: string, body: string): Promise<SocialResult<void>> {
-  return transition('edit_message', { p_message: messageId, p_body: body });
+  return transition('edit_message', {
+    p_message: messageId,
+    p_body: prepareOutgoingMessage(body, 2_000),
+  });
 }
 
 export function deleteMessage(messageId: string): Promise<SocialResult<void>> {
