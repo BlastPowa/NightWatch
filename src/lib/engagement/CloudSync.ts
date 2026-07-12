@@ -35,11 +35,17 @@ export interface CloudSyncState {
 
 let userId: string | null = null;
 let displayName = '';
-let shareStats = true;
+/**
+ * Phase 20B: sharing is opt-IN. This must match the share_stats column default
+ * (false, per 0006) — pushSnapshot writes this value, so defaulting it true
+ * here would silently opt every new user in on their first sync and defeat the
+ * column default entirely.
+ */
+let shareStats = false;
 let syncTimer: number | null = null;
 let initialized = false;
 
-let state: CloudSyncState = { synced: false, shareStats: true };
+let state: CloudSyncState = { synced: false, shareStats: false };
 const stateListeners = new Set<(state: CloudSyncState) => void>();
 
 /**
