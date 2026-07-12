@@ -7,6 +7,14 @@ import {
   type AppNotification,
 } from '@/lib/social/CreatorService';
 import { subscribeToNotifications } from '@/lib/social/SocialRealtime';
+import { Icon, type IconName } from '@/components/Icon';
+
+function notificationIcon(kind: string): IconName {
+  if (kind.startsWith('bounty.')) return 'creator';
+  if (kind.startsWith('submission.')) return 'play';
+  if (kind.startsWith('club.')) return 'users';
+  return 'sparkle';
+}
 
 function payloadText(notification: AppNotification): string {
   const safe = (...keys: string[]): string | null => {
@@ -81,13 +89,13 @@ export function NotificationCenter(): JSX.Element {
   return (
     <div className="notification-center" ref={rootRef}>
       <button type="button" className="topbar-icon notification-trigger" onClick={() => setOpen((value) => !value)} aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ''}`} aria-expanded={open}>
-        <span aria-hidden="true">♢</span>{unread > 0 && <b>{unread > 99 ? '99+' : unread}</b>}
+        <Icon name="bell" />{unread > 0 && <b>{unread > 99 ? '99+' : unread}</b>}
       </button>
       {open && <section className="notification-popover" aria-label="Notifications">
         <header><div><span className="eyebrow">Community pulse</span><h2>Notifications</h2></div>{unread > 0 && <button type="button" onClick={() => void markAll()}>Mark all read</button>}</header>
         {error !== null && <p className="form-error">{error}</p>}
-        {loading && items.length === 0 ? <div className="notification-loading"><span className="loader-orbit" />Loading updates…</div> : <div className="notification-list">{items.map((item) => <button key={item.id} type="button" className={`notification-item${item.readAt === null ? ' notification-item-unread' : ''}`} onClick={() => void markOne(item)}><span className="notification-glyph" aria-hidden="true">{item.kind.startsWith('bounty.') ? '◎' : item.kind.startsWith('submission.') ? '▶' : item.kind.startsWith('club.') ? '◇' : '✦'}</span><span><strong>{payloadText(item)}</strong><small>{new Date(item.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></span>{item.readAt === null && <i aria-label="Unread" />}</button>)}</div>}
-        {!loading && items.length === 0 && <div className="notification-empty"><span>✦</span><strong>You’re all caught up</strong><small>Club and bounty updates will appear here.</small></div>}
+        {loading && items.length === 0 ? <div className="notification-loading"><span className="loader-orbit" />Loading updates…</div> : <div className="notification-list">{items.map((item) => <button key={item.id} type="button" className={`notification-item${item.readAt === null ? ' notification-item-unread' : ''}`} onClick={() => void markOne(item)}><span className="notification-glyph"><Icon name={notificationIcon(item.kind)} /></span><span><strong>{payloadText(item)}</strong><small>{new Date(item.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></span>{item.readAt === null && <i aria-label="Unread" />}</button>)}</div>}
+        {!loading && items.length === 0 && <div className="notification-empty"><Icon name="bell" size={26} /><strong>You’re all caught up</strong><small>Club and bounty updates will appear here.</small></div>}
       </section>}
     </div>
   );

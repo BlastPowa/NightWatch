@@ -9,6 +9,7 @@ import {
   type MomentNote,
   type MomentVisibility,
 } from '@/lib/social/MomentsService';
+import { Icon } from '@/components/Icon';
 
 interface MomentNotesPanelProps {
   videoId: string;
@@ -211,7 +212,7 @@ export function MomentNotesPanel({
               {note.authorId === currentUserId && <div className="moment-note-actions"><button type="button" onClick={() => beginEdit(note)}>Edit</button><button type="button" onClick={() => void remove(note.id)}>Delete</button></div>}
             </article>
           ))}
-          {visibleNotes.length === 0 && <div className="moment-empty"><span aria-hidden="true">✦</span><strong>No notes at this video yet</strong><small>Pin the first memorable moment without covering the player.</small></div>}
+          {visibleNotes.length === 0 && <div className="moment-empty"><Icon name="clock" size={24} /><strong>No notes at this video yet</strong><small>Pin the first memorable moment without covering the player.</small></div>}
           {hasMore && <button type="button" className="button moment-load-more" onClick={() => void loadOlder()}>Load earlier notes</button>}
         </div>
       )}

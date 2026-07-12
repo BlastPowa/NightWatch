@@ -8,6 +8,8 @@ Released baseline: `v0.1.18` (`16baf3a`). Active frontend: `frontend/phase-20b-p
 
 Implemented on the active frontend branch: Discord avatar/CSP repair, Friends, realtime Messages, shelf-arrow navigation, consent-based presence settings, Moment Notes, achievement profile borders, and Creator Club/bounty UI. Every social destination remains hidden until its deployed capability probe passes. Strict typecheck passes; production build verification is the current gate.
 
+Current shell pass: reusable local SVG icons now replace prototype glyphs across the sidebar, Browse, Settings, room actions, and notifications. Video shelves and the category rail use explicit arrow controls with smooth snapping instead of visible scrollbars.
+
 Remaining frontend integration: notification centre, group member/role controls and centred system messages from migration `0014`, friend profile/presence views, creator moderation/report/audit, exact Figma visual inspection after quota reset, final public rename/logo after the owner selects a name, and packaged two-client/update regression.
 
 The historical phase ledger below is retained for evidence; older "Current Work" text is not authoritative over this update.

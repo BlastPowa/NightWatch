@@ -10,6 +10,7 @@ import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { MessagesScreen } from '@/components/MessagesScreen';
 import { CreatorClubScreen } from '@/components/CreatorClubScreen';
 import { NotificationCenter } from '@/components/NotificationCenter';
+import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
@@ -275,14 +276,14 @@ export function App(): JSX.Element {
             className={`nav-item${view === 'discover' ? ' nav-item-active' : ''}`}
             onClick={() => setView('discover')}
           >
-            <span className="nav-icon" aria-hidden="true">⌂</span><span className="nav-label">Browse</span>
+            <span className="nav-icon"><Icon name="home" /></span><span className="nav-label">Browse</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'main' ? ' nav-item-active' : ''}`}
             onClick={() => setView('main')}
           >
-            <span className="nav-icon" aria-hidden="true">▶</span><span className="nav-label">{inRoom ? 'Room' : 'Join'}</span>
+            <span className="nav-icon"><Icon name="play" /></span><span className="nav-label">{inRoom ? 'Room' : 'Join'}</span>
           </button>
           {isElectron && (
             <button
@@ -290,33 +291,33 @@ export function App(): JSX.Element {
               className={`nav-item${view === 'rooms' ? ' nav-item-active' : ''}`}
               onClick={() => setView('rooms')}
             >
-              <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">Parties</span>
+              <span className="nav-icon"><Icon name="parties" /></span><span className="nav-label">Parties</span>
             </button>
           )}
-          {socialCapabilities.friends && <button type="button" className={`nav-item${view === 'friends' ? ' nav-item-active' : ''}`} onClick={() => setView('friends')}><span className="nav-icon" aria-hidden="true">♧</span><span className="nav-label">Friends</span></button>}
-          {socialCapabilities.messaging && <button type="button" className={`nav-item${view === 'messages' ? ' nav-item-active' : ''}`} onClick={() => setView('messages')}><span className="nav-icon" aria-hidden="true">▱</span><span className="nav-label">Messages</span></button>}
-          {socialCapabilities.creatorClubs && <button type="button" className={`nav-item${view === 'creator' ? ' nav-item-active' : ''}`} onClick={() => setView('creator')}><span className="nav-icon" aria-hidden="true">◎</span><span className="nav-label">Creator Club</span></button>}
+          {socialCapabilities.friends && <button type="button" className={`nav-item${view === 'friends' ? ' nav-item-active' : ''}`} onClick={() => setView('friends')}><span className="nav-icon"><Icon name="friends" /></span><span className="nav-label">Friends</span></button>}
+          {socialCapabilities.messaging && <button type="button" className={`nav-item${view === 'messages' ? ' nav-item-active' : ''}`} onClick={() => setView('messages')}><span className="nav-icon"><Icon name="message" /></span><span className="nav-label">Messages</span></button>}
+          {socialCapabilities.creatorClubs && <button type="button" className={`nav-item${view === 'creator' ? ' nav-item-active' : ''}`} onClick={() => setView('creator')}><span className="nav-icon"><Icon name="creator" /></span><span className="nav-label">Creator Club</span></button>}
           <span className="nav-section-label">You</span>
           <button
             type="button"
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
             onClick={() => setView('card')}
           >
-            <span className="nav-icon" aria-hidden="true">◇</span><span className="nav-label">Profile</span>
+            <span className="nav-icon"><Icon name="profile" /></span><span className="nav-label">Profile</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'settings' ? ' nav-item-active' : ''}`}
             onClick={() => setView('settings')}
           >
-            <span className="nav-icon" aria-hidden="true">⚙</span><span className="nav-label">Settings</span>
+            <span className="nav-icon"><Icon name="settings" /></span><span className="nav-label">Settings</span>
           </button>
           <button
             type="button"
             className={`nav-item${view === 'about' ? ' nav-item-active' : ''}`}
             onClick={() => setView('about')}
           >
-            <span className="nav-icon" aria-hidden="true">i</span><span className="nav-label">About</span>
+            <span className="nav-icon"><Icon name="info" /></span><span className="nav-label">About</span>
           </button>
         </nav>
 
@@ -356,10 +357,10 @@ export function App(): JSX.Element {
           <header className="browse-topbar">
             <div className="browse-topbar-title"><span className="eyebrow">NightWatch</span><strong>Browse</strong></div>
             <div className="browse-topbar-actions">
-              <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}>▶</button>
-              <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings">⚙</button>
+              <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}><Icon name="play" /></button>
+              <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings"><Icon name="settings" /></button>
               {socialCapabilities.creatorClubs && <NotificationCenter />}
-              <button type="button" className="profile-chip" onClick={() => setView(authUser !== null && isElectron ? 'rooms' : 'settings')} aria-label="Open account settings">
+              <button type="button" className="profile-chip" onClick={() => setView('card')} aria-label="Open your profile">
                 <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} />
                 <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
               </button>

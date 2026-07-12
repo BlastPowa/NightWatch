@@ -10,6 +10,7 @@ import {
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { Icon, type IconName } from '@/components/Icon';
 import {
   getPresencePreferences,
   setPresencePreferences,
@@ -22,13 +23,13 @@ interface SettingsPanelProps {
 
 type SettingsSection = 'appearance' | 'playback' | 'social' | 'accessibility' | 'account' | 'data';
 
-const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string; icon: string }> = [
-  { id: 'appearance', label: 'Appearance', icon: '✦' },
-  { id: 'playback', label: 'Playback', icon: '▶' },
-  { id: 'social', label: 'Social', icon: '◉' },
-  { id: 'accessibility', label: 'Accessibility', icon: '⌘' },
-  { id: 'account', label: 'Account', icon: '◎' },
-  { id: 'data', label: 'Local data', icon: '◇' },
+const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string; icon: IconName }> = [
+  { id: 'appearance', label: 'Appearance', icon: 'sparkle' },
+  { id: 'playback', label: 'Playback', icon: 'play' },
+  { id: 'social', label: 'Social', icon: 'friends' },
+  { id: 'accessibility', label: 'Accessibility', icon: 'settings' },
+  { id: 'account', label: 'Account', icon: 'profile' },
+  { id: 'data', label: 'Local data', icon: 'lock' },
 ];
 
 const THEME_PREVIEW: Record<string, string> = {
@@ -62,7 +63,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
               onClick={() => setSection(item.id)}
               aria-current={section === item.id ? 'page' : undefined}
             >
-              <span aria-hidden="true">{item.icon}</span>{item.label}
+              <span><Icon name={item.icon} /></span>{item.label}
             </button>
           ))}
         </nav>

@@ -5,6 +5,7 @@
 - [x] Discord avatar CSP and resilient fallback.
 - [x] Friends lifecycle and persistent direct/group Messages.
 - [x] Accessible shelf arrows replacing exposed media scrollbars.
+- [x] Local SVG icon system and category-rail arrow navigation replacing prototype glyphs and exposed scrollbars.
 - [x] Consent-based friend presence settings.
 - [x] Moment Notes with privacy filters, edit/delete, and host-synchronized seek.
 - [x] Server-validated achievement profile borders.

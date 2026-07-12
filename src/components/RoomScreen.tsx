@@ -6,6 +6,7 @@ import { QueuePanel } from '@/components/QueuePanel';
 import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
+import { Icon } from '@/components/Icon';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -177,7 +178,7 @@ export function RoomScreen({
             className="button button-glow"
             onClick={() => loadVideoRef.current?.(meta.premiereVideoId as string)}
           >
-            ▶ Start the premiere
+            <Icon name="play" size={16} /> Start the premiere
           </button>
         )}
         <span className={`room-status room-status-${room.status}`}>
