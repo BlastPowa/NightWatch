@@ -229,32 +229,6 @@ export function PlayerPanel({
 
   return (
     <div className="player-panel">
-      {isHost ? (
-        // Search/browse moved to the Discovery panel below the player
-        // (Phase 16) — the host bar keeps direct link loading.
-        <form className="player-form" onSubmit={handleLoad}>
-          <input
-            className="input"
-            value={url}
-            placeholder="Paste a YouTube link…"
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError(null);
-            }}
-          />
-          <button type="submit" className="button button-glow">
-            Load video
-          </button>
-        </form>
-      ) : (
-        <p className="player-viewer-note">
-          The host controls playback.
-          {syncDelayMs !== null && ` · sync delay ~${syncDelayMs}ms`}
-        </p>
-      )}
-
-      {error !== null && <p className="form-error">{error}</p>}
-
       <div
         className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
         style={{
@@ -271,6 +245,35 @@ export function PlayerPanel({
             {isHost ? 'No video loaded' : 'Waiting for the host to pick a video…'}
           </span>
         )}
+      </div>
+
+      <div className="player-command-bar">
+        {isHost ? (
+          // This supported control stays below the official iframe and never
+          // obscures YouTube playback controls, branding, or advertisements.
+          <form className="player-form" onSubmit={handleLoad}>
+            <input
+              className="input"
+              value={url}
+              placeholder="Paste a YouTube link…"
+              aria-label="YouTube link or video ID"
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setError(null);
+              }}
+            />
+            <button type="submit" className="button button-glow">
+              Load video
+            </button>
+          </form>
+        ) : (
+          <p className="player-viewer-note">
+            <span className="status-dot" aria-hidden="true" />
+            The host controls playback
+            {syncDelayMs !== null && ` · sync delay ~${syncDelayMs}ms`}
+          </p>
+        )}
+        {error !== null && <p className="form-error" role="status">{error}</p>}
       </div>
 
       <TimelineMarkers markers={markers} durationSeconds={durationSeconds} />

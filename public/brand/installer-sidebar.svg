@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314">
+  <defs>
+    <linearGradient id="sky" x1="12" y1="0" x2="152" y2="314" gradientUnits="userSpaceOnUse"><stop stop-color="#171E3B"/><stop offset=".55" stop-color="#090D1A"/><stop offset="1" stop-color="#050711"/></linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientTransform="translate(126 53) rotate(132) scale(145 170)" gradientUnits="userSpaceOnUse"><stop stop-color="#8B7CFF" stop-opacity=".5"/><stop offset="1" stop-color="#8B7CFF" stop-opacity="0"/></radialGradient>
+    <linearGradient id="glow" x1="37" y1="25" x2="124" y2="124" gradientUnits="userSpaceOnUse"><stop stop-color="#C9D2FF"/><stop offset=".5" stop-color="#8B7CFF"/><stop offset="1" stop-color="#5EE7F7"/></linearGradient>
+  </defs>
+  <rect width="164" height="314" fill="url(#sky)"/>
+  <rect width="164" height="314" fill="url(#halo)"/>
+  <rect x="26" y="25" width="112" height="112" rx="31" fill="#080B16" stroke="#FFFFFF" stroke-opacity=".12"/>
+  <path d="M108 42a45 45 0 1 0 15 64 38 38 0 1 1-15-64Z" fill="url(#glow)"/>
+  <path d="M48 103V60l29 43V60m0 0 12 43 13-26 12 26 12-43" fill="none" stroke="#F7F8FF" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="111" cy="49" r="4" fill="#5EE7F7"/>
+  <text x="82" y="177" fill="#F7F8FF" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700" text-anchor="middle">NightWatch</text>
+  <text x="82" y="202" fill="#AEB7D4" font-family="Segoe UI,Arial,sans-serif" font-size="8" font-weight="600" letter-spacing="1.4" text-anchor="middle">WATCH TOGETHER</text>
+  <path d="M42 221h80" stroke="#8B7CFF" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="82" cy="269" r="3" fill="#5EE7F7"/><circle cx="68" cy="269" r="2" fill="#8B7CFF" opacity=".6"/><circle cx="96" cy="269" r="2" fill="#8B7CFF" opacity=".6"/>
+</svg>

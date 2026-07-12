@@ -36,6 +36,8 @@ nsis:
   # is stated explicitly because flipping it would silently wipe local state on
   # every uninstall/reinstall cycle.
   deleteAppDataOnUninstall: false
+  installerSidebar: build/installer-sidebar.bmp
+  installerHeader: build/installer-header.bmp
   # BRAND PACK PENDING: installerSidebar (164x314 BMP) and installerHeader
   # (150x57 BMP) are the last two branding slots. They need the final artwork
   # from the frontend brand pack, and NSIS requires BMP — a PNG here fails the

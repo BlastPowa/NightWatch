@@ -3,6 +3,15 @@
 
 ## Unreleased
 
+### Phase 22 cinematic UI completion
+
+- Reworked Browse into denser cinematic shelves with labeled search, keyboard-focusable tracks, edge fades, arrow-only navigation, responsive cards, and clearer channel identity.
+- Rebuilt the watch room around an iframe-first stage with host controls below YouTube, persistent collapsible Queue/Chat/Members panels, a single-border chat composer, and refined reaction/moment timelines.
+- Expanded Settings with eight descriptive atmosphere cards, accessible ranges and switches, pressed states, readable scaling previews, stronger focus, and reduced-motion/transparency/high-contrast treatment.
+- Replaced the NightWatch monogram with a clearer eclipse `NW` mark and regenerated taskbar, favicon, Discord, Activity-cover, and multi-resolution Windows icon assets.
+- Added custom NSIS installer sidebar/header artwork while retaining owner-initiated releases.
+- Gated automatic PR merging behind an explicit coordinator-applied `automerge` label after scope and head-SHA review.
+
 ### Phase 21 frontend integration
 
 - Added capability-gated public club discovery, join/open actions, and owner-controlled public/private directory listing.

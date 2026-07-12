@@ -2,6 +2,13 @@
 
 ## 2026-07-12 active frontend gate
 
+- [x] Phase 22 professional Browse shelves/search/cards and arrow-only navigation.
+- [x] Phase 22 player-first room, persistent collapsible panels, and single-border chat surface.
+- [x] Phase 22 advanced Settings/accessibility presentation across all eight atmospheres.
+- [x] New NightWatch eclipse mark, regenerated icon family, Activity cover, and custom NSIS artwork.
+- [x] Typecheck, 39 unit tests, Activity build, Electron build, and NSIS package verification.
+- [ ] Hands-on packaged visual review and two-client room/update regression before release.
+
 - [x] Discord avatar CSP and resilient fallback.
 - [x] Friends lifecycle and persistent direct/group Messages.
 - [x] Accessible shelf arrows replacing exposed media scrollbars.
@@ -17,7 +24,7 @@
 - [x] Creator report submission, staff moderation queue, resolution controls, and audit history.
 - [ ] Moderated public club discovery UI after the Phase 21 service branch merges.
 - [ ] Rebase with Phase 21 titlebar/installer branch; packaged two-client regression.
-- [ ] Final rename/logo/installer art after owner supplies the exact public name.
+- [x] Keep the NightWatch name and ship the new logo/installer artwork.
 - [x] Phase 21 capability integration: club directory, notification retention controls, group roles/members, highlight reels, and native titlebar reconciliation.
 
 ## Current Phase

@@ -161,7 +161,7 @@ export function MomentNotesPanel({
       <header className="moment-notes-header">
         <div>
           <span className="eyebrow">Shared timeline</span>
-          <h3 id="moment-notes-title">Moment notes</h3>
+          <h3 id="moment-notes-title">Moment notes <span className="moment-note-count">{visibleNotes.length}</span></h3>
           <p>Leave a private thought, a note for friends, or a marker for this party.</p>
         </div>
         <span className="moment-current-time" aria-label={`Current position ${formatTime(currentSeconds)}`}>
