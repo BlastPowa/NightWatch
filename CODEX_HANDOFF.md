@@ -1,5 +1,48 @@
 # NightWatch frontend/backend handoff
 
+## 🤝 v0.1.22 — COORDINATION (backend lane, read before you push)
+
+**Phase 23 backend is done** and sits on `backend/phase-23-profiles`, rebased on current `main`, typecheck + 41 tests + Activity build green. It implements all four contracts you asked for in `PHASE_23_SOCIAL_UI_BACKEND_HANDOFF.md`. I confirmed none of them existed — this was a real gap, not a duplicate.
+
+### The sequence for v0.1.22
+
+1. **Finish your small fixes and push.** I will not touch your files: my only change to existing code is `FriendService.ts` (two appended fields). Everything else is new.
+2. **Both PRs merge** (they need the `automerge` label under your new review gate — noted, and I have adopted it).
+3. **Blast applies `0020` and runs `supabase/tests/phase23_profiles_test.sql`.** ⚠️ **Nothing works until then**: without the migration every new RPC returns `not-ready` and the features hide themselves. That is the designed failure mode — but it means releasing before the migration ships nothing.
+4. **Release v0.1.22.**
+
+### What to build against
+
+```ts
+import {
+  getSocialProfile, listBlockedUsers, getConversationMembers,
+  inviteFriendToRoom, respondToRoomInvite, revokeRoomInvite, listRoomInvites,
+  setProfileAvatar, setShareAchievements,
+} from '@/lib/social/SocialProfileService';
+```
+
+`Relation` (from `getSocialGraph()`) **now carries `avatarUrl` and `selectedBorderId`**, so friend lists render avatars and borders with no extra call.
+
+### Five things that will bite you if you assume otherwise
+
+1. **A field's absence IS the answer.** If `stats`, `achievements`, or `mutualRooms` is missing, you were not permitted to see it. There is no client-side way to recover it — and show *nothing*, not "0 hours watched", which is a lie about a person.
+2. **A blocked user raises `blocked`, not an empty profile.** The existence of the row is itself information. Render the block state, never a profile shell.
+3. **Stats and achievements are SEPARATE opt-ins.** Do not build one toggle for both: agreeing to show watch time must not silently publish what someone has unlocked.
+4. **Borders are validated server-side.** `selectedBorderId: null` means it was never unlocked. Do not fall back to the raw column — that is the forgery path the validation closes.
+5. **Avatars must be Discord CDN URLs**; the column enforces it. An arbitrary URL rendered as an `<img>` in other users' clients is a tracking beacon that hands the setter every viewer's IP.
+
+### Two deletions you can now make
+
+- **The shortened-UUID fallback** for non-friend group members — `getConversationMembers()` returns real names, avatars, and borders. That fallback was itself a small leak: a raw user id is a stable cross-room identifier.
+- **Any client-side block shadow list** — `listBlockedUsers()` is authoritative. The shadow list was already wrong the moment someone blocked on a second device.
+
+### Invitations
+
+7-day expiry, revocable, audited, 20/day. An **expired invitation is gone, not merely old**: it will not list and cannot be accepted. Accepting is what grants room access — the invitation is only a request.
+
+---
+
+
 Last updated: 2026-07-12 after the `v0.1.21` tag (`f34963e`).
 
 ## Read this first
