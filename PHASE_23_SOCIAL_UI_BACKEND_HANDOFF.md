@@ -1,22 +1,54 @@
 # Phase 23 social profile backend handoff
 
-Frontend source of truth: `C:\Users\Blast\source\repos\NightWatch-ui\PHASE_23_SOCIAL_UI_BACKEND_HANDOFF.md` on `frontend/phase-22-runtime-fixes`.
+This is the remaining backend contract required to complete the requested Friends/Profile experience. It does not change room playback, YouTube, queue, or existing Realtime event contracts.
 
-Claude/Opus should implement only the server contracts below; the current frontend runtime fixes are already in progress and must not be duplicated.
+## 1. Public profile read
 
-## Required server contracts
+Add a security-definer RPC such as `get_social_profile(p_user uuid)` returning a typed object with:
 
-1. Add a privacy-safe `get_social_profile(p_user uuid)` returning safe display name/avatar, server-validated selected border, friendship/block state, opt-in stats/achievements, mutual accessible persistent rooms (never private room codes), and `canMessage`/`canInvite` permissions.
-2. Add `list_blocked_users()` so the frontend can render a complete unblock-management screen without a client shadow list.
-3. Add a membership-authorized conversation-member profile read returning user ID, safe display name, avatar, validated selected border, role, and joined timestamp. The current frontend must fall back to a shortened UUID for non-friends.
-4. If one-click friend invitations remain in scope, add an accepted-friend persistent-room invitation RPC with membership/access validation, privacy/block enforcement, notification preference checks, expiry, accept/decline/revoke, audit, and rate limiting. Never leak room codes through presence.
+- `userId`, safe display name, Discord avatar URL or null;
+- selected profile-border identifier only when that border is server-validated as unlocked;
+- friendship state (`none`, `incoming`, `outgoing`, `accepted`);
+- whether either party blocks the other, without revealing which direction when disclosure would leak privacy;
+- opt-in public stats and achievement summaries only when the target shares them;
+- mutual persistent rooms limited to rooms both users may already access, returning stable room ID/name but never a private room code;
+- booleans for `canMessage` and `canInvite`.
 
-Use existing `SocialResult<T>` outcomes. Do not change playback, queue, room Realtime events, PlatformBridge, persistence keys, or the official YouTube iframe boundary.
+RLS/RPC behavior must return explicit `ok`, `forbidden`, `blocked`, `not-ready`, `offline`, and error outcomes through the existing `SocialResult<T>` mapping.
 
-## Required tests
+## 2. Block management
 
-- Target privacy and block state filter every profile field.
-- Non-mutual private rooms never appear and selected borders cannot be forged.
+Add `list_blocked_users()` returning the caller's blocked profiles with safe display name/avatar/border. Preserve existing `block_user` and `unblock_user` transitions. Blocked relationships must continue preventing messages, invitations, presence, friends-only notes, and profile details.
+
+The UI cannot provide a complete unblock screen from transition RPCs alone; it must not keep a client-side shadow list.
+
+## 3. Conversation member presentation
+
+Extend the membership read or add `list_conversation_member_profiles(p_conversation uuid)` returning membership-authorized:
+
+- `userId`, safe display name, avatar URL or null, selected validated border;
+- group role and joined timestamp.
+
+Only active members may read it. Removed/blocked users must disappear according to current membership/block policy. This replaces the current shortened-UUID fallback for non-friend group members.
+
+## 4. Friend party invitation
+
+If the product keeps a one-click **Invite** action, add an explicit RPC such as `invite_friend_to_room(p_friend uuid, p_room uuid)` that:
+
+- requires accepted friendship and inviter room membership;
+- respects blocks and the target's notification/privacy preferences;
+- validates that the target can access the persistent room;
+- creates an auditable notification/invitation without exposing the room code through presence;
+- rate-limits repeated invitations and supports accept/decline/expiry.
+
+Do not implement this as a raw room-code message or client-only notification.
+
+## Acceptance/security tests
+
+- Profile fields follow target privacy preferences and block state.
+- Non-mutual private rooms never appear.
+- Selected borders cannot be forged.
 - Blocked users cannot read profiles, message, invite, see presence, or access friends-only notes.
-- Only active conversation members can read member profiles; removal revokes access.
-- Invitations enforce friendship, access, expiry, revocation, and rate limits.
+- Only conversation members can list member profiles; removal revokes access.
+- Invitation spam is rate-limited and expired/revoked invitations cannot be accepted.
+- Tests run without requiring client secrets and preserve existing `SocialResult<T>` behavior.

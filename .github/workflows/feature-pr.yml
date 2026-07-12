@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
   pull-requests: write
 
 jobs:
@@ -33,14 +34,18 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const head = context.ref.replace('refs/heads/', '');
+            const commitMessage = context.payload.head_commit?.message ?? '';
+            const reviewedAutomerge = /^Automerge:\s*reviewed\s*$/mi.test(commitMessage);
             const existing = await github.rest.pulls.list({ owner, repo, head: `${owner}:${head}`, base: 'main', state: 'open' });
+            let pull;
             if (existing.data.length === 0) {
               const title = context.payload.head_commit?.message?.split('\n')[0] ?? `Merge ${head}`;
               try {
                 const created = await github.rest.pulls.create({
                   owner, repo, head, base: 'main', title,
-                  body: `Automated PR for \`${head}\`.\n\nValidation passed: install, typecheck, Activity build, and Electron package.\n\nManual owner merge is required.`,
+                  body: `Automated PR for \`${head}\`.\n\nValidation passed: install, tests, typecheck, Activity build, and Electron package.\n\nMerge requires either owner action or an explicit reviewed automerge trailer.`,
                 });
+                pull = created.data;
                 core.summary.addLink(`Pull request #${created.data.number}`, created.data.html_url).write();
               } catch (error) {
                 const message = String(error?.message ?? error);
@@ -54,5 +59,25 @@ jobs:
                 }
               }
             } else {
-              core.summary.addLink(`Updated pull request #${existing.data[0].number}`, existing.data[0].html_url).write();
+              pull = existing.data[0];
+              core.summary.addLink(`Updated pull request #${pull.number}`, pull.html_url).write();
+            }
+
+            // A reviewed trailer is the auditable opt-in. Ordinary Claude,
+            // Codex, or user pushes remain unlabeled and therefore never
+            // auto-merge merely because their build is green.
+            if (pull !== undefined && reviewedAutomerge) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: 'automerge' });
+              } catch (error) {
+                if (error?.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  owner, repo, name: 'automerge', color: '1f883d',
+                  description: 'Reviewed branch may merge after all validation passes',
+                });
+              }
+              await github.rest.issues.addLabels({
+                owner, repo, issue_number: pull.number, labels: ['automerge'],
+              });
+              core.notice(`PR #${pull.number} opted into reviewed automerge.`);
             }

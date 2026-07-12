@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   createGroupConversation,
+  deleteMessage,
+  editMessage,
   getMessages,
   listConversations,
   markConversationRead,
@@ -10,6 +12,7 @@ import {
 } from '@/lib/social/MessagingService';
 import { subscribeToConversation } from '@/lib/social/SocialRealtime';
 import { Icon } from '@/components/Icon';
+import { prepareOutgoingMessage } from '@/lib/chat/messageFilter';
 import { GroupManagementPanel } from '@/components/GroupManagementPanel';
 
 interface MessagesScreenProps {
@@ -38,6 +41,7 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [hasOlder, setHasOlder] = useState(false);
   const [sending, setSending] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [showGroupComposer, setShowGroupComposer] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
   const logRef = useRef<HTMLDivElement | null>(null);
@@ -86,6 +90,8 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
       setMessages([]);
       return;
     }
+    setDraft('');
+    setEditingMessageId(null);
     void refreshMessages(selectedId);
     return subscribeToConversation(selectedId, (change) => {
       const log = logRef.current;
@@ -125,14 +131,45 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
   async function handleSend(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (selectedId === null || draft.trim() === '' || sending) return;
-    const body = draft.trim();
-    setDraft('');
+    const body = prepareOutgoingMessage(draft, 2_000);
     setSending(true);
-    const result = await sendMessage(selectedId, body);
+    const result = editingMessageId === null
+      ? await sendMessage(selectedId, body)
+      : await editMessage(editingMessageId, body);
     setSending(false);
     if (result.status !== 'ok') {
-      setDraft(body);
       setStatus(failureCopy(result.status));
+      return;
+    }
+    if (editingMessageId !== null) {
+      const editedId = editingMessageId;
+      setMessages((current) => current.map((message) => message.id === editedId
+        ? { ...message, body, editedAt: new Date().toISOString() }
+        : message));
+      setEditingMessageId(null);
+    }
+    setDraft('');
+  }
+
+  function beginEdit(message: Message): void {
+    setEditingMessageId(message.id);
+    setDraft(message.body);
+    setStatus(null);
+  }
+
+  async function removeMessage(message: Message): Promise<void> {
+    if (!window.confirm('Delete this message? It will remain as a tombstone in the conversation.')) return;
+    const result = await deleteMessage(message.id);
+    if (result.status !== 'ok') {
+      setStatus(failureCopy(result.status));
+      return;
+    }
+    setMessages((current) => current.map((item) => item.id === message.id
+      ? { ...item, body: '', deletedAt: new Date().toISOString() }
+      : item));
+    if (editingMessageId === message.id) {
+      setEditingMessageId(null);
+      setDraft('');
     }
   }
 
@@ -159,7 +196,7 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
           <button type="button" className="conversation-new" onClick={() => setShowGroupComposer((value) => !value)} aria-label="Create a group conversation" aria-expanded={showGroupComposer}><Icon name={showGroupComposer ? 'close' : 'plus'} /></button>
         </header>
 
-        {showGroupComposer && <form className="new-group-form" onSubmit={(event) => void handleCreateGroup(event)}><label htmlFor="new-group-title">New group</label><div><input id="new-group-title" className="input" value={groupTitle} maxLength={80} autoFocus placeholder="Movie night crew" onChange={(event) => setGroupTitle(event.target.value)} /><button className="button button-primary" type="submit" disabled={groupTitle.trim() === ''}><Icon name="users" size={16} />Create</button></div><small>You can add up to 29 more accepted friends after creating it.</small></form>}
+        {showGroupComposer && <form className="new-group-form" onSubmit={(event) => void handleCreateGroup(event)}><label htmlFor="new-group-title">New group</label><div><input id="new-group-title" className="input" value={groupTitle} maxLength={60} autoFocus placeholder="Movie night crew" onChange={(event) => setGroupTitle(event.target.value)} /><button className="button button-primary" type="submit" disabled={groupTitle.trim() === ''}><Icon name="users" size={16} />Create</button></div><small>You can add up to 29 more accepted friends after creating it.</small></form>}
 
         <label className="conversation-search"><Icon name="search" size={17} /><input value={conversationQuery} placeholder="Search conversations" onChange={(event) => setConversationQuery(event.target.value)} aria-label="Search conversations" />{conversationQuery !== '' && <button type="button" onClick={() => setConversationQuery('')} aria-label="Clear conversation search"><Icon name="close" size={14} /></button>}</label>
 
@@ -181,9 +218,10 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
             {hasOlder && <button type="button" className="button message-load-older" disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? 'Loading…' : 'Load earlier messages'}</button>}
             {loadingMessages && messages.length === 0 && <div className="message-empty"><span className="loader-orbit" /><p>Loading messages…</p></div>}
             {!loadingMessages && messages.length === 0 && <div className="message-empty"><Icon name="sparkle" size={30} /><h2>Say hello</h2><p>This is the beginning of the conversation.</p></div>}
-            {messages.map((message) => message.kind === 'system' ? <p key={message.id} className="message-system"><Icon name="info" size={14} />{message.body}</p> : <article key={message.id} className="direct-message"><span className="person-avatar" aria-hidden="true">{message.displayName.slice(0, 1).toUpperCase()}</span><div><header><strong>{message.displayName}</strong><time>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time></header><p className={message.deletedAt !== null ? 'message-deleted' : ''}>{message.deletedAt !== null ? 'Message deleted' : message.body}</p></div></article>)}
+            {messages.map((message) => message.kind === 'system' ? <p key={message.id} className="message-system"><Icon name="info" size={14} />{message.body}</p> : <article key={message.id} className="direct-message"><span className="person-avatar" aria-hidden="true">{message.displayName.slice(0, 1).toUpperCase()}</span><div><header><strong>{message.displayName}</strong><span><time>{new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>{message.editedAt !== null && message.deletedAt === null && <small>edited</small>}</span></header><p className={message.deletedAt !== null ? 'message-deleted' : ''}>{message.deletedAt !== null ? 'Message deleted' : message.body}</p>{message.senderId === currentUserId && message.deletedAt === null && <div className="direct-message-actions"><button type="button" onClick={() => beginEdit(message)}>Edit</button><button type="button" onClick={() => void removeMessage(message)}>Delete</button></div>}</div></article>)}
           </div>
-          <form className="message-composer" onSubmit={(event) => void handleSend(event)}><input className="input" value={draft} maxLength={2000} placeholder={`Message ${selected.title ?? 'conversation'}…`} onChange={(event) => setDraft(event.target.value)} /><span className="message-character-count">{draft.length > 1800 ? `${draft.length}/2000` : ''}</span><button type="submit" className="button button-primary" disabled={sending || draft.trim() === ''}><Icon name="send" size={17} />{sending ? 'Sending…' : 'Send'}</button></form>
+          {editingMessageId !== null && <div className="message-edit-notice"><span><Icon name="check" size={15} />Editing message</span><button type="button" onClick={() => { setEditingMessageId(null); setDraft(''); }}>Cancel</button></div>}
+          <form className="message-composer" onSubmit={(event) => void handleSend(event)}><input className="input" value={draft} maxLength={2000} placeholder={editingMessageId === null ? `Message ${selected.title ?? 'conversation'}…` : 'Update your message…'} onChange={(event) => setDraft(event.target.value)} /><span className="message-character-count">{draft.length > 1800 ? `${draft.length}/2000` : ''}</span><button type="submit" className="button button-primary" disabled={sending || draft.trim() === ''}><Icon name={editingMessageId === null ? 'send' : 'check'} size={17} />{sending ? 'Saving…' : editingMessageId === null ? 'Send' : 'Save'}</button></form>
         </>}
         {status !== null && <p className="social-notice message-status" role="status">{status}<button type="button" onClick={() => setStatus(null)} aria-label="Dismiss message"><Icon name="close" size={14} /></button></p>}
         {selected !== null && selected.kind === 'group' && showGroupManagement && <div className="group-management-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowGroupManagement(false); }}><GroupManagementPanel conversation={selected} currentUserId={currentUserId} onClose={() => setShowGroupManagement(false)} onChanged={refreshConversations} onLeft={() => { setSelectedId(null); setShowGroupManagement(false); void refreshConversations(); }} /></div>}

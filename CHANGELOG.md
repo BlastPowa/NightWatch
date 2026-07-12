@@ -3,6 +3,14 @@
 
 ## Unreleased
 
+### Runtime QA follow-up
+
+- Prevented stale Browse category/search/pagination responses from replacing the current view and made retry preserve search/history intent.
+- Kept video actions visible on touch devices and made compact navigation scroll instead of clipping capability-gated destinations.
+- Added two-step Settings reset confirmation and compact category labels.
+- Added persistent-message edit/delete, group rename, and sender-side profanity filtering.
+- Made Reactions, Moment Notes, and room Discovery independently collapsible without adding iframe overlays.
+
 ### Phase 22 cinematic UI completion
 
 - Reworked Browse into denser cinematic shelves with labeled search, keyboard-focusable tracks, edge fades, arrow-only navigation, responsive cards, and clearer channel identity.

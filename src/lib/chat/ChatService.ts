@@ -1,27 +1,11 @@
-import {
-  RegExpMatcher,
-  TextCensor,
-  englishDataset,
-  englishRecommendedTransformers,
-} from 'obscenity';
 import type { RoomMember } from '@shared/room';
 import type { RoomService } from '@/lib/room/RoomService';
-import { settingsStore } from '@/lib/settings';
+import { prepareOutgoingMessage } from '@/lib/chat/messageFilter';
 
 /**
  * Profanity filtering happens once, at the source (§7.7): outgoing text is
  * censored before broadcast so every recipient sees the same result.
  */
-const profanityMatcher = new RegExpMatcher({
-  ...englishDataset.build(),
-  ...englishRecommendedTransformers,
-});
-const profanityCensor = new TextCensor();
-
-function censorProfanity(text: string): string {
-  return profanityCensor.applyTo(text, profanityMatcher.getAllMatches(text));
-}
-
 export interface ChatEntry {
   id: string;
   kind: 'message' | 'system';
@@ -82,8 +66,7 @@ export class ChatService {
 
   /** Send a message. Own messages are appended locally (broadcast self=false). */
   public send(text: string, senderName: string): SendResult {
-    const trimmed = text.trim().slice(0, MAX_MESSAGE_LENGTH);
-    const clean = settingsStore.get().chatFilterEnabled ? censorProfanity(trimmed) : trimmed;
+    const clean = prepareOutgoingMessage(text, MAX_MESSAGE_LENGTH);
     if (clean.length === 0) {
       return 'empty';
     }

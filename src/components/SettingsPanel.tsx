@@ -74,6 +74,8 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
               className={`settings-nav-item${section === item.id ? ' settings-nav-item-active' : ''}`}
               onClick={() => setSection(item.id)}
               aria-current={section === item.id ? 'page' : undefined}
+              aria-label={item.label}
+              title={item.label}
             >
               <span><Icon name={item.icon} /></span>{item.label}
             </button>
@@ -140,7 +142,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'data' && (
-          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, and accessibility presentation.</p><button type="button" className="button" onClick={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })}>Reset appearance</button></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><button type="button" className="button button-danger" onClick={() => settingsStore.update(DEFAULT_SETTINGS)}>Reset all settings</button></div></section></>
+          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
         )}
       </div>
     </div>
@@ -159,6 +161,18 @@ function ToggleCard({ title, description, checked, onChange }: { title: string; 
   return <label className="card settings-card toggle-card" htmlFor={id}><span><strong>{title}</strong><small id={descriptionId}>{description}</small></span><input id={id} type="checkbox" checked={checked} aria-describedby={descriptionId} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>;
 }
 function Segmented<T extends string>({ values, active, onSelect }: { values: readonly T[]; active: T; onSelect(value: T): void }): JSX.Element { return <div className="segmented">{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{value}</button>)}</div>; }
+
+function ConfirmResetButton({ label, confirmLabel, danger = false, onConfirm }: { label: string; confirmLabel: string; danger?: boolean; onConfirm(): void }): JSX.Element {
+  const [confirming, setConfirming] = useState(false);
+  return <div className="reset-confirmation">
+    <button type="button" className={`button${danger || confirming ? ' button-danger' : ''}`} onClick={() => {
+      if (!confirming) { setConfirming(true); return; }
+      onConfirm();
+      setConfirming(false);
+    }}>{confirming ? confirmLabel : label}</button>
+    {confirming && <button type="button" className="button" onClick={() => setConfirming(false)}>Cancel</button>}
+  </div>;
+}
 
 function PresencePrivacyCard(): JSX.Element {
   const [preferences, setPreferences] = useState<PresencePreferences>({ shareOnline: false, shareActivity: false });

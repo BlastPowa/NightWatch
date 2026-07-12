@@ -1,5 +1,9 @@
 # NightWatch Development Roadmap
 
+## Current delivery state (2026-07-12)
+
+`v0.1.21` contains the Phase 20-22 Browse/player/social/creator UI, advanced Settings/accessibility, native Windows shell, new NightWatch brand family, custom installer, and the Windows startup-window fix. The active work is runtime QA and the narrowly scoped Phase 23 social-profile backend contract documented in `PHASE_23_SOCIAL_UI_BACKEND_HANDOFF.md`. Historical phase descriptions below are retained as the delivery ledger; `STATUS.md` and `TASKS.md` are authoritative for current work.
+
 ## Project Goal
 
 Build a downloadable desktop watch-party application using Electron that allows users to watch YouTube content together in synchronized rooms while remaining compliant with YouTube policies.

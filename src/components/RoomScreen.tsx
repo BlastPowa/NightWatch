@@ -3,6 +3,7 @@ import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
 import { QueuePanel } from '@/components/QueuePanel';
+import { SearchBox } from '@/components/SearchBox';
 import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
@@ -49,6 +50,7 @@ export function RoomScreen({
   const [queueOpen, setQueueOpen] = useState(true);
   const [chatOpen, setChatOpen] = useState(true);
   const [membersOpen, setMembersOpen] = useState(true);
+  const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
@@ -222,6 +224,18 @@ export function RoomScreen({
               />
             </div>
           </details>
+
+          {selfIsHost && (
+            <details className="room-module room-collapsible room-discovery-module" open={discoveryOpen} onToggle={(event) => setDiscoveryOpen(event.currentTarget.open)}>
+              <summary>
+                <span><span className="eyebrow">Find the next video</span><strong>Discovery</strong></span>
+                <Icon name="chevron-right" size={18} className="room-summary-chevron" />
+              </summary>
+              <div className="room-module-body">
+                <SearchBox callerId={selfId} onSelect={(videoId) => loadVideoRef.current?.(videoId)} />
+              </div>
+            </details>
+          )}
         </div>
 
         <aside className="room-aside card room-dock">

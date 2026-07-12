@@ -6,6 +6,7 @@ import {
   leaveConversation,
   listConversationMembers,
   removeGroupMember,
+  renameGroup,
   setConversationRole,
   transferOwnership,
   type Conversation,
@@ -59,6 +60,7 @@ export function GroupManagementPanel({
   const [members, setMembers] = useState<ConversationMember[]>([]);
   const [friends, setFriends] = useState<AcceptedFriend[]>(acceptedFriends ?? []);
   const [selectedFriendId, setSelectedFriendId] = useState('');
+  const [groupTitle, setGroupTitle] = useState(conversation.title ?? '');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -84,6 +86,10 @@ export function GroupManagementPanel({
     setNotice(null);
     return true;
   }
+
+  useEffect(() => {
+    setGroupTitle(conversation.title ?? '');
+  }, [conversation.id, conversation.title]);
 
   useEffect(() => {
     let active = true;
@@ -147,6 +153,13 @@ export function GroupManagementPanel({
     if (added) setSelectedFriendId('');
   }
 
+  async function rename(event: FormEvent): Promise<void> {
+    event.preventDefault();
+    const title = groupTitle.trim();
+    if (title.length === 0 || title === conversation.title) return;
+    await run(() => renameGroup(conversation.id, title), 'Group renamed.');
+  }
+
   async function removeMember(member: ConversationMember): Promise<void> {
     const displayName = names.get(member.userId) ?? 'this member';
     if (!window.confirm(`Remove ${displayName} from the group?`)) return;
@@ -195,6 +208,16 @@ export function GroupManagementPanel({
         <strong>{members.length}/{GROUP_MEMBER_LIMIT} members</strong>
         <small>Your role: {roleLabel(currentRole)}</small>
       </div>
+
+      {canManageMembers && (
+        <form className="group-rename-form" onSubmit={(event) => void rename(event)}>
+          <label htmlFor={`group-title-${conversation.id}`}>Group name</label>
+          <div>
+            <input id={`group-title-${conversation.id}`} className="input" value={groupTitle} minLength={1} maxLength={60} onChange={(event) => setGroupTitle(event.target.value)} />
+            <button type="submit" className="button" disabled={busy || groupTitle.trim() === '' || groupTitle.trim() === conversation.title}>Rename</button>
+          </div>
+        </form>
+      )}
 
       {canManageMembers && (
         <form className="group-add-member" onSubmit={(event) => void addMember(event)}>
