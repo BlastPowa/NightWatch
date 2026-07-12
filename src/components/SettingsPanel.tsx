@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { AuthUser } from '@/lib/auth';
 import { signInWithDiscord, signOut } from '@/lib/auth';
 import {
@@ -10,6 +10,11 @@ import {
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import {
+  getPresencePreferences,
+  setPresencePreferences,
+  type PresencePreferences,
+} from '@/lib/social/PresenceService';
 
 interface SettingsPanelProps {
   user: AuthUser | null;
@@ -110,7 +115,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'social' && (
-          <><SettingsHeader title="Social" description="Choose what NightWatch shares and filters." /><section className="settings-grid"><ToggleCard title="Discord Rich Presence" description="Show what you are watching without exposing the room code." checked={settings.richPresenceEnabled} onChange={(richPresenceEnabled) => settingsStore.update({ richPresenceEnabled })} /><ToggleCard title="Message filter" description="Filter profanity in messages you send before everyone receives them." checked={settings.chatFilterEnabled} onChange={(chatFilterEnabled) => settingsStore.update({ chatFilterEnabled })} /></section></>
+          <><SettingsHeader title="Social & privacy" description="Control device presence, friend visibility, and message filtering without exposing private room codes." /><section className="settings-grid"><ToggleCard title="Discord Rich Presence" description="Show what you are watching in Discord without exposing the room code." checked={settings.richPresenceEnabled} onChange={(richPresenceEnabled) => settingsStore.update({ richPresenceEnabled })} /><ToggleCard title="Message filter" description="Filter profanity in messages you send before everyone receives them." checked={settings.chatFilterEnabled} onChange={(chatFilterEnabled) => settingsStore.update({ chatFilterEnabled })} />{user !== null ? <PresencePrivacyCard /> : <div className="card settings-card settings-card-muted"><h2>Friend presence</h2><p>Connect Discord to choose whether accepted friends can see when you are online or watching.</p></div>}</section></>
         )}
 
         {section === 'accessibility' && (
@@ -133,3 +138,37 @@ function SettingsHeader({ title, description }: { title: string; description: st
 function RangeSetting({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange(value: number): void }): JSX.Element { return <label className="range-setting"><span><span className="range-label">{label}</span><output>{value}{unit}</output></span><input type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>; }
 function ToggleCard({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange(value: boolean): void }): JSX.Element { return <label className="card settings-card toggle-card"><span><strong>{title}</strong><small>{description}</small></span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>; }
 function Segmented<T extends string>({ values, active, onSelect }: { values: readonly T[]; active: T; onSelect(value: T): void }): JSX.Element { return <div className="segmented">{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{value}</button>)}</div>; }
+
+function PresencePrivacyCard(): JSX.Element {
+  const [preferences, setPreferences] = useState<PresencePreferences>({ shareOnline: false, shareActivity: false });
+  const [state, setState] = useState<'loading' | 'ready' | 'saving' | 'error'>('loading');
+
+  useEffect(() => {
+    let active = true;
+    void getPresencePreferences().then((result) => {
+      if (!active) return;
+      if (result.status === 'ok') {
+        setPreferences(result.data);
+        setState('ready');
+      } else {
+        setState('error');
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  async function update(next: PresencePreferences): Promise<void> {
+    setPreferences(next);
+    setState('saving');
+    const result = await setPresencePreferences(next);
+    setState(result.status === 'ok' ? 'ready' : 'error');
+  }
+
+  return (
+    <div className="card settings-card settings-card-wide presence-card">
+      <div className="presence-card-heading"><div><h2>Friend presence</h2><p>Privacy-first: both options stay off until you choose to share with accepted friends.</p></div><span className={`settings-sync-state settings-sync-${state}`}>{state === 'loading' ? 'Loading…' : state === 'saving' ? 'Saving…' : state === 'error' ? 'Could not save' : 'Private by default'}</span></div>
+      <label className="privacy-option"><span><strong>Share online status</strong><small>Friends can see online, watching, or in-party. Your room code is never included.</small></span><input type="checkbox" checked={preferences.shareOnline} disabled={state === 'loading'} onChange={(event) => void update({ shareOnline: event.target.checked, shareActivity: event.target.checked ? preferences.shareActivity : false })} /><span className="toggle-switch" aria-hidden="true" /></label>
+      <label className="privacy-option"><span><strong>Share watching activity</strong><small>Also show the current video title. Requires online status sharing.</small></span><input type="checkbox" checked={preferences.shareActivity} disabled={state === 'loading' || !preferences.shareOnline} onChange={(event) => void update({ ...preferences, shareActivity: event.target.checked })} /><span className="toggle-switch" aria-hidden="true" /></label>
+    </div>
+  );
+}

@@ -196,6 +196,7 @@ export function RoomScreen({
             service={service}
             isHost={selfIsHost}
             roomCode={room.code}
+            allowRoomMomentNotes={meta !== null}
             takeNextFromQueue={queue.popNext}
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;

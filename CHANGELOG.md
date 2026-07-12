@@ -9,6 +9,11 @@
 - Added capability-gated Friends navigation with accepted friends, incoming/outgoing requests, co-watcher suggestions, realtime refresh, and working lifecycle actions.
 - Added persistent direct/group Messages UI with unread counts, sequence-safe paging state, realtime delivery, soft-delete tombstones, group creation, and direct-message launch from Friends.
 - Replaced exposed horizontal video scrollbars with accessible left/right shelf controls, smooth page-sized movement, and snap-aligned media cards.
+- Added consent-based friend presence controls with privacy-first defaults and no room-code exposure.
+- Added persistent Moment Notes below the official player with private/friends/party visibility, emoji stamps, filters, edit/delete, and host-synchronized seeking.
+- Added server-validated achievement profile borders with a cinematic profile studio and selected-border preview.
+- Added a capability-gated Creator Club workspace with club creation, bounty lifecycle, YouTube submissions, and one-vote-per-bounty judging.
+- Added a realtime notification centre with unread counts, safe unknown-event fallback copy, and individual or bulk read controls.
 
 ### Phase 20A — Browse and player shell
 

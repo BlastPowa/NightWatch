@@ -134,6 +134,19 @@ export class SyncEngine {
     }
   }
 
+  /** Host UI action: seek through the official API and broadcast the new position. */
+  public seekTo(positionSeconds: number): void {
+    if (!this.isHost() || !Number.isFinite(positionSeconds) || positionSeconds < 0) {
+      return;
+    }
+    this.player.seekTo(positionSeconds);
+    if (this.player.getState() === 'playing') {
+      this.room.send('playback:play', { positionSeconds, hostClockMs: Date.now() }).catch(() => {});
+    } else {
+      this.room.send('playback:pause', { positionSeconds }).catch(() => {});
+    }
+  }
+
   /** Wire the player's onStateChange here. */
   public handleLocalStateChange(state: PlayerState): void {
     if (!this.isHost()) {

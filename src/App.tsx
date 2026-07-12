@@ -8,6 +8,8 @@ import { HomeScreen } from '@/components/HomeScreen';
 import { FriendsScreen } from '@/components/FriendsScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { MessagesScreen } from '@/components/MessagesScreen';
+import { CreatorClubScreen } from '@/components/CreatorClubScreen';
+import { NotificationCenter } from '@/components/NotificationCenter';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
@@ -39,7 +41,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'discover' | 'rooms' | 'friends' | 'messages' | 'settings' | 'card' | 'about';
+type View = 'main' | 'discover' | 'rooms' | 'friends' | 'messages' | 'creator' | 'settings' | 'card' | 'about';
 
 interface PendingVideo {
   videoId: string;
@@ -280,6 +282,7 @@ export function App(): JSX.Element {
           )}
           {socialCapabilities.friends && <button type="button" className={`nav-item${view === 'friends' ? ' nav-item-active' : ''}`} onClick={() => setView('friends')}><span className="nav-icon" aria-hidden="true">♧</span><span className="nav-label">Friends</span></button>}
           {socialCapabilities.messaging && <button type="button" className={`nav-item${view === 'messages' ? ' nav-item-active' : ''}`} onClick={() => setView('messages')}><span className="nav-icon" aria-hidden="true">▱</span><span className="nav-label">Messages</span></button>}
+          {socialCapabilities.creatorClubs && <button type="button" className={`nav-item${view === 'creator' ? ' nav-item-active' : ''}`} onClick={() => setView('creator')}><span className="nav-icon" aria-hidden="true">◎</span><span className="nav-label">Creator Club</span></button>}
           <span className="nav-section-label">You</span>
           <button
             type="button"
@@ -342,6 +345,7 @@ export function App(): JSX.Element {
             <div className="browse-topbar-actions">
               <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}>▶</button>
               <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings">⚙</button>
+              {socialCapabilities.creatorClubs && <NotificationCenter />}
               <button type="button" className="profile-chip" onClick={() => setView(authUser !== null && isElectron ? 'rooms' : 'settings')} aria-label="Open account settings">
                 <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} />
                 <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
@@ -369,7 +373,8 @@ export function App(): JSX.Element {
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
         {view === 'friends' && socialCapabilities.friends && <FriendsScreen onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
         {view === 'messages' && socialCapabilities.messaging && <MessagesScreen initialConversationId={selectedConversationId} />}
-        {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
+        {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen />}
+        {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
         {view === 'about' && <AboutScreen />}
         {/* The room stays mounted while other views are open so the player,
             sync engine, and chat survive navigation (host state has no

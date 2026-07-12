@@ -1,5 +1,21 @@
 # Development Tasks
 
+## 2026-07-12 active frontend gate
+
+- [x] Discord avatar CSP and resilient fallback.
+- [x] Friends lifecycle and persistent direct/group Messages.
+- [x] Accessible shelf arrows replacing exposed media scrollbars.
+- [x] Consent-based friend presence settings.
+- [x] Moment Notes with privacy filters, edit/delete, and host-synchronized seek.
+- [x] Server-validated achievement profile borders.
+- [x] Capability-gated Creator Club, bounty lifecycle, submissions, and voting.
+- [x] Notification centre and unknown-kind-safe feed.
+- [ ] Group membership/roles and centred `0014` system notices.
+- [ ] Friend public profile/presence detail.
+- [ ] Creator moderation/report/audit and moderated club discovery contract.
+- [ ] Rebase with Phase 21 titlebar/installer branch; packaged two-client regression.
+- [ ] Final rename/logo/installer art after owner supplies the exact public name.
+
 ## Current Phase
 
 Phase 14 — Persistent Community Rooms

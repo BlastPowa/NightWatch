@@ -1,4 +1,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import type { AuthUser } from '@/lib/auth';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { listBorders, selectBorder, unlockBorder, type ProfileBorder } from '@/lib/social/ProfileService';
 import { ACHIEVEMENTS, achievementTracker } from '@/lib/engagement/AchievementTracker';
 import {
   getCloudSyncState,
@@ -25,6 +28,7 @@ function formatMetricValue(metric: LeaderboardMetric, value: number): string {
 
 interface UserCardProps {
   displayName: string;
+  user: AuthUser | null;
 }
 
 function formatWatchTime(totalSeconds: number): string {
@@ -34,7 +38,7 @@ function formatWatchTime(totalSeconds: number): string {
 }
 
 /** Local Engagement Dashboard view (§7.4, ADR-009 — device-local only). */
-export function UserCard({ displayName }: UserCardProps): JSX.Element {
+export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
   const snapshot = useSyncExternalStore(
     (onChange) => achievementTracker.subscribe(onChange),
     () => achievementTracker.get(),
@@ -49,6 +53,40 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
   const [metric, setMetric] = useState<LeaderboardMetric>('watch_seconds');
   const [scope, setScope] = useState<LeaderboardScope>('friends');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [borders, setBorders] = useState<ProfileBorder[]>([]);
+  const [borderState, setBorderState] = useState<'idle' | 'loading' | 'saving' | 'error'>('idle');
+
+  useEffect(() => {
+    if (user === null) {
+      setBorders([]);
+      return;
+    }
+    let active = true;
+    setBorderState('loading');
+    const borderIds = snapshot.unlockedIds.map((id) => id === 'first-night' ? 'first-room' : id);
+    void Promise.all(borderIds.map((id) => unlockBorder(id))).then(() => listBorders()).then((result) => {
+      if (!active) return;
+      if (result.status === 'ok') {
+        setBorders(result.data);
+        setBorderState('idle');
+      } else {
+        setBorderState('error');
+      }
+    });
+    return () => { active = false; };
+  }, [user, snapshot.unlockedIds]);
+
+  async function chooseBorder(border: ProfileBorder): Promise<void> {
+    if (!border.unlocked || border.selected) return;
+    setBorderState('saving');
+    const result = await selectBorder(border.id);
+    if (result.status === 'ok') {
+      setBorders((current) => current.map((item) => ({ ...item, selected: item.id === border.id })));
+      setBorderState('idle');
+    } else {
+      setBorderState('error');
+    }
+  }
 
   useEffect(() => {
     if (!cloud) {
@@ -72,7 +110,7 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
 
       <section className="card user-card">
         <div className="user-card-header">
-          <span className="user-avatar">{(displayName[0] ?? '?').toUpperCase()}</span>
+          <span className={`profile-border-preview profile-border-${borders.find((border) => border.selected)?.id ?? 'default'}`}><ProfileAvatar src={user?.avatarUrl ?? null} name={displayName} className="user-avatar" /></span>
           <div>
             <p className="user-name">{displayName.length > 0 ? displayName : 'Anonymous'}</p>
             <p className="user-sub">
@@ -110,6 +148,20 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
           </div>
         </div>
       </section>
+
+      {user !== null && (
+        <section className="card settings-card profile-cosmetics">
+          <div className="profile-cosmetics-heading"><div><span className="eyebrow">Profile studio</span><h2 className="settings-heading">Achievement borders</h2><p className="user-sub">Earn borders through NightWatch achievements, then choose the one shown on your profile.</p></div><span className="settings-sync-state">{borderState === 'loading' ? 'Loading…' : borderState === 'saving' ? 'Saving…' : borderState === 'error' ? 'Could not sync' : `${borders.filter((border) => border.unlocked).length} unlocked`}</span></div>
+          <div className="profile-border-grid">
+            {borders.map((border) => (
+              <button key={border.id} type="button" className={`profile-border-tile${border.selected ? ' profile-border-tile-active' : ''}`} disabled={!border.unlocked || borderState === 'saving'} onClick={() => void chooseBorder(border)} aria-pressed={border.selected}>
+                <span className={`profile-border-sample profile-border-${border.id}`}><ProfileAvatar src={user.avatarUrl} name={displayName} /></span>
+                <span><strong>{border.label}</strong><small>{border.selected ? 'Selected' : border.unlocked ? 'Unlocked' : 'Keep watching to unlock'}</small></span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="card settings-card">
         <h2 className="settings-heading">Leaderboard</h2>
