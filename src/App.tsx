@@ -93,6 +93,17 @@ export function App(): JSX.Element {
     document.documentElement.dataset['enhancedFocus'] = String(settings.enhancedFocus);
     document.documentElement.style.setProperty('--nw-text-scale', String(settings.textScalePercent / 100));
     document.documentElement.style.setProperty('--nw-accent', settings.accent);
+    if (settings.theme === 'custom') {
+      document.documentElement.style.setProperty('--nw-bg', settings.customAtmosphere.canvas);
+      document.documentElement.style.setProperty('--nw-bg-raised', settings.customAtmosphere.surface);
+      document.documentElement.style.setProperty('--nw-bg-sunken', settings.customAtmosphere.panel);
+      document.documentElement.style.setProperty('--nw-border', `color-mix(in srgb, ${settings.customAtmosphere.surface} 68%, white)`);
+    } else {
+      document.documentElement.style.removeProperty('--nw-bg');
+      document.documentElement.style.removeProperty('--nw-bg-raised');
+      document.documentElement.style.removeProperty('--nw-bg-sunken');
+      document.documentElement.style.removeProperty('--nw-border');
+    }
     document.documentElement.style.setProperty('--nw-glow-strength', `${settings.accentGlowPercent}%`);
     document.documentElement.style.setProperty('--nw-radius-lg', `${settings.cornerRadiusPx}px`);
     document.documentElement.style.setProperty(

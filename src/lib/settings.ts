@@ -3,7 +3,7 @@
  * localStorage only — never synced to other members or any backend.
  */
 
-export type ThemeId = 'electric-teal' | 'shiny-gold' | 'legacy' | 'moonlit-violet' | 'crimson-theatre' | 'oceanic' | 'evergreen' | 'rose-noir';
+export type ThemeId = 'electric-teal' | 'shiny-gold' | 'legacy' | 'moonlit-violet' | 'crimson-theatre' | 'oceanic' | 'evergreen' | 'rose-noir' | 'doomsday' | 'brand-new-day' | 'alien-x' | 'obsidian' | 'custom';
 
 export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'electric-teal', label: 'Electric Teal' },
@@ -14,6 +14,11 @@ export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'oceanic', label: 'Oceanic' },
   { id: 'evergreen', label: 'Evergreen' },
   { id: 'rose-noir', label: 'Rose Noir' },
+  { id: 'doomsday', label: 'Avengers: Doomsday' },
+  { id: 'brand-new-day', label: 'Spider-Man: Brand New Day' },
+  { id: 'alien-x', label: 'Alien X' },
+  { id: 'obsidian', label: 'Obsidian Black' },
+  { id: 'custom', label: 'Custom Atmosphere' },
 ];
 
 export interface VideoFilters {
@@ -38,6 +43,7 @@ export const ACCENT_COLORS = [
 export type AccentColor = string;
 export type UiDensity = 'compact' | 'comfortable' | 'spacious';
 export type BackgroundStyle = 'midnight' | 'aurora' | 'studio';
+export interface CustomAtmosphere { canvas: string; surface: string; panel: string; }
 
 export interface Settings {
   theme: ThemeId;
@@ -52,6 +58,7 @@ export interface Settings {
   cornerRadiusPx: number;
   density: UiDensity;
   backgroundStyle: BackgroundStyle;
+  customAtmosphere: CustomAtmosphere;
   reduceMotion: boolean;
   highContrast: boolean;
   textScalePercent: number;
@@ -72,6 +79,7 @@ export const DEFAULT_SETTINGS: Settings = {
   cornerRadiusPx: 16,
   density: 'comfortable',
   backgroundStyle: 'midnight',
+  customAtmosphere: { canvas: '#050507', surface: '#111217', panel: '#090a0e' },
   reduceMotion: false,
   highContrast: false,
   textScalePercent: 100,
@@ -85,9 +93,16 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
+function safeColor(value: unknown, fallback: string): string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
+    ? value.toLowerCase()
+    : fallback;
+}
+
 function sanitize(raw: unknown): Settings {
   const partial = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Settings>;
   const filters = (partial.videoFilters ?? {}) as Partial<VideoFilters>;
+  const customAtmosphere = (partial.customAtmosphere ?? {}) as Partial<CustomAtmosphere>;
   const theme = THEMES.some((t) => t.id === partial.theme)
     ? (partial.theme as ThemeId)
     : DEFAULT_SETTINGS.theme;
@@ -112,6 +127,11 @@ function sanitize(raw: unknown): Settings {
     cornerRadiusPx: clamp(Number(partial.cornerRadiusPx ?? 16) || 0, 4, 28),
     density,
     backgroundStyle,
+    customAtmosphere: {
+      canvas: safeColor(customAtmosphere.canvas, DEFAULT_SETTINGS.customAtmosphere.canvas),
+      surface: safeColor(customAtmosphere.surface, DEFAULT_SETTINGS.customAtmosphere.surface),
+      panel: safeColor(customAtmosphere.panel, DEFAULT_SETTINGS.customAtmosphere.panel),
+    },
     reduceMotion: typeof partial.reduceMotion === 'boolean' ? partial.reduceMotion : false,
     highContrast: typeof partial.highContrast === 'boolean' ? partial.highContrast : false,
     textScalePercent: clamp(Number(partial.textScalePercent ?? 100) || 100, 90, 125),
@@ -152,11 +172,12 @@ class SettingsStore {
     return this.settings;
   }
 
-  public update(partial: Partial<Omit<Settings, 'videoFilters'>> & { videoFilters?: Partial<VideoFilters> }): void {
+  public update(partial: Partial<Omit<Settings, 'videoFilters' | 'customAtmosphere'>> & { videoFilters?: Partial<VideoFilters>; customAtmosphere?: Partial<CustomAtmosphere> }): void {
     this.settings = sanitize({
       ...this.settings,
       ...partial,
       videoFilters: { ...this.settings.videoFilters, ...partial.videoFilters },
+      customAtmosphere: { ...this.settings.customAtmosphere, ...partial.customAtmosphere },
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.settings));
     this.listeners.forEach((listener) => listener(this.settings));

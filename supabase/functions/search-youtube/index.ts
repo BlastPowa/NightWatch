@@ -23,7 +23,8 @@
 // 12-item search already cost), cache that set, and serve it to the client in
 // pages of 12. Every Show More is a cache slice and costs ZERO units. Browse is
 // hard-capped at those 48 results, so a single query can never cost more than
-// 101 units no matter how many times the user pages. On top of that, a global
+// 102 units (including one batched channel-avatar lookup) no matter how many
+// times the user pages. On top of that, a global
 // daily unit budget stops us calling YouTube at all once the day's spend is up.
 
 const CORS_HEADERS = {
@@ -41,6 +42,7 @@ const PAGE_SIZE = 12;
 /** Quota unit costs, per the YouTube Data API v3 cost table. */
 const COST_SEARCH_LIST = 100;
 const COST_VIDEOS_LIST = 1;
+const COST_CHANNELS_LIST = 1;
 
 /**
  * Stop calling YouTube once the day's estimated spend passes this. The free
@@ -60,6 +62,7 @@ interface VideoResult {
   videoId: string;
   title: string;
   channelTitle: string;
+  channelThumbnailUrl: string;
   thumbnailUrl: string;
   durationText: string;
 }
@@ -128,7 +131,7 @@ function isRateLimited(callerId: string): boolean {
 function canSpendOnSearch(callerId: string): boolean {
   return (
     callerUsage(callerId).upstreamSearches < UPSTREAM_SEARCHES_PER_CALLER &&
-    unitsRemaining() >= COST_SEARCH_LIST + COST_VIDEOS_LIST
+    unitsRemaining() >= COST_SEARCH_LIST + COST_VIDEOS_LIST + COST_CHANNELS_LIST
   );
 }
 
@@ -219,7 +222,42 @@ async function fetchDurations(apiKey: string, ids: string[]): Promise<Map<string
   return durations;
 }
 
-/** Fetch the full 48-item set for a query (100 + 1 units). Cached afterwards. */
+/** Resolve up to 50 channel avatars in one 1-unit channels.list call. */
+async function fetchChannelThumbnails(
+  apiKey: string,
+  ids: string[],
+): Promise<Map<string, string>> {
+  const thumbnails = new Map<string, string>();
+  const uniqueIds = [...new Set(ids.filter((id) => id.length > 0))].slice(0, 50);
+  if (uniqueIds.length === 0) {
+    return thumbnails;
+  }
+  const url = new URL('https://www.googleapis.com/youtube/v3/channels');
+  url.searchParams.set('part', 'snippet');
+  url.searchParams.set('id', uniqueIds.join(','));
+  url.searchParams.set('key', apiKey);
+  chargeUnits(COST_CHANNELS_LIST);
+  const response = await fetch(url);
+  if (!response.ok) {
+    return thumbnails;
+  }
+  const data = (await response.json()) as {
+    items?: Array<{
+      id?: string;
+      snippet?: { thumbnails?: { default?: { url?: string }; medium?: { url?: string } } };
+    }>;
+  };
+  for (const channel of data.items ?? []) {
+    const thumbnail = channel.snippet?.thumbnails?.medium?.url
+      ?? channel.snippet?.thumbnails?.default?.url;
+    if (typeof channel.id === 'string' && typeof thumbnail === 'string') {
+      thumbnails.set(channel.id, thumbnail);
+    }
+  }
+  return thumbnails;
+}
+
+/** Fetch the full 48-item set for a query (100 search + 1 durations + 1 channels). */
 async function fetchSearchSet(apiKey: string, query: string): Promise<VideoResult[]> {
   const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
   searchUrl.searchParams.set('part', 'snippet');
@@ -238,6 +276,7 @@ async function fetchSearchSet(apiKey: string, query: string): Promise<VideoResul
       id?: { videoId?: string };
       snippet?: {
         title?: string;
+        channelId?: string;
         channelTitle?: string;
         thumbnails?: { medium?: { url?: string } };
       };
@@ -245,15 +284,16 @@ async function fetchSearchSet(apiKey: string, query: string): Promise<VideoResul
   };
 
   const items = (data.items ?? []).filter((item) => typeof item.id?.videoId === 'string');
-  const durations = await fetchDurations(
-    apiKey,
-    items.map((item) => item.id!.videoId!),
-  );
+  const [durations, channelThumbnails] = await Promise.all([
+    fetchDurations(apiKey, items.map((item) => item.id!.videoId!)),
+    fetchChannelThumbnails(apiKey, items.map((item) => item.snippet?.channelId ?? '')),
+  ]);
 
   return items.map((item) => ({
     videoId: item.id!.videoId!,
     title: item.snippet?.title ?? 'Untitled',
     channelTitle: item.snippet?.channelTitle ?? '',
+    channelThumbnailUrl: channelThumbnails.get(item.snippet?.channelId ?? '') ?? '',
     thumbnailUrl: item.snippet?.thumbnails?.medium?.url ?? '',
     durationText: durations.get(item.id!.videoId!) ?? '',
   }));
@@ -281,6 +321,7 @@ async function fetchTrendingSet(apiKey: string, categoryId: string): Promise<Vid
       id?: string;
       snippet?: {
         title?: string;
+        channelId?: string;
         channelTitle?: string;
         thumbnails?: { medium?: { url?: string } };
       };
@@ -288,12 +329,18 @@ async function fetchTrendingSet(apiKey: string, categoryId: string): Promise<Vid
     }>;
   };
 
-  return (data.items ?? [])
-    .filter((item) => typeof item.id === 'string')
+  const items = (data.items ?? []).filter((item) => typeof item.id === 'string');
+  const channelThumbnails = await fetchChannelThumbnails(
+    apiKey,
+    items.map((item) => item.snippet?.channelId ?? ''),
+  );
+
+  return items
     .map((item) => ({
       videoId: item.id!,
       title: item.snippet?.title ?? 'Untitled',
       channelTitle: item.snippet?.channelTitle ?? '',
+      channelThumbnailUrl: channelThumbnails.get(item.snippet?.channelId ?? '') ?? '',
       thumbnailUrl: item.snippet?.thumbnails?.medium?.url ?? '',
       durationText:
         typeof item.contentDetails?.duration === 'string'
@@ -314,7 +361,7 @@ async function resolveSet(
     if (cached !== undefined && isFresh(cached, TRENDING_CACHE_MS)) {
       return cached.results;
     }
-    if (unitsRemaining() < COST_VIDEOS_LIST) {
+    if (unitsRemaining() < COST_VIDEOS_LIST + COST_CHANNELS_LIST) {
       // Budget gone: stale results beat a quota breach.
       return cached?.results ?? 'rate-limited';
     }

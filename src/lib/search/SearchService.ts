@@ -4,6 +4,7 @@ export interface SearchResult {
   videoId: string;
   title: string;
   channelTitle: string;
+  channelThumbnailUrl: string;
   thumbnailUrl: string;
   durationText: string;
 }
@@ -32,7 +33,7 @@ function normalizeResults(data: unknown): SearchResult[] | null {
   }
   return results
     .filter(
-      (r): r is Omit<SearchResult, 'channelTitle'> & { channelTitle?: unknown } =>
+      (r): r is Omit<SearchResult, 'channelTitle' | 'channelThumbnailUrl' | 'durationText'> & { channelTitle?: unknown; channelThumbnailUrl?: unknown; durationText?: unknown } =>
         typeof r === 'object' &&
         r !== null &&
         typeof (r as SearchResult).videoId === 'string' &&
@@ -43,6 +44,7 @@ function normalizeResults(data: unknown): SearchResult[] | null {
       videoId: r.videoId,
       title: r.title,
       channelTitle: typeof r.channelTitle === 'string' ? r.channelTitle : '',
+      channelThumbnailUrl: typeof r.channelThumbnailUrl === 'string' ? r.channelThumbnailUrl : '',
       thumbnailUrl: r.thumbnailUrl,
       durationText: typeof r.durationText === 'string' ? r.durationText : '',
     }));

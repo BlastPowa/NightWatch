@@ -1,8 +1,16 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-12 after `v0.1.21`.
+Last updated: 2026-07-13 after Phase 23 merged to `main`.
 
 ## Runtime QA follow-up
+
+- [x] Remove the nested Browse search focus rectangle.
+- [x] Add real YouTube channel avatars with a resilient fallback.
+- [x] Rebuild My Card panels and statistics as responsive grids.
+- [x] Replace the circular Browse Play control with a conventional labeled button.
+- [x] Add four atmosphere presets, a Custom Atmosphere builder, and visual Backdrop choices.
+- [ ] Deploy the updated `search-youtube` Edge Function for channel avatars.
+- [ ] Add the Discord Activity `/ytchannel` URL mapping for `yt3.ggpht.com`.
 
 - [x] Guard Browse category/search requests against stale responses.
 - [x] Preserve search/history intent when retrying.
@@ -13,7 +21,7 @@ Last updated: 2026-07-12 after `v0.1.21`.
 - [x] Apply the sender-side profanity preference to persistent messages.
 - [x] Make Reactions, Moment Notes, and room Discovery collapsible.
 - [x] Run strict typecheck, unit tests, Activity build, Electron build, and NSIS packaging on the complete follow-up diff.
-- [ ] Merge the green follow-up PR without starting another release.
+- [x] Merge the green runtime follow-up PR without starting another release.
 
 ## Manual acceptance
 
@@ -25,12 +33,11 @@ Last updated: 2026-07-12 after `v0.1.21`.
 - [ ] Confirm the GitHub Release contains installer, blockmap, and `latest.yml`.
 - [ ] Complete a real Discord Activity launch and high-latency drift test.
 
-## Backend/UI contract still required
+## Phase 23 deployment
 
-- [ ] Phase 23 privacy-safe public friend profiles with avatars, selected borders, opt-in stats/achievements, mutual rooms, and permissions.
-- [ ] Blocked-user listing and complete block/unblock management.
-- [ ] Safe conversation-member display names, avatars, and selected borders.
-- [ ] Explicit accepted-friend party invite/notification RPC if one-click Invite is retained as a product requirement.
+- [x] Privacy-safe public profiles, blocked-user management, member presentation, and persistent-room invitation backend.
+- [x] Phase 23 Friends/Profile/Invitations frontend.
+- [ ] Apply migration `0020` and run `supabase/tests/phase23_profiles_test.sql`.
 
 ## Deferred or deliberately unavailable
 
