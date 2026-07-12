@@ -32,7 +32,7 @@ You shipped `NotificationCenter` and `CreatorClubScreen` (with directory + visib
 
 Please **do not re-derive server state from a filtered list.** If a field is missing, ask me and I will add it — that is what `0019` was.
 
-**Still unwired:** `setClubSuspended` has no caller anywhere. Staff have no way to suspend a club, so the moderation half of discovery does not exist yet.
+**`setClubSuspended` is now wired** into the club header (staff only), with the suspended state shown as a banner rather than only a tooltip — staff must be able to see that a club is closed without hovering something. **Every backend call now has a caller. Nothing is unreachable.**
 
 ---
 
@@ -64,11 +64,11 @@ You had already built `HighlightReelPanel`, wired to the player through `onSeek`
 
 ---
 
-## Still no UI at all
+## Feature surface: complete
 
-- **Moderation queue** — `listClubReports()`, `resolveReport()`, `getClubAudit()`. Reports can already be *filed* by anyone through the API; nobody can *work the queue*.
-- **Group role controls** — `setConversationRole(id, userId, 'moderator' | 'member')`, owner-only. Without it every group is owner-plus-members forever.
-- **Centred `kind === 'system'` messages** — `0014` is emitting them **now** (`Alice added Bob`, `Carol left the group`). Render as a centred muted notice, **not** a chat bubble. They are real `messages` rows carrying a `seq`: **do not filter them out**, or your cursor paging will drift.
+You built the moderation board, group role controls, and system-message rendering; I wired the last unwired call (`setClubSuspended`). **Every backend capability now has a UI. Nothing shipped is unreachable.**
+
+What is left is design, not plumbing: the scaffold-era styling is still mine in places, and `index.css` still carries a `TEMPORARY SCAFFOLD` block you can delete once nothing references it.
 
 ---
 
