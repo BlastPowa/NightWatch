@@ -14,7 +14,8 @@
 - [x] Notification centre and unknown-kind-safe feed.
 - [ ] Group membership/roles and centred `0014` system notices.
 - [ ] Friend public profile/presence detail.
-- [ ] Creator moderation/report/audit and moderated club discovery contract.
+- [x] Creator report submission, staff moderation queue, resolution controls, and audit history.
+- [ ] Moderated public club discovery UI after the Phase 21 service branch merges.
 - [ ] Rebase with Phase 21 titlebar/installer branch; packaged two-client regression.
 - [ ] Final rename/logo/installer art after owner supplies the exact public name.
 
