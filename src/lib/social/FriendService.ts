@@ -78,6 +78,10 @@ export interface Relation {
   /** Present for incoming/outgoing requests only. */
   requestId: string | null;
   createdAt: string;
+  /** Discord avatar (0020). Null when they have not published one. */
+  avatarUrl: string | null;
+  /** Server-validated selected border (0020) — a forged selection returns null. */
+  selectedBorderId: string | null;
 }
 
 export interface SocialGraph {
@@ -94,6 +98,8 @@ interface GraphRow {
   display_name?: unknown;
   request_id?: unknown;
   created_at?: unknown;
+  avatar_url?: unknown;
+  selected_border_id?: unknown;
 }
 
 function toRelation(row: GraphRow): Relation | null {
@@ -110,6 +116,11 @@ function toRelation(row: GraphRow): Relation | null {
     displayName: typeof row.display_name === 'string' ? row.display_name : 'Someone',
     requestId: typeof row.request_id === 'string' ? row.request_id : null,
     createdAt: typeof row.created_at === 'string' ? row.created_at : '',
+    avatarUrl: typeof row.avatar_url === 'string' && row.avatar_url !== '' ? row.avatar_url : null,
+    selectedBorderId:
+      typeof row.selected_border_id === 'string' && row.selected_border_id !== ''
+        ? row.selected_border_id
+        : null,
   };
 }
 
