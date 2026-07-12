@@ -9,6 +9,7 @@ import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
+import { NotificationBell } from '@/components/NotificationBell';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { TitleBar } from '@/components/TitleBar';
 import { UserCard } from '@/components/UserCard';
@@ -245,6 +246,7 @@ export function App(): JSX.Element {
         </div>
 
         <nav className="side-nav">
+          <NotificationBell />
           <span className="nav-section-label">Watch</span>
           <button
             type="button"
