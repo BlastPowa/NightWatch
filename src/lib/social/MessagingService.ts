@@ -1,3 +1,4 @@
+import { cacheDisplayName } from '@/lib/social/SocialRealtime';
 import { ok, toFailure, type SocialResult } from '@/lib/social/types';
 import { supabase } from '@/lib/supabase';
 
@@ -90,21 +91,27 @@ export async function getMessages(
     return toFailure(error);
   }
   const rows = Array.isArray(data) ? (data as Record<string, unknown>[]) : [];
-  return ok(
-    rows
-      .filter((row) => typeof row['id'] === 'string')
-      .map((row) => ({
-        id: str(row['id']),
-        seq: Number(row['seq'] ?? 0),
-        senderId: str(row['sender_id']),
-        displayName: str(row['display_name'], 'Someone'),
-        kind: row['kind'] === 'system' ? 'system' : 'message',
-        body: str(row['body']),
-        createdAt: str(row['created_at']),
-        editedAt: nullableStr(row['edited_at']),
-        deletedAt: nullableStr(row['deleted_at']),
-      })),
-  );
+  const messages = rows
+    .filter((row) => typeof row['id'] === 'string')
+    .map((row) => ({
+      id: str(row['id']),
+      seq: Number(row['seq'] ?? 0),
+      senderId: str(row['sender_id']),
+      displayName: str(row['display_name'], 'Someone'),
+      kind: row['kind'] === 'system' ? ('system' as const) : ('message' as const),
+      body: str(row['body']),
+      createdAt: str(row['created_at']),
+      editedAt: nullableStr(row['edited_at']),
+      deletedAt: nullableStr(row['deleted_at']),
+    }));
+
+  // Realtime rows are raw table rows with no display_name — seed the cache the
+  // live path reads from, so a streamed message shows a name rather than
+  // 'Someone'.
+  for (const message of messages) {
+    cacheDisplayName(message.senderId, message.displayName);
+  }
+  return ok(messages);
 }
 
 export async function createDirectConversation(userId: string): Promise<SocialResult<string>> {

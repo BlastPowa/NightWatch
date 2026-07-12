@@ -16,6 +16,7 @@ Four migrations and five client services. **No UI** — that is yours.
 | `0007_social_rpcs.sql` | All RPCs: social graph, friend transitions, presence, conversations/messages, moment notes, borders. |
 | `0008_message_ordering.sql` | Adds `messages.seq` (monotonic) and moves the unread count + message cursor onto it. |
 | `0009_fix_social_graph.sql` | Fixes a plpgsql variable/column ambiguity (42702) in `get_social_graph`. |
+| `0010_social_realtime.sql` | Adds `messages` + `friend_requests` to the realtime publication; `replica identity full`. |
 
 | Service (`src/lib/social/`) | Exposes |
 | --- | --- |
@@ -26,6 +27,7 @@ Four migrations and five client services. **No UI** — that is yours.
 | `MessagingService.ts` | conversations, messages, group membership/ownership. |
 | `MomentsService.ts` | `listMomentNotes()`, create/edit/delete, `clampPosition()`. |
 | `ProfileService.ts` | `listBorders()`, `unlockBorder()`, `selectBorder()`. |
+| `SocialRealtime.ts` | `subscribeToConversation()`, `subscribeToFriendRequests()`. |
 
 ---
 
@@ -60,6 +62,29 @@ Per the handoff: **hide** unfinished navigation, do not disable it. Call `resetS
 3. **Presence never carries a room code.** By design — it tells you a friend is watching, not where to join them. Do not build a "jump to their room" affordance on it; there is nothing to jump to.
 4. **Soft-deleted messages still arrive**, with `deletedAt` set and `body: ''`. Render a tombstone; do not filter them out, or your cursor will drift.
 
+### Realtime
+
+Chat is live. Fetch a page, then subscribe; both return an unsubscribe fn.
+
+```ts
+const unsubscribe = subscribeToConversation(conversationId, (change) => {
+  // change.type: 'insert' | 'update'   (an edit and a soft delete are both 'update')
+  // change.message: Message
+});
+
+const stop = subscribeToFriendRequests(() => {
+  // Something changed. Re-read getSocialGraph() — do NOT act on a raw row,
+  // because the graph RPC is what applies the block filter.
+});
+```
+
+These are `postgres_changes` subscriptions, not broadcast. Authorisation is the **same RLS policy** the REST path uses, so a subscriber cannot receive a row they could not already have fetched, and removing someone from a conversation cuts their stream server-side with no client cooperation. That is what satisfies the handoff's "authorise membership/friendship server-side" requirement.
+
+Two consequences for you:
+
+- **Reconcile by `seq`, not by arrival order.** A realtime insert can race the fetch that was already in flight. Merge on `id`/`seq` rather than appending blindly, or you will double-render a message.
+- **An `update` may be a soft delete.** Check `deletedAt`; the body arrives empty.
+
 ### Consent (changed behaviour — expect user-visible regression)
 
 `player_stats.share_stats` **now defaults to `false`, and all existing rows were reset to `false`.** Phase 18 defaulted it true, which contradicted the handoff's mandate that presence consent default false; two opt-in surfaces with opposite defaults is how privacy incidents happen.
@@ -76,9 +101,13 @@ The branch is committed locally but **not pushed**, and the acceptance test has 
 
 ### 1. Apply the migrations (Supabase SQL Editor, in order)
 
-**All four migrations (`0006`–`0009`) are applied to the project.** Nothing to run.
+`0006`–`0009` are applied. **`0010_social_realtime.sql` is NOT — apply it**, or every realtime subscription will connect and then silently receive nothing (Realtime only replays tables in the publication):
 
-If you are rebuilding the database from scratch, apply them in numeric order.
+```
+supabase/migrations/0010_social_realtime.sql
+```
+
+If you are rebuilding the database from scratch, apply all of them in numeric order.
 
 Close the running NightWatch app first. `0006` deadlocked once because the app polls `player_stats` while `ALTER TABLE` holds an exclusive lock; the migrations now set `lock_timeout` and touch `player_stats` last, but an idle app is still the safest way to run DDL.
 
@@ -135,6 +164,6 @@ eaeef46  fix(db): order messages by sequence, not timestamp
 ## Known gaps / honest caveats
 
 - **The SQL has never been executed by me.** There is no `psql` in the dev environment and the anon key cannot run DDL, so the migrations are reviewed but machine-unverified. `0006`/`0007` applied cleanly when the owner ran them; `0008` is untested.
-- **Realtime is not wired.** The handoff requires that realtime channels authorise membership/friendship server-side. Messages are currently fetch-on-demand; live delivery needs a channel whose authorisation is enforced server-side, and that is not built. If you need live chat rather than polling, flag it and I will add it.
 - **Group `system` messages are not emitted.** The `messages.kind = 'system'` column exists, but nothing writes join/leave/rename notices yet.
+- **Realtime covers messages and friend requests only.** Presence is still poll-on-demand via `getFriendPresence()` — a heartbeat table is a poor fit for `postgres_changes` (it would replay a row on every heartbeat of every friend). Poll it on an interval.
 - **`unlock_border` trusts the client's achievement claim** insofar as achievements are themselves client-authoritative (ADR-009). Borders are cosmetic, so this is an accepted trade rather than an oversight.

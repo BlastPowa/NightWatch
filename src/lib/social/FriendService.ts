@@ -1,4 +1,5 @@
 import { getCloudSyncState, whenSyncReady } from '@/lib/engagement/CloudSync';
+import { cacheDisplayName } from '@/lib/social/SocialRealtime';
 import { ok, toFailure, type SocialResult } from '@/lib/social/types';
 import { supabase } from '@/lib/supabase';
 
@@ -128,6 +129,9 @@ export async function getSocialGraph(): Promise<SocialResult<SocialGraph>> {
     if (relation === null) {
       continue;
     }
+    // Seed the realtime name cache: a streamed message carries no display_name,
+    // so without this the first message from a friend would read 'Someone'.
+    cacheDisplayName(relation.userId, relation.displayName);
     if (relation.kind === 'friend') {
       graph.friends.push(relation);
     } else if (relation.kind === 'incoming') {
