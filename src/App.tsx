@@ -9,6 +9,7 @@ import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
+import { ClubDiscoveryPanel } from '@/components/ClubDiscoveryPanel';
 import { NotificationBell } from '@/components/NotificationBell';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { TitleBar } from '@/components/TitleBar';
@@ -25,6 +26,7 @@ import {
   type GuestIdentity,
 } from '@/lib/identity';
 import type { ConnectionStatus } from '@/lib/realtime/types';
+import { getSocialCapabilities } from '@/lib/social/capabilities';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
 
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
@@ -34,7 +36,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'discover' | 'rooms' | 'settings' | 'card' | 'about';
+type View = 'main' | 'discover' | 'rooms' | 'clubs' | 'settings' | 'card' | 'about';
 
 interface PendingVideo {
   videoId: string;
@@ -209,6 +211,21 @@ export function App(): JSX.Element {
     [authUser],
   );
 
+  // Phase 21: the club directory is hidden until the migration is deployed and
+  // the user is signed in. Hidden, not disabled -- per the Phase 20 handoff.
+  const [clubsEnabled, setClubsEnabled] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void getSocialCapabilities().then((caps) => {
+      if (active) {
+        setClubsEnabled(caps.clubDiscovery);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [authUser]);
+
   const inRoom = roomCode !== null && session !== null && identity !== null;
   const selfIsHost =
     inRoom && session.state.members.some((m) => m.id === identity.id && m.isHost);
@@ -272,6 +289,15 @@ export function App(): JSX.Element {
             </button>
           )}
           <span className="nav-section-label">You</span>
+          {clubsEnabled && (
+            <button
+              type="button"
+              className={`nav-item${view === 'clubs' ? ' nav-item-active' : ''}`}
+              onClick={() => setView('clubs')}
+            >
+              <span className="nav-icon" aria-hidden="true">◎</span><span className="nav-label">Clubs</span>
+            </button>
+          )}
           <button
             type="button"
             className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
@@ -356,6 +382,7 @@ export function App(): JSX.Element {
             </div>
           </div>
         )}
+        {view === 'clubs' && <ClubDiscoveryPanel />}
         {view === 'settings' && <SettingsPanel user={authUser} />}
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}

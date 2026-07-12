@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HighlightsPanel } from '@/components/HighlightsPanel';
 import {
   listSessionEvents,
   listSessions,
@@ -125,6 +126,9 @@ export function InsightsPanel({ roomCode }: InsightsPanelProps): JSX.Element {
           </svg>
         </div>
       )}
+
+      {/* Phase 21 highlights. Scaffold styling — see HighlightsPanel. */}
+      {selected !== null && <HighlightsPanel sessionId={selected} />}
 
       {selected !== null && memberSamples.length === 0 && reactions.length === 0 && (
         <p className="user-sub">No events recorded in this session.</p>
