@@ -49,6 +49,17 @@ jobs:
               return;
             }
 
+            // Validation is automatic, but merging requires an explicit audit
+            // signal. The coordinator adds this label only after reviewing the
+            // PR scope, head SHA, and completed checks.
+            const labels = pr.labels.map((label) => label.name);
+            if (!labels.includes('automerge')) {
+              core.notice(
+                `PR #${pr.number} is green but has no automerge label; leaving it for review.`,
+              );
+              return;
+            }
+
             // A draft is a work-in-progress by definition. Respect it.
             if (pr.draft) {
               core.notice(`PR #${pr.number} is a draft; leaving it alone.`);

@@ -46,6 +46,9 @@ export function RoomScreen({
   onLeave,
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(true);
+  const [membersOpen, setMembersOpen] = useState(true);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
@@ -204,52 +207,71 @@ export function RoomScreen({
             }}
           />
 
-          <details className="room-module room-collapsible" open>
-          <summary><span><span className="eyebrow">Playlist</span><strong>Up next</strong></span><span aria-hidden="true">⌄</span></summary>
-          <QueuePanel
-            queue={queue}
-            selfId={selfId}
-            selfName={self?.displayName ?? 'Me'}
-            isHost={selfIsHost}
-            onPlayNext={handlePlayNext}
-          />
+          <details className="room-module room-collapsible" open={queueOpen} onToggle={(event) => setQueueOpen(event.currentTarget.open)}>
+            <summary>
+              <span><span className="eyebrow">Playlist</span><strong>Up next</strong></span>
+              <Icon name="chevron-right" size={18} className="room-summary-chevron" />
+            </summary>
+            <div className="room-module-body">
+              <QueuePanel
+                queue={queue}
+                selfId={selfId}
+                selfName={self?.displayName ?? 'Me'}
+                isHost={selfIsHost}
+                onPlayNext={handlePlayNext}
+              />
+            </div>
           </details>
         </div>
 
         <aside className="room-aside card room-dock">
-          <div className="room-dock-heading"><div><span className="eyebrow">Watch party</span><h2>Conversation</h2></div><span className="member-count">{room.members.length}</span></div>
-          <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
+          <div className="room-dock-heading">
+            <div><span className="eyebrow">Watch party</span><h2>Room lounge</h2></div>
+            <span className="member-count" aria-label={`${room.members.length} watching`}>{room.members.length}</span>
+          </div>
 
-          <details className="members-collapsible" open><summary><span>Watching now</span><span aria-hidden="true">⌄</span></summary>
-          <ul className="member-list">
-            {room.members.map((member) => (
-              <li key={member.id} className="member">
-                <span className="member-avatar" aria-hidden="true">
-                  {member.displayName.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="member-name">
-                  {member.displayName}
-                  {member.id === selfId && <span className="member-you"> (you)</span>}
-                  {member.streakDays >= 3 && (
-                    <span
-                      className="member-streak"
-                      title={`${member.streakDays}-day watch streak`}
-                    >
-                      {' '}
-                      🔥{member.streakDays}
-                    </span>
-                  )}
-                </span>
-                {member.isHost && <span className="member-host">HOST</span>}
-              </li>
-            ))}
-            {room.members.length === 0 && (
-              <li className="member member-empty">Waiting for presence…</li>
-            )}
-          </ul>
+          <details className="room-side-section room-chat-section" open={chatOpen} onToggle={(event) => setChatOpen(event.currentTarget.open)}>
+            <summary>
+              <span><Icon name="message" size={17} /> Conversation</span>
+              <Icon name="chevron-right" size={17} className="room-summary-chevron" />
+            </summary>
+            <div className="room-side-section-body">
+              <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
+            </div>
           </details>
 
-          <button type="button" className="button" onClick={onLeave}>
+          <details className="room-side-section members-collapsible" open={membersOpen} onToggle={(event) => setMembersOpen(event.currentTarget.open)}>
+            <summary>
+              <span><Icon name="users" size={17} /> Watching now</span>
+              <Icon name="chevron-right" size={17} className="room-summary-chevron" />
+            </summary>
+            <div className="room-side-section-body">
+              <ul className="member-list">
+                {room.members.map((member) => (
+                  <li key={member.id} className="member">
+                    <span className="member-avatar" aria-hidden="true">
+                      {member.displayName.slice(0, 1).toUpperCase()}
+                    </span>
+                    <span className="member-name">
+                      {member.displayName}
+                      {member.id === selfId && <span className="member-you"> (you)</span>}
+                      {member.streakDays >= 3 && (
+                        <span className="member-streak" title={`${member.streakDays}-day watch streak`}>
+                          {' '}🔥{member.streakDays}
+                        </span>
+                      )}
+                    </span>
+                    {member.isHost && <span className="member-host">HOST</span>}
+                  </li>
+                ))}
+                {room.members.length === 0 && (
+                  <li className="member member-empty">Waiting for presence…</li>
+                )}
+              </ul>
+            </div>
+          </details>
+
+          <button type="button" className="button room-leave-button" onClick={onLeave}>
             Leave Room
           </button>
         </aside>

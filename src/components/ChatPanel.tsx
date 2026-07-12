@@ -45,7 +45,7 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
 
   return (
     <div className="chat-panel">
-      <div className="chat-log" ref={logRef} onScroll={handleScroll}>
+      <div className="chat-log" ref={logRef} onScroll={handleScroll} role="log" aria-live="polite" aria-relevant="additions" aria-label="Room conversation">
         {entries.length === 0 && <div className="chat-empty"><Icon name="message" size={26} /><strong>Start the conversation</strong><p>Reactions are great. Words work too.</p></div>}
         {entries.map((entry) =>
           entry.kind === 'system' ? (
@@ -76,7 +76,7 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
           onChange={(e) => setDraft(e.target.value)}
         />
         <button type="submit" className="button">
-          <span aria-hidden="true">➤</span><span className="send-label">Send</span>
+          <Icon name="send" size={16} /><span className="send-label">Send</span>
         </button>
       </form>
     </div>

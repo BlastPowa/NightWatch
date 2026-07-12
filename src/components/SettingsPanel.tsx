@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { AuthUser } from '@/lib/auth';
 import { signInWithDiscord, signOut } from '@/lib/auth';
 import {
@@ -16,6 +16,7 @@ import {
   setPresencePreferences,
   type PresencePreferences,
 } from '@/lib/social/PresenceService';
+import './SettingsPanel.css';
 
 interface SettingsPanelProps {
   user: AuthUser | null;
@@ -41,6 +42,17 @@ const THEME_PREVIEW: Record<string, string> = {
   oceanic: 'linear-gradient(135deg,#04111b 50%,#164b68 50%)',
   evergreen: 'linear-gradient(135deg,#06110e 50%,#1d4a3b 50%)',
   'rose-noir': 'linear-gradient(135deg,#120912 50%,#512640 50%)',
+};
+
+const THEME_DESCRIPTION: Record<string, string> = {
+  'electric-teal': 'Deep blue with a cool teal signal.',
+  'shiny-gold': 'Warm black with theatre-gold highlights.',
+  legacy: 'Neutral graphite with softened blue-grey depth.',
+  'moonlit-violet': 'Ink-black surfaces with violet moonlight.',
+  'crimson-theatre': 'Dark velvet with restrained crimson warmth.',
+  oceanic: 'Abyssal navy with clear ocean-blue contrast.',
+  evergreen: 'Forest-black with calm emerald detail.',
+  'rose-noir': 'Near-black plum with cinematic rose accents.',
 };
 
 export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
@@ -80,8 +92,8 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
                 <div className="theme-grid">
                   {THEMES.map((theme) => (
                     <button key={theme.id} type="button" className={`theme-tile${settings.theme === theme.id ? ' theme-tile-active' : ''}`} onClick={() => settingsStore.update({ theme: theme.id })} aria-pressed={settings.theme === theme.id}>
-                      <span className="theme-preview" style={{ background: THEME_PREVIEW[theme.id] }} />
-                      <span>{theme.label}</span>
+                      <span className="theme-preview" style={{ background: THEME_PREVIEW[theme.id] }} aria-hidden="true"><span /></span>
+                      <span className="theme-tile-copy"><strong>{theme.label}</strong><small>{THEME_DESCRIPTION[theme.id]}</small></span>
                     </button>
                   ))}
                 </div>
@@ -90,7 +102,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
                 <h2>Accent</h2>
                 <div className="swatch-row">
                   {ACCENT_COLORS.map((color) => <button key={color} type="button" className={`swatch${settings.accent === color ? ' swatch-active' : ''}`} style={{ background: color }} aria-label={`Use ${color}`} aria-pressed={settings.accent === color} onClick={() => settingsStore.update({ accent: color })} />)}
-                  <label className="custom-color" title="Custom accent color"><input type="color" value={settings.accent} onChange={(event) => settingsStore.update({ accent: event.target.value })} /><span>Custom</span></label>
+                  <label className="custom-color" title="Custom accent color"><input type="color" value={settings.accent} aria-label="Choose a custom accent color" onChange={(event) => settingsStore.update({ accent: event.target.value })} /><span>Custom</span></label>
                 </div>
                 <RangeSetting label="Accent glow" value={settings.accentGlowPercent} min={0} max={100} unit="%" onChange={(accentGlowPercent) => settingsStore.update({ accentGlowPercent })} />
                 <RangeSetting label="Corner radius" value={settings.cornerRadiusPx} min={4} max={28} unit="px" onChange={(cornerRadiusPx) => settingsStore.update({ cornerRadiusPx })} />
@@ -109,7 +121,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
 
         {section === 'playback' && (
           <><SettingsHeader title="Playback" description="Local controls applied through the official player API and safe CSS filters." /><section className="settings-grid settings-grid-two">
-            <div className="card settings-card"><h2>Sound</h2><p>Sets your local player volume without changing anyone else’s.</p><RangeSetting label="Player volume" value={settings.volumePercent} min={0} max={100} unit="%" onChange={(volumePercent) => settingsStore.update({ volumePercent })} /><div className="quick-actions"><button type="button" className="button" onClick={() => settingsStore.update({ volumePercent: 0 })}>Mute</button><button type="button" className="button" onClick={() => settingsStore.update({ volumePercent: 50 })}>50%</button><button type="button" className="button" onClick={() => settingsStore.update({ volumePercent: 100 })}>Full</button></div></div>
+            <div className="card settings-card"><h2>Sound</h2><p>Sets your local player volume without changing anyone else’s.</p><RangeSetting label="Player volume" value={settings.volumePercent} min={0} max={100} unit="%" onChange={(volumePercent) => settingsStore.update({ volumePercent })} /><div className="quick-actions" aria-label="Volume presets"><button type="button" className="button" aria-pressed={settings.volumePercent === 0} onClick={() => settingsStore.update({ volumePercent: 0 })}>Mute</button><button type="button" className="button" aria-pressed={settings.volumePercent === 50} onClick={() => settingsStore.update({ volumePercent: 50 })}>50%</button><button type="button" className="button" aria-pressed={settings.volumePercent === 100} onClick={() => settingsStore.update({ volumePercent: 100 })}>Full</button></div></div>
             <div className="card settings-card"><h2>Picture preset</h2><p>Safe local filters around the official YouTube player.</p><div className="preset-actions"><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Neutral</button><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: { brightness: 92, contrast: 112, saturation: 105 } })}>Cinema</button><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: { brightness: 105, contrast: 108, saturation: 120 } })}>Vivid</button></div></div>
             <div className="card settings-card settings-card-wide"><h2>Fine-tune video image</h2>{(['brightness','contrast','saturation'] as const).map((key) => <RangeSetting key={key} label={key} value={settings.videoFilters[key]} min={50} max={150} unit="%" onChange={(value) => settingsStore.update({ videoFilters: { [key]: value } })} />)}<button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Reset video image</button></div>
           </section></>
@@ -120,7 +132,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'accessibility' && (
-          <><SettingsHeader title="Accessibility" description="Tune readability, motion, transparency, and keyboard focus for this device." /><section className="settings-grid settings-grid-two"><div className="card settings-card settings-card-wide"><h2>Text size</h2><p>Scale NightWatch interface text without changing the YouTube player.</p><RangeSetting label="Interface text" value={settings.textScalePercent} min={90} max={125} unit="%" onChange={(textScalePercent) => settingsStore.update({ textScalePercent })} /></div><ToggleCard title="Reduce motion" description="Minimize entrances, shimmer, hover movement, and reaction travel." checked={settings.reduceMotion} onChange={(reduceMotion) => settingsStore.update({ reduceMotion })} /><ToggleCard title="Higher contrast" description="Strengthen text and borders across every theme." checked={settings.highContrast} onChange={(highContrast) => settingsStore.update({ highContrast })} /><ToggleCard title="Reduce transparency" description="Replace glass and translucent surfaces with solid backgrounds." checked={settings.reduceTransparency} onChange={(reduceTransparency) => settingsStore.update({ reduceTransparency })} /><ToggleCard title="Enhanced keyboard focus" description="Show a stronger focus ring when navigating controls with a keyboard." checked={settings.enhancedFocus} onChange={(enhancedFocus) => settingsStore.update({ enhancedFocus })} /></section></>
+          <><SettingsHeader title="Accessibility" description="Tune readability, motion, transparency, and keyboard focus for this device." /><section className="settings-grid settings-grid-two"><div className="card settings-card settings-card-wide text-scale-card"><div><h2>Text size</h2><p>Scale NightWatch interface text without changing the YouTube player.</p></div><RangeSetting label="Interface text" value={settings.textScalePercent} min={90} max={125} unit="%" onChange={(textScalePercent) => settingsStore.update({ textScalePercent })} /><div className="text-scale-preview" aria-label="Text size preview"><strong>Tonight is better together.</strong><span>Room details and messages stay clear at your chosen size.</span></div></div><ToggleCard title="Reduce motion" description="Minimize entrances, shimmer, hover movement, and reaction travel." checked={settings.reduceMotion} onChange={(reduceMotion) => settingsStore.update({ reduceMotion })} /><ToggleCard title="Higher contrast" description="Strengthen text, controls, and boundaries across every atmosphere." checked={settings.highContrast} onChange={(highContrast) => settingsStore.update({ highContrast })} /><ToggleCard title="Reduce transparency" description="Replace glass and translucent surfaces with solid backgrounds." checked={settings.reduceTransparency} onChange={(reduceTransparency) => settingsStore.update({ reduceTransparency })} /><ToggleCard title="Enhanced keyboard focus" description="Show a stronger focus ring when navigating controls with a keyboard." checked={settings.enhancedFocus} onChange={(enhancedFocus) => settingsStore.update({ enhancedFocus })} /><div className="card settings-card accessibility-note settings-card-wide" role="note"><Icon name="sparkle" /><div><h2>Player boundary</h2><p>These preferences change NightWatch surfaces only. Captions, playback controls, and accessibility options inside YouTube remain available through the official player.</p></div></div></section></>
         )}
 
         {section === 'account' && (
@@ -136,8 +148,16 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
 }
 
 function SettingsHeader({ title, description }: { title: string; description: string }): JSX.Element { return <header className="settings-section-header"><span className="eyebrow">NightWatch preferences</span><h2>{title}</h2><p>{description}</p></header>; }
-function RangeSetting({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange(value: number): void }): JSX.Element { return <label className="range-setting"><span><span className="range-label">{label}</span><output>{value}{unit}</output></span><input type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>; }
-function ToggleCard({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange(value: boolean): void }): JSX.Element { return <label className="card settings-card toggle-card"><span><strong>{title}</strong><small>{description}</small></span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>; }
+function RangeSetting({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange(value: number): void }): JSX.Element {
+  const id = useId();
+  const outputId = `${id}-output`;
+  return <label className="range-setting" htmlFor={id}><span><span className="range-label">{label}</span><output id={outputId} htmlFor={id} aria-live="polite">{value}{unit}</output></span><input id={id} type="range" min={min} max={max} value={value} aria-describedby={outputId} onChange={(event) => onChange(Number(event.target.value))} /></label>;
+}
+function ToggleCard({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange(value: boolean): void }): JSX.Element {
+  const id = useId();
+  const descriptionId = `${id}-description`;
+  return <label className="card settings-card toggle-card" htmlFor={id}><span><strong>{title}</strong><small id={descriptionId}>{description}</small></span><input id={id} type="checkbox" checked={checked} aria-describedby={descriptionId} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>;
+}
 function Segmented<T extends string>({ values, active, onSelect }: { values: readonly T[]; active: T; onSelect(value: T): void }): JSX.Element { return <div className="segmented">{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{value}</button>)}</div>; }
 
 function PresencePrivacyCard(): JSX.Element {
@@ -167,7 +187,7 @@ function PresencePrivacyCard(): JSX.Element {
 
   return (
     <div className="card settings-card settings-card-wide presence-card">
-      <div className="presence-card-heading"><div><h2>Friend presence</h2><p>Privacy-first: both options stay off until you choose to share with accepted friends.</p></div><span className={`settings-sync-state settings-sync-${state}`}>{state === 'loading' ? 'Loading…' : state === 'saving' ? 'Saving…' : state === 'error' ? 'Could not save' : 'Private by default'}</span></div>
+      <div className="presence-card-heading"><div><h2>Friend presence</h2><p>Privacy-first: both options stay off until you choose to share with accepted friends.</p></div><span className={`settings-sync-state settings-sync-${state}`} role="status" aria-live="polite">{(state === 'loading' || state === 'saving') && <span className="settings-mini-loader" aria-hidden="true" />}{state === 'loading' ? 'Loading…' : state === 'saving' ? 'Saving…' : state === 'error' ? 'Could not save' : 'Private by default'}</span></div>
       <label className="privacy-option"><span><strong>Share online status</strong><small>Friends can see online, watching, or in-party. Your room code is never included.</small></span><input type="checkbox" checked={preferences.shareOnline} disabled={state === 'loading'} onChange={(event) => void update({ shareOnline: event.target.checked, shareActivity: event.target.checked ? preferences.shareActivity : false })} /><span className="toggle-switch" aria-hidden="true" /></label>
       <label className="privacy-option"><span><strong>Share watching activity</strong><small>Also show the current video title. Requires online status sharing.</small></span><input type="checkbox" checked={preferences.shareActivity} disabled={state === 'loading' || !preferences.shareOnline} onChange={(event) => void update({ ...preferences, shareActivity: event.target.checked })} /><span className="toggle-switch" aria-hidden="true" /></label>
     </div>

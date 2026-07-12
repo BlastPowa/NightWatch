@@ -12,10 +12,10 @@ export function BrandMark({ className = '', decorative = true }: BrandMarkProps)
       aria-label={decorative ? undefined : 'NightWatch'}
     >
       <svg viewBox="0 0 64 64" role="img" focusable="false">
-        <path className="brand-mark-orbit" d="M46.7 11.4A25 25 0 1 0 53 45.9 21 21 0 1 1 46.7 11.4Z" />
-        <path className="brand-mark-n" d="M16 43V21h6l12 14V21h6v22h-6L22 29v14Z" />
-        <path className="brand-mark-w" d="m28 21 5 22h6l4-11 4 11h6l6-22h-7l-3 13-4-13h-5l-4 13-2-13Z" />
-        <circle className="brand-mark-star" cx="49" cy="16" r="2.5" />
+        <path className="brand-mark-orbit" d="M46.5 9.5A25.5 25.5 0 1 0 55 45.8 21.5 21.5 0 1 1 46.5 9.5Z" />
+        <path className="brand-mark-n" d="M14.5 43V21L29 43V21" />
+        <path className="brand-mark-w" d="m29 21 6 22 6-13 6 13 6-22" />
+        <circle className="brand-mark-star" cx="48.5" cy="15.5" r="2.25" />
       </svg>
     </span>
   );

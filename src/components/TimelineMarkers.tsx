@@ -22,19 +22,26 @@ export function TimelineMarkers({ markers, durationSeconds }: TimelineMarkersPro
   }
 
   return (
-    <div className="timeline-strip">
-      {markers.map((marker) => (
-        <span
-          key={marker.id}
-          className="timeline-marker"
-          style={{
-            left: `${Math.min(100, Math.max(0, (marker.positionSeconds / durationSeconds) * 100))}%`,
-          }}
-          title={`${marker.emoji} at ${formatTimestamp(marker.positionSeconds)}`}
-        >
-          {marker.emoji}
-        </span>
-      ))}
+    <div className="timeline-module" role="group" aria-label={`${markers.length} room reactions on the video timeline`}>
+      <div className="timeline-label">
+        <span>Room pulse</span>
+        <small>{markers.length} reaction{markers.length === 1 ? '' : 's'}</small>
+      </div>
+      <div className="timeline-strip">
+        <span className="timeline-rail" aria-hidden="true" />
+        {markers.map((marker) => (
+          <span
+            key={marker.id}
+            className="timeline-marker"
+            style={{
+              left: `${Math.min(100, Math.max(0, (marker.positionSeconds / durationSeconds) * 100))}%`,
+            }}
+            title={`${marker.emoji} at ${formatTimestamp(marker.positionSeconds)}`}
+          >
+            {marker.emoji}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

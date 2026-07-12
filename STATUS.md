@@ -1,5 +1,9 @@
 # Current Status
 
+**Authoritative update (2026-07-12): released `v0.1.19`; `main` is `ce20237`.** All earlier frontend/backend lanes are merged. The current reviewed UI batch is `frontend/phase-22-visual-qa`.
+
+Browse, player/chat, Settings/accessibility, and the NightWatch logo/installer brand pack are complete on the active frontend branch. TypeScript, 39 unit tests, Discord Activity production build, Electron renderer/main/preload builds, and Windows NSIS packaging all pass with publishing disabled. Remaining acceptance work is hands-on packaged visual review, two-client room regression, and the intentional owner-triggered release after approval.
+
 **Released: `v0.1.18`.** See `CODEX_HANDOFF.md` for the live working state — it is kept current and supersedes this file where they disagree.
 
 ## 2026-07-12 authoritative update

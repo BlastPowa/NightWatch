@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type SyntheticEvent } from 'react';
 import { getTrending, searchYouTube, type SearchResult } from '@/lib/search/SearchService';
 import { listHistory } from '@/lib/rooms/HistoryService';
 import { Icon, type IconName } from '@/components/Icon';
@@ -163,6 +163,13 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
     event.currentTarget.parentElement?.classList.add('thumbnail-unavailable');
   }
 
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
+    if (event.key === 'Escape' && query !== '') {
+      event.preventDefault();
+      setQuery('');
+    }
+  }
+
   const firstShelf = results.slice(0, 8);
   const secondShelf = results.slice(8, 16);
   const remainingShelf = results.slice(16);
@@ -170,8 +177,11 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
   return (
     <div className="browse-hub">
       <form className="browse-search" role="search" onSubmit={(event) => void handleSearch(event)}>
-        <span><Icon name="search" size={20} /></span>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search videos, creators, and topics" aria-label="Search videos" />
+        <span className="browse-search-icon"><Icon name="search" size={20} /></span>
+        <label className="browse-search-field">
+          <span>Find your next watch</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleSearchKeyDown} placeholder="Search videos, creators, and topics" aria-label="Search videos" />
+        </label>
         {query !== '' && <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="Clear search"><Icon name="close" size={16} /></button>}
         <button type="submit" className="button button-primary" disabled={loading || query.trim() === ''}>{loading && mode === 'search' ? 'Searching…' : 'Search'}</button>
       </form>
@@ -238,7 +248,8 @@ function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, 
   }
   return <section className="video-shelf" aria-labelledby={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>
     <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><div className="shelf-controls"><span>{items.length} videos</span><button type="button" disabled={!edges.left} onClick={() => move(-1)} aria-label={`Scroll ${title} left`}><Icon name="chevron-left" /></button><button type="button" disabled={!edges.right} onClick={() => move(1)} aria-label={`Scroll ${title} right`}><Icon name="chevron-right" /></button></div></header>
-    <ul className="shelf-track" ref={trackRef}>
+    <div className="shelf-viewport" data-can-scroll-left={edges.left} data-can-scroll-right={edges.right}>
+    <ul className="shelf-track" ref={trackRef} tabIndex={0} aria-label={`${title} videos`}>
       {items.map((result) => <li key={result.videoId} className="media-card">
         <div className="media-thumb">
           <img src={result.thumbnailUrl} alt="" loading="lazy" onError={onImageError} />
@@ -248,10 +259,17 @@ function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, 
             <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queuedId === result.videoId ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
           </div>
         </div>
-        <div className="media-card-copy"><span className="channel-avatar" aria-hidden="true">{(result.channelTitle || result.title).slice(0, 1).toUpperCase()}</span><span><strong title={result.title}>{result.title}</strong><small>{result.channelTitle || 'YouTube'}</small></span></div>
+        <div className="media-card-copy"><ChannelAvatar name={result.channelTitle || result.title} /><span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span></div>
       </li>)}
     </ul>
+    </div>
   </section>;
+}
+
+function ChannelAvatar({ name }: { name: string }): JSX.Element {
+  const seed = Array.from(name).reduce((value, character) => ((value * 31) + character.charCodeAt(0)) % 360, 217);
+  const style = { '--channel-hue': seed } as CSSProperties;
+  return <span className="channel-avatar" style={style} aria-hidden="true"><span>{name.trim().slice(0, 1).toUpperCase() || 'N'}</span></span>;
 }
 
 function BrowseLoading(): JSX.Element {
