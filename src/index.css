@@ -1590,9 +1590,22 @@ input {
   font-weight: 700;
 }
 
+.leaderboard-row-self {
+  border-color: color-mix(in srgb, var(--nw-accent) 55%, var(--nw-border));
+  background: color-mix(in srgb, var(--nw-accent) 10%, var(--nw-bg-sunken));
+}
+
 .member-streak {
   font-size: 0.78rem;
   color: var(--nw-accent);
+}
+
+/* ===== Watch parties (Phase 19 — temporary, frontend lane restyles) ===== */
+
+.party-live {
+  color: var(--nw-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
 .room-milestones {

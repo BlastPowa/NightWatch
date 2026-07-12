@@ -13,6 +13,7 @@ import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
 import { UserCard } from '@/components/UserCard';
 import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
+import { recordParticipation } from '@/lib/social/FriendService';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
@@ -122,6 +123,15 @@ export function App(): JSX.Element {
       cancelled = true;
     };
   }, [roomCode]);
+
+  // Phase 19: note the co-watch for the friend graph. No-ops for guests,
+  // opted-out users, and ephemeral rooms. Keyed on authUser too, so signing in
+  // while already in a room still records it.
+  useEffect(() => {
+    if (roomCode !== null && authUser !== null) {
+      void recordParticipation(roomCode);
+    }
+  }, [roomCode, authUser]);
 
   useEffect(() => {
     let cancelled = false;

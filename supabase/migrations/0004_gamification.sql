@@ -12,7 +12,7 @@ create table public.player_stats (
   videos_loaded integer not null default 0 check (videos_loaded >= 0),
   streak_days integer not null default 0 check (streak_days >= 0),
   last_watch_day date,
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now()ive ran 
 );
 
 create table public.player_achievements (

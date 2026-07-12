@@ -1,7 +1,23 @@
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, session, shell } from 'electron';
-import { IpcChannel, type AppInfo, type LogLevel, type PresenceState } from '@shared/ipc';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  net,
+  Notification,
+  protocol,
+  session,
+  shell,
+} from 'electron';
+import {
+  IpcChannel,
+  type AppInfo,
+  type LogLevel,
+  type NotificationRequest,
+  type PresenceState,
+} from '@shared/ipc';
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
 import { RichPresenceManager } from './richPresence';
@@ -79,6 +95,18 @@ function findDeepLink(argv: readonly string[]): string | undefined {
 // Note: must be dot-access — Vite only statically replaces import.meta.env.X.
 const richPresence = new RichPresenceManager(import.meta.env.VITE_DISCORD_CLIENT_ID);
 const updateManager = new UpdateManager(() => mainWindow);
+
+function isValidNotificationRequest(value: unknown): value is NotificationRequest {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const request = value as NotificationRequest;
+  return (
+    typeof request.title === 'string' &&
+    request.title.length > 0 &&
+    typeof request.body === 'string'
+  );
+}
 
 function isValidPresenceState(value: unknown): value is PresenceState {
   if (typeof value !== 'object' || value === null) {
@@ -171,6 +199,19 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(IpcChannel.UpdateInstall, (): void => {
     updateManager.install();
+  });
+
+  ipcMain.handle(IpcChannel.NotifyShow, (_event, request: unknown): void => {
+    if (!Notification.isSupported() || !isValidNotificationRequest(request)) {
+      return;
+    }
+    const notification = new Notification({
+      title: request.title.slice(0, 80),
+      body: request.body.slice(0, 200),
+    });
+    // Clicking "your watch party is starting" should bring the app forward.
+    notification.on('click', focusMainWindow);
+    notification.show();
   });
 
   const LOG_LEVELS: readonly string[] = ['info', 'warn', 'error'];

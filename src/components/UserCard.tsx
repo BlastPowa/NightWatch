@@ -10,6 +10,7 @@ import {
   LEADERBOARD_METRICS,
   type LeaderboardEntry,
   type LeaderboardMetric,
+  type LeaderboardScope,
 } from '@/lib/engagement/LeaderboardService';
 
 function formatMetricValue(metric: LeaderboardMetric, value: number): string {
@@ -46,6 +47,7 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
     getCloudSyncState,
   );
   const [metric, setMetric] = useState<LeaderboardMetric>('watch_seconds');
+  const [scope, setScope] = useState<LeaderboardScope>('friends');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
       return;
     }
     let active = true;
-    void getLeaderboard(metric).then((rows) => {
+    void getLeaderboard(metric, scope).then((rows) => {
       if (active) {
         setEntries(rows);
       }
@@ -62,7 +64,7 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
     return () => {
       active = false;
     };
-  }, [cloud, metric]);
+  }, [cloud, metric, scope]);
 
   return (
     <div className="settings-page fade-up">
@@ -110,7 +112,7 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
       </section>
 
       <section className="card settings-card">
-        <h2 className="settings-heading">Friend leaderboard</h2>
+        <h2 className="settings-heading">Leaderboard</h2>
         {!cloud && (
           <p className="user-sub">
             Sign in with Discord (My Rooms) to sync your stats across devices and join the
@@ -119,6 +121,18 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
         )}
         {cloud && (
           <>
+            <div className="insights-sessions">
+              {(['friends', 'global'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`source-tab${scope === s ? ' source-tab-active' : ''}`}
+                  onClick={() => setScope(s)}
+                >
+                  {s === 'friends' ? 'Friends' : 'Everyone'}
+                </button>
+              ))}
+            </div>
             <div className="insights-sessions">
               {LEADERBOARD_METRICS.map((m) => (
                 <button
@@ -131,10 +145,19 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
                 </button>
               ))}
             </div>
-            {entries.length === 0 && <p className="user-sub">No shared stats yet.</p>}
+            {entries.length === 0 && (
+              <p className="user-sub">
+                {scope === 'friends'
+                  ? 'No friends on the board yet — watch a persistent room with someone and you will both show up here.'
+                  : 'No shared stats yet.'}
+              </p>
+            )}
             <ol className="leaderboard-list">
               {entries.map((entry, index) => (
-                <li key={`${entry.displayName}-${index}`} className="leaderboard-row">
+                <li
+                  key={`${entry.displayName}-${index}`}
+                  className={`leaderboard-row${entry.isSelf ? ' leaderboard-row-self' : ''}`}
+                >
                   <span className="leaderboard-rank">#{index + 1}</span>
                   <span className="leaderboard-name">{entry.displayName}</span>
                   <span className="leaderboard-value">
@@ -151,7 +174,11 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
               />
               <span>
                 Show me on the leaderboard
-                <span className="toggle-hint"> — your Discord name and stats only</span>
+                <span className="toggle-hint">
+                  {' '}
+                  — shares your Discord name and stats, and records which persistent rooms you
+                  watch in so friends can rank together. Never what you watch.
+                </span>
               </span>
             </label>
           </>

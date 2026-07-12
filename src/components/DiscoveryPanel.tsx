@@ -43,6 +43,8 @@ export function DiscoveryPanel({
   const [loading, setLoading] = useState(false);
   const [queuedId, setQueuedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(11);
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   async function runTrending(categoryId: string): Promise<void> {
     setLoading(true);
