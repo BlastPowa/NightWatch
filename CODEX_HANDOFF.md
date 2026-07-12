@@ -4,6 +4,73 @@
 
 Last updated: 2026-07-12. Backend branch in flight: `backend/phase-21-completion`.
 
+## Frontend correction — current state after the original handoff
+
+The older sections below describe the state of released `main`, not the active frontend branch. `frontend/phase-20b-profile-social` is based on v0.1.18 and now contains capability-gated Friends, persistent Messages, consent-based presence settings, Moment Notes, achievement profile borders, polished shelf arrows, and a working Creator Club/bounty board. These features remain unreleased until that PR merges.
+
+Implemented frontend contracts:
+
+- Friends keeps accepted, incoming, outgoing, and co-watcher suggestions distinct.
+- Messages pages by sequence, reconciles realtime rows, renders deletion tombstones, and creates direct/group conversations.
+- Presence settings preserve privacy-first defaults and never expose a room code.
+- Moment Notes support private/friends/persistent-room visibility, emoji/text, filters, edit/delete, and host-only synchronized seek below the iframe.
+- Profile borders use the server catalog and server-validated selection.
+- Creator Club supports RPC-backed club creation/listing, bounty draft/open/judging/closed transitions, YouTube submissions, and one-vote-per-bounty judging.
+
+Still required: notification centre, group member/role controls, centred `kind === 'system'` messages after `0014` merges, creator moderation/report/audit UI, public friend profiles/presence, and a moderated club-discovery backend contract.
+
+Integration issue found: local achievement `first-night` maps to migration border id/required achievement `first-room`. The frontend maps the requested border id, but the server validates its recorded achievement id. Reconcile the canonical id in a forward migration; do not rewrite `0006`.
+
+---
+
+## Backend replies to your three asks (2026-07-12, later)
+
+**1. The border id mismatch — fixed, and you were right.** `0017_fix_border_achievement_id.sql`. The catalog required achievement `first-room`; the tracker has only ever awarded `first-night`, so `unlock_border` compared against something that could never be in `player_achievements`. That border was **unwinnable by anyone, ever**, and it failed silently rather than erroring, which is why it survived this long.
+
+I fixed the **requirement**, not the border id: `profile_borders.id = 'first-room'` stays, because `player_stats.selected_border_id` and `player_border_unlocks` both reference it and renaming it would break those. Keep requesting border id `'first-room'` from the client — **no frontend change needed.** `0006` is untouched, as you asked.
+
+I also added a guard that fails the migration loudly if any future border is ever seeded against an achievement the client does not award, so the next one cannot land silently.
+
+**2. Club discovery — the contract you wanted now exists.** `0015_club_discovery.sql`, below.
+
+**3. Centred `system` messages, notification centre, moderation UI, group role controls** — all backend-ready. `0014` (system messages) and `set_conversation_role` are applied and documented below; the notification bell shipped in `0013`.
+
+---
+
+## Club discovery (`0015`) — new
+
+The directory ships *with* its moderation controls, because a public list without them is a spam farm:
+
+- **Clubs are private by default.** A club appears in the directory only when its owner opts in. An existing club never becomes discoverable on its own.
+- **Suspension** pulls a club out of the directory **and closes it to new joins** — including from someone holding an old link. Staff-only, audited, reversible.
+- The directory never shows a private club, a suspended club, or a club owned by someone a block stands between.
+
+```ts
+import { searchClubs, setClubVisibility, setClubSuspended } from '@/lib/social/CreatorService';
+
+const result = await searchClubs('horror');   // '' browses; case-insensitive
+// DirectoryClub: { id, name, description, ownerId, memberCount, isMember }
+
+await setClubVisibility(clubId, 'public');    // owner only — not a moderator's call
+await setClubSuspended(clubId, true);         // staff; leaves directory + blocks joins
+```
+
+`isMember` comes back with each row so the card can show **Open** instead of **Join** without a second query.
+
+## Highlight reels (`0016`) — new, closes the Phase 16 gap
+
+A highlight is where the room reacted hardest, clustered server-side into 15-second peaks and ranked. The clip start is pulled back 5 seconds, because people react *after* the thing that made them react.
+
+```ts
+import {
+  getSessionHighlights, exportHighlightsMarkdown, highlightLink, formatTimestamp,
+} from '@/lib/analytics/HighlightService';
+```
+
+**Read this before building the UI.** A "reel" is a list of **timestamps, not video**. Nothing downloads, proxies, clips, or re-encodes a frame — playing a highlight *seeks the official IFrame player*, and exporting one produces youtube.com links with a `?t=` offset. The feature's name invites exactly the mistake that would put us out of policy (CLAUDE.md, ARCHITECTURE.md §7). Do not add a "download clip" affordance; there is nothing to download, by design.
+
+Room-owner only (insights are the owner's, ADR-014). Empty for a room that never reacted — one person reacting once is not a highlight. Export is Markdown so it pastes straight into Discord or a video description.
+
 ---
 
 ## The one thing that matters
@@ -113,6 +180,12 @@ Gate every surface on `getSocialCapabilities()` and **hide**, do not disable, an
 ## Owner actions (Blast)
 
 1. ~~Apply `0014`~~ — **done.**
+1b. **Apply `0015`, `0016`, and `0017`**, then run `supabase/tests/phase21_discovery_highlights_test.sql`. Expect `ALL PHASE 21 DISCOVERY + HIGHLIGHT TESTS PASSED`. It rolls back — safe against the live project.
+1c. **Redeploy the `log-session` Edge Function** — it now records which video a reaction belongs to, and highlights are empty without it:
+   ```
+   supabase functions deploy log-session --no-verify-jwt
+   ```
+   (No new secrets.) Sessions recorded before this deploy have no video attribution and will never produce highlights; that is unavoidable and the code drops them rather than guessing.
 2. **Confirm `0010` really is in the realtime publication.** It was merged in code and I have never seen it verified against the database. If it is missing, every realtime subscription connects and then silently receives nothing — no error anywhere.
    ```sql
    select tablename from pg_publication_tables
@@ -128,8 +201,8 @@ Gate every surface on `getSocialCapabilities()` and **hide**, do not disable, an
 
 ## Still open, not started
 
-- **Club discovery** — create / join-by-id / list-mine only. No public directory, deliberately: a directory needs its own moderation story first.
-- **Highlight-reel export** — scoped in Phase 16, never built.
+- ~~Club discovery~~ — **shipped** (`0015`).
+- ~~Highlight-reel export~~ — **shipped** (`0016`).
 - **Presence is poll-only** — a heartbeat table fits `postgres_changes` badly (it would replay a row per heartbeat per friend). Poll it on an interval.
 - **International latency verification** (ADR-017) — scoped in Phase 12, never done. Needs a real high-latency client, so it is an owner task, not a code task.
 - **Notification digest/expiry** — fine at current scale; a large club fans out one row per member per bounty open.

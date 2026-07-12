@@ -42,3 +42,11 @@ Opus owns Electron/window/platform and installer work. Codex owns React/CSS Brow
 
 - Strict typecheck, Activity build, Electron build with `--publish never`, installer build, packaged two-client room regression, window-control regression, and v0.1.18-to-new-version update test.
 - Hand back typed IPC changes before frontend integration and list all deployment/release steps.
+
+## Frontend integration snapshot (2026-07-12)
+
+- `frontend/phase-20b-profile-social` now renders Friends, Messages, presence consent, Moment Notes, profile borders, and Creator Club/bounties behind deployed capability probes.
+- Moment-note seeking adds host-only `SyncEngine.seekTo()` and reuses existing playback events; no event payload changed.
+- Creator Club exposes only RPC-backed actions. Public club discovery remains absent because there is no moderated directory RPC.
+- After `0014` merges, Messages must render system rows as centred notices and expose owner/moderator membership controls while keeping sequence paging.
+- Resolve the `first-night` versus `first-room` achievement-border mismatch in a forward migration.

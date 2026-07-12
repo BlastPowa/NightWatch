@@ -9,7 +9,7 @@
 //
 // Requests (POST):
 //   { action: 'start', roomCode }              -> { sessionId }
-//   { action: 'log',   sessionId, events: [{ kind, value }] }   (≤50)
+//   { action: 'log',   sessionId, events: [{ kind, value, videoId? }] }  (≤50)
 //   { action: 'end',   sessionId }
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
@@ -21,6 +21,7 @@ const CORS_HEADERS = {
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json' };
 
 const EVENT_KINDS = new Set(['members', 'play', 'pause', 'seek', 'reaction']);
+const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 const MAX_EVENTS_PER_CALL = 50;
 const MAX_SESSION_AGE_MS = 12 * 60 * 60 * 1000;
 
@@ -112,7 +113,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const events = Array.isArray(body.events) ? body.events.slice(0, MAX_EVENTS_PER_CALL) : [];
     const rows = events
       .filter(
-        (e): e is { kind: string; value: number } =>
+        (e): e is { kind: string; value: number; videoId?: unknown } =>
           typeof e === 'object' &&
           e !== null &&
           typeof (e as { kind?: unknown }).kind === 'string' &&
@@ -124,6 +125,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         session_id: sessionId,
         kind: e.kind,
         value: Math.max(0, Math.min(1_000_000, e.value)),
+        // Which video the position refers to (Phase 21 highlights). Still
+        // anonymized: a video id is content, never an identity. Anything that
+        // is not a well-formed id is stored as null rather than rejected, so a
+        // malformed client cannot drop a whole batch of otherwise good events.
+        video_id:
+          typeof e.videoId === 'string' && VIDEO_ID.test(e.videoId) ? e.videoId : null,
       }));
     if (rows.length > 0) {
       await supabase.from('session_events').insert(rows);
