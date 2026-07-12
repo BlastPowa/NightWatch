@@ -5,7 +5,7 @@
 Current Phase:
 Phase 21 — finishing the gaps left inside shipped phases (backend lane: `backend/phase-21-completion`).
 
-**The critical gap:** `v0.1.18` ships eight migrations and eight social services that **no user can reach**. There is no Phase 20 UI in `main` — no friends list, DMs, moment notes, borders, clubs, bounties, or notification bell. Every capability flag is false because nothing renders behind it. The backend is not the bottleneck; the UI is.
+**The critical gap:** released `main` still has no Phase 20 UI, but `frontend/phase-20b-profile-social` now does (Friends, Messages, presence consent, Moment Notes, borders, Creator Club). The bottleneck has moved from *building* to *merging*: until that branch and `backend/phase-21-completion` both land, everything both lanes have built is invisible to every user. They do not depend on each other and can merge in either order.
 
 Frontend Track: Phase 20A Browse/player shell is on `frontend/phase-20a-browse-player`, still unmerged.
 
@@ -99,6 +99,7 @@ Completed:
 ✅ Phase 20D — notification emitters + bell, with realtime (0013, applied; test green)
 ✅ Phase 21 (backend) — group system messages (0014, applied), set_conversation_role RPC, vitest suite + CI gate
 ✅ Phase 21 (platform) — custom title bar (native overlay controls, so Snap Layouts survives), typed window IPC, branded assisted installer
+✅ Phase 21 (features) — club discovery with moderation (0015), highlight reels (0016), unwinnable-border fix (0017)
 
 Current Work:
 Owner: merge `backend/phase-21-completion`; confirm `0010` is in the realtime publication (still never verified against the database); hand-verify the installer round trip. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).

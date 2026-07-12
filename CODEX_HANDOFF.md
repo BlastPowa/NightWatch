@@ -75,9 +75,9 @@ Room-owner only (insights are the owner's, ADR-014). Empty for a room that never
 
 ## The one thing that matters
 
-`v0.1.18` ships **eight migrations and eight typed social services that no user can reach.** There is not a single Phase 20 UI component in `main` — no friends list, no DM view, no moment notes, no borders, no clubs, no bounties, no notification bell. Every capability flag is false because nothing renders behind it.
+**Released `main` still has no Phase 20 UI** — but the frontend branch now does (Friends, Messages, presence consent, Moment Notes, borders, Creator Club). So the bottleneck has moved: it is no longer "build the UI", it is **merge the two branches and cut a release**. Until `frontend/phase-20b-profile-social` and `backend/phase-21-completion` both land, everything either lane has built is invisible to every user.
 
-**The backend is not the bottleneck. The UI is.** Nothing else on any list below comes close in value to making Phase 20 visible.
+Neither branch depends on the other's code, so they can merge in either order.
 
 ---
 
