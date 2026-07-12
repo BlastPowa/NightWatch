@@ -16,10 +16,32 @@ win:
     - nsis
   icon: build/icon.ico
 nsis:
+  # Assisted installer: welcome → scope → location → progress → finish.
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
+  shortcutName: NightWatch
+  runAfterFinish: true
+  # Per-user by default so a normal install needs no UAC prompt, but the user
+  # can still elect an all-users install from the scope page.
+  perMachine: false
+  allowElevation: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  uninstallDisplayName: NightWatch ${version}
+  # Upgrade safety: an upgrade must never take a user's settings, achievement
+  # progress, or logs with it. electron-builder defaults this to false, but it
+  # is stated explicitly because flipping it would silently wipe local state on
+  # every uninstall/reinstall cycle.
+  deleteAppDataOnUninstall: false
+  # BRAND PACK PENDING: installerSidebar (164x314 BMP) and installerHeader
+  # (150x57 BMP) are the last two branding slots. They need the final artwork
+  # from the frontend brand pack, and NSIS requires BMP — a PNG here fails the
+  # build rather than degrading. Add them once the assets land:
+  #   installerSidebar: build/installer-sidebar.bmp
+  #   installerHeader: build/installer-header.bmp
 publish:
   provider: github
   owner: BlastPowa

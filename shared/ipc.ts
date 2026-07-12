@@ -18,6 +18,10 @@ export const IpcChannel = {
   /** Desktop notification (e.g. a scheduled watch party is starting). */
   NotifyShow: 'notify:show',
   LogWrite: 'log:write',
+  /** Current window chrome geometry/state (Phase 21 custom title bar). */
+  WindowGetState: 'window:get-state',
+  /** Push channel (main → renderer) carrying WindowState on change. */
+  WindowState: 'window:state',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -36,6 +40,29 @@ export interface AppInfo {
 export interface PresenceState {
   roomCode: string;
   videoTitle: string | null;
+}
+
+/**
+ * Window chrome state for the custom title bar (Phase 21).
+ *
+ * The window controls themselves are drawn by Windows via `titleBarOverlay`,
+ * not by us. That is deliberate: Snap Layouts (the flyout on hover over the
+ * maximize button) depends on Windows knowing where that button is, which it
+ * can only do when it owns the button. Hand-drawn HTML controls with
+ * `frame: false` look identical and silently break Snap Layouts, keyboard
+ * access, and high-contrast themes.
+ *
+ * So the renderer does not need minimize/maximize/close IPC — it needs to know
+ * how much room the OS took, so the brand bar can lay out beside it rather than
+ * underneath it.
+ */
+export interface WindowState {
+  /** True while maximized — the title bar squares off its corners. */
+  isMaximized: boolean;
+  /** True when the OS is drawing overlay controls we must not overlap. */
+  hasOverlay: boolean;
+  /** Height of the title bar area in CSS px. */
+  height: number;
 }
 
 /** Auto-update status pushed from main to the renderer (ADR-016). */
@@ -86,6 +113,10 @@ export interface IpcInvokeContract {
     args: [LogLevel, string];
     result: void;
   };
+  [IpcChannel.WindowGetState]: {
+    args: [];
+    result: WindowState;
+  };
 }
 
 /** A desktop notification raised by the renderer (Phase 19). */
@@ -118,4 +149,8 @@ export interface NightWatchBridge {
   notify(request: NotificationRequest): Promise<void>;
   /** Append a line to the local log file (fire-and-forget). */
   log(level: LogLevel, message: string): Promise<void>;
+  /** Current window chrome state (custom title bar). */
+  getWindowState(): Promise<WindowState>;
+  /** Subscribe to window state changes (maximize/restore). Returns unsubscribe. */
+  onWindowState(callback: (state: WindowState) => void): () => void;
 }

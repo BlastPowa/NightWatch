@@ -105,6 +105,11 @@ export async function createDiscordBridge(clientId: string): Promise<PlatformBri
     },
     getFixedRoomCode: () => Promise.resolve(fixedRoomCode),
     getPlatformIdentity: () => identityPromise,
+    // The Activity is embedded in Discord's own frame. It has no window of its
+    // own, and drawing a title bar inside someone else's chrome is exactly the
+    // kind of thing that gets an Activity rejected.
+    getWindowState: () => Promise.resolve(null),
+    onWindowState: () => () => {},
     // The Activity is already inside Discord, and its iframe is sandboxed away
     // from the Notification API — the room is on screen, so this is a no-op.
     notify: () => {},
