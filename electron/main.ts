@@ -184,9 +184,33 @@ function createMainWindow(): void {
     },
   });
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
+  // Showing the window must not depend on a single event.
+  //
+  // v0.1.19/v0.1.20 shipped a window nobody could see: with `show: false` and
+  // `titleBarStyle: 'hidden'` + `titleBarOverlay`, 'ready-to-show' did not fire
+  // on some Windows machines. The window was created, the renderer ran happily,
+  // and the app sat there invisible with no error in any log — the worst class
+  // of bug, because everything reports success.
+  //
+  // So the paint signal is now an optimisation, not the contract: whichever of
+  // ready-to-show / did-finish-load arrives first reveals the window, and a
+  // timer guarantees it regardless. An app that flashes an unpainted frame is a
+  // blemish; an app that never appears is not an app.
+  let shown = false;
+  const reveal = (reason: string): void => {
+    if (shown || mainWindow === null || mainWindow.isDestroyed()) {
+      return;
+    }
+    shown = true;
+    mainWindow.show();
+    logger.write('info', 'main', `Window shown (${reason})`);
+  };
+
+  mainWindow.once('ready-to-show', () => reveal('ready-to-show'));
+  mainWindow.webContents.once('did-finish-load', () => reveal('did-finish-load'));
+  // Last resort: even a renderer that never finishes loading gets a window, so
+  // the user sees the app (and any error it renders) instead of nothing at all.
+  setTimeout(() => reveal('fallback timer'), 10_000);
 
   // The title bar squares off its corners when maximized, so it has to know.
   mainWindow.on('maximize', pushWindowState);
