@@ -14,6 +14,14 @@ export interface SocialCapabilities {
   messaging: boolean;
   momentNotes: boolean;
   creatorClubs: boolean;
+  /** Notification bell (0013). */
+  notifications: boolean;
+  /** Public club directory (0015). Separate from creatorClubs on purpose: a
+   *  deployment can have clubs without the directory, and the directory is the
+   *  surface that carries moderation risk. */
+  clubDiscovery: boolean;
+  /** Highlight reels (0016). Room owners only, and only where insights are on. */
+  highlights: boolean;
 }
 
 const NONE: SocialCapabilities = {
@@ -21,6 +29,9 @@ const NONE: SocialCapabilities = {
   messaging: false,
   momentNotes: false,
   creatorClubs: false,
+  notifications: false,
+  clubDiscovery: false,
+  highlights: false,
 };
 
 let cached: SocialCapabilities = NONE;
@@ -43,14 +54,31 @@ async function detect(): Promise<SocialCapabilities> {
     return NONE;
   }
 
-  const [friends, messaging, momentNotes, creatorClubs] = await Promise.all([
-    probe('get_social_graph', {}),
-    probe('list_conversations', {}),
-    probe('list_moment_notes', { p_video_id: 'AAAAAAAAAAA' }),
-    probe('list_my_clubs', {}),
-  ]);
+  const [friends, messaging, momentNotes, creatorClubs, notifications, clubDiscovery, highlights] =
+    await Promise.all([
+      probe('get_social_graph', {}),
+      probe('list_conversations', {}),
+      probe('list_moment_notes', { p_video_id: 'AAAAAAAAAAA' }),
+      probe('list_my_clubs', {}),
+      probe('count_unread_notifications', {}),
+      probe('search_clubs', { p_query: '', p_limit: 1 }),
+      // Probed with a nil session: the function rejects it, but a 'forbidden'
+      // proves it is deployed. Only 42883/42P01 mean not-ready.
+      probe('get_session_highlights', {
+        p_session: '00000000-0000-0000-0000-000000000000',
+        p_limit: 1,
+      }),
+    ]);
 
-  return { friends, messaging, momentNotes, creatorClubs };
+  return {
+    friends,
+    messaging,
+    momentNotes,
+    creatorClubs,
+    notifications,
+    clubDiscovery,
+    highlights,
+  };
 }
 
 /** Cached after the first successful probe; safe to call from render paths. */

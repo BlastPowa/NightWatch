@@ -7,6 +7,7 @@ import {
   type NotificationRequest,
   type PresenceState,
   type UpdateStatusMessage,
+  type WindowState,
 } from '@shared/ipc';
 
 /**
@@ -65,6 +66,18 @@ const bridge: NightWatchBridge = {
   },
   log: (level: LogLevel, message: string): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.LogWrite, level, message) as Promise<void>;
+  },
+  getWindowState: (): Promise<WindowState> => {
+    return ipcRenderer.invoke(IpcChannel.WindowGetState) as Promise<WindowState>;
+  },
+  onWindowState: (callback: (state: WindowState) => void): (() => void) => {
+    const listener = (_event: unknown, state: WindowState): void => {
+      callback(state);
+    };
+    ipcRenderer.on(IpcChannel.WindowState, listener);
+    return () => {
+      ipcRenderer.removeListener(IpcChannel.WindowState, listener);
+    };
   },
 };
 

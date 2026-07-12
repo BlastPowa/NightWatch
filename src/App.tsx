@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
+import { TitleBar } from '@/components/TitleBar';
 import { UserCard } from '@/components/UserCard';
 import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
 import { recordParticipation } from '@/lib/social/FriendService';
@@ -236,6 +237,7 @@ export function App(): JSX.Element {
 
   return (
     <div className="app">
+      <TitleBar subtitle={inRoom ? `Room ${roomCode}` : undefined} />
       <aside className="sidebar">
         <div className="brand">
           <BrandMark />

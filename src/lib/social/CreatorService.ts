@@ -349,6 +349,66 @@ export async function getClubAudit(
   );
 }
 
+/* -------------------------------- Discovery --------------------------------- */
+
+export interface DirectoryClub {
+  id: string;
+  name: string;
+  description: string;
+  ownerId: string;
+  memberCount: number;
+  isMember: boolean;
+}
+
+/**
+ * The public club directory (Phase 21). Clubs are PRIVATE by default and appear
+ * here only once their owner opts in — an existing club never becomes
+ * discoverable on its own. Suspended clubs, and clubs owned by someone a block
+ * stands between, are absent.
+ *
+ * Pass an empty query to browse.
+ */
+export async function searchClubs(query = '', limit = 30): Promise<SocialResult<DirectoryClub[]>> {
+  const { data, error } = await supabase.rpc('search_clubs', {
+    p_query: query,
+    p_limit: limit,
+  });
+  if (error !== null) {
+    return toFailure(error);
+  }
+  return ok(
+    rows(data)
+      .filter((row) => typeof row['id'] === 'string')
+      .map((row) => ({
+        id: str(row['id']),
+        name: str(row['name']),
+        description: str(row['description']),
+        ownerId: str(row['owner_id']),
+        memberCount: Number(row['member_count'] ?? 0),
+        isMember: row['is_member'] === true,
+      })),
+  );
+}
+
+/** List or unlist a club. Owner only — not a moderator's call to make. */
+export function setClubVisibility(
+  clubId: string,
+  visibility: 'private' | 'public',
+): Promise<SocialResult<void>> {
+  return transition('set_club_visibility', { p_club: clubId, p_visibility: visibility });
+}
+
+/**
+ * Suspend a club: it leaves the directory AND stops accepting joins, including
+ * from anyone holding an old link. Staff only, audited, and reversible.
+ */
+export function setClubSuspended(
+  clubId: string,
+  suspended: boolean,
+): Promise<SocialResult<void>> {
+  return transition('set_club_suspended', { p_club: clubId, p_suspended: suspended });
+}
+
 /* ------------------------------ Notifications ------------------------------- */
 
 export async function listNotifications(limit = 50): Promise<SocialResult<AppNotification[]>> {
@@ -378,6 +438,16 @@ export function markNotificationRead(notificationId: string): Promise<SocialResu
 
 export function markAllNotificationsRead(): Promise<SocialResult<void>> {
   return transition('mark_all_notifications_read', {});
+}
+
+/** Remove one notification from your bell for good. */
+export function dismissNotification(notificationId: string): Promise<SocialResult<void>> {
+  return transition('dismiss_notification', { p_notification: notificationId });
+}
+
+/** Clear everything you have already read. Never touches unread. */
+export function clearReadNotifications(): Promise<SocialResult<void>> {
+  return transition('clear_read_notifications', {});
 }
 
 /** Badge count. Cheap enough to call on a realtime nudge rather than a poll. */

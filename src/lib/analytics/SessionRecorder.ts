@@ -15,6 +15,8 @@ type EventKind = 'members' | 'play' | 'pause' | 'seek' | 'reaction';
 interface PendingEvent {
   kind: EventKind;
   value: number;
+  /** Which video the position refers to — required to attribute a highlight. */
+  videoId?: string;
 }
 
 const FLUSH_INTERVAL_MS = 30_000;
@@ -28,6 +30,12 @@ class SessionRecorder {
   private flushTimer: number | null = null;
   private lastMembersAt = 0;
   private starting = false;
+  /**
+   * The video currently loaded. Carried as ambient state rather than threaded
+   * through every call site: a position without a video id is unattributable,
+   * and a session routinely spans several videos.
+   */
+  private videoId: string | null = null;
 
   /** Reconfigure on room/host/setting changes. Safe to call repeatedly. */
   public configure(roomCode: string, insightsEnabled: boolean, isHost: boolean): void {
@@ -67,12 +75,21 @@ class SessionRecorder {
     this.push({ kind: 'members', value: count });
   }
 
+  /** The room loaded a new video; subsequent positions belong to it. */
+  public setVideo(videoId: string | null): void {
+    this.videoId = videoId;
+  }
+
   public playback(kind: 'play' | 'pause' | 'seek', positionSeconds: number): void {
-    this.push({ kind, value: positionSeconds });
+    this.push({ kind, value: positionSeconds, ...this.videoContext() });
   }
 
   public reaction(positionSeconds: number): void {
-    this.push({ kind: 'reaction', value: positionSeconds });
+    this.push({ kind: 'reaction', value: positionSeconds, ...this.videoContext() });
+  }
+
+  private videoContext(): { videoId?: string } {
+    return this.videoId === null ? {} : { videoId: this.videoId };
   }
 
   public end(): void {
@@ -89,6 +106,7 @@ class SessionRecorder {
     this.sessionId = null;
     this.active = false;
     this.lastMembersAt = 0;
+    this.videoId = null;
   }
 
   private push(event: PendingEvent): void {

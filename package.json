@@ -15,6 +15,8 @@
     "git:sync": "powershell -ExecutionPolicy Bypass -File scripts/git/sync-feature.ps1",
     "git:finish": "powershell -ExecutionPolicy Bypass -File scripts/git/finish-feature.ps1",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -29,13 +31,14 @@
   "devDependencies": {
     "@types/node": "^22.10.1",
     "@types/react": "^18.3.12",
-    "@types/youtube": "^0.1.0",
     "@types/react-dom": "^18.3.1",
+    "@types/youtube": "^0.1.0",
     "@vitejs/plugin-react": "^4.3.4",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
-    "vite-plugin-electron": "^0.28.8"
+    "vite-plugin-electron": "^0.28.8",
+    "vitest": "^3.2.7"
   }
 }

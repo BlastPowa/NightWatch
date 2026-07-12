@@ -136,6 +136,13 @@ export function PlayerPanel({
     playerRef.current?.setVolume(settings.volumePercent);
   }, [settings.volumePercent]);
 
+  // Attribute insight events to the video they happened in (Phase 21
+  // highlights). A reaction position means nothing without knowing which video
+  // it was in, and a session routinely spans several.
+  useEffect(() => {
+    sessionRecorder.setVideo(videoId);
+  }, [videoId]);
+
   // Track duration for the timeline strip (0 until a video is loaded) and
   // count active watch time for the local engagement dashboard.
   useEffect(() => {

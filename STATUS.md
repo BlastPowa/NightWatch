@@ -1,11 +1,15 @@
 # Current Status
 
-Frontend Track: `v0.1.16` is released. Phase 20A professional Browse/player shell is active on `frontend/phase-20a-browse-player`; social and Creator Club navigation remains gated on the Phase 20 backend capabilities.
-
-Parallel Frontend Track: Cinematic midnight brand and shell implementation is in progress on `frontend/nightwatch-cinematic`. The Figma target file exists; canvas construction is paused at discovery because the Starter-plan MCP quota was reached.
+**Released: `v0.1.18`.** See `CODEX_HANDOFF.md` for the live working state — it is kept current and supersedes this file where they disagree.
 
 Current Phase:
-Phase 14 — Persistent Community Rooms
+Phase 21 — finishing the gaps left inside shipped phases (backend lane: `backend/phase-21-completion`).
+
+**The critical gap:** released `main` still has no Phase 20 UI, but `frontend/phase-20b-profile-social` now does (Friends, Messages, presence consent, Moment Notes, borders, Creator Club). The bottleneck has moved from *building* to *merging*: until that branch and `backend/phase-21-completion` both land, everything both lanes have built is invisible to every user. They do not depend on each other and can merge in either order.
+
+Frontend Track: Phase 20A Browse/player shell is on `frontend/phase-20a-browse-player`, still unmerged.
+
+Parallel Frontend Track: Cinematic midnight brand/shell on `frontend/nightwatch-cinematic`, still unmerged. Figma canvas construction is paused at discovery — the Starter-plan MCP quota was reached.
 
 Completed:
 ✅ Phase 0 — documentation & planning
@@ -87,11 +91,31 @@ Completed:
 ✅ Phase 16 shipped (Discover home grid + chat, trending/search/history, invite links)
 ✅ Phase 17 (ADR-014): opt-in session insights (log-session Edge Function, host-side recorder, owner-only reads, member-visible notice), temporary insights charts, premiere events (countdown + host start button), room settings in My Rooms
 
+✅ Phase 18 — gamification upgrade (cross-device achievements via CloudSync, leaderboards, room streaks/milestones)
+✅ Phase 19 — room invites, RSVPs, scheduled-room surface, co-watcher suggestions
+✅ Search/browse paging (search-youtube Edge Function: 48-result cached fetch, zero-quota Show More, daily unit budget)
+✅ Phase 20B — friends, blocks, presence consent, DMs/groups, moment notes, profile borders (migrations 0006–0010, applied; RLS test green)
+✅ Phase 20C — creator clubs, bounties, submissions, voting, moderation queue, append-only audit log (0011–0012, applied; test green)
+✅ Phase 20D — notification emitters + bell, with realtime (0013, applied; test green)
+✅ Phase 21 (backend) — group system messages (0014, applied), set_conversation_role RPC, vitest suite + CI gate
+✅ Phase 21 (platform) — custom title bar (native overlay controls, so Snap Layouts survives), typed window IPC, branded assisted installer
+✅ Phase 21 (features) — club discovery with moderation (0015), highlight reels (0016), unwinnable-border fix (0017), notification dismissal + retention (0018, applied)
+
 Current Work:
-Owner: run 0003_session_analytics.sql; deploy log-session Edge Function (no extra secrets). Then verify: insights toggle → host a session → View insights shows charts; premiere countdown/start. Codex: restyle Discovery + Insights per FEATURES_UI_BRIEF.md.
+Owner: merge `backend/phase-21-completion` and redeploy the `log-session` Edge Function (highlights return nothing without it); hand-verify the installer round trip. Realtime publication VERIFIED 2026-07-12 — messages, friend_requests, and notifications are all in `supabase_realtime`; the backend has no unverified assumptions left. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).
+
+Codex: building the Phase 20 UI on `frontend/phase-20b-profile-social` — FriendsScreen, MessagesScreen, and a capabilities hook are in flight. See `CODEX_HANDOFF.md`.
 
 Blocked:
-None
+None. But nothing from Phase 20 is user-visible until the frontend lane ships.
 
 Next:
-Phase 18 — gamification upgrade (cross-device achievements, leaderboards, streaks)
+**Phase 21 is complete. The backend has no known gaps and no unverified assumptions left.** Every feature scoped across Phases 14–21 is built, tested, and applied.
+
+What remains is not backend code:
+- Merge both branches and cut a release. Everything both lanes built is invisible to users until then.
+- Redeploy the `log-session` Edge Function (highlights return nothing without it).
+- Codex: build the UIs for the features that have none — notifications above all.
+- Owner-only: the public rename (exact name + trademark/domain checks), the installer BMPs (brand pack), and the international latency verification (ADR-017, needs a real high-latency client).
+
+No phase is scheduled after 21. Candidates, none committed: mobile/web reach (the Activity build already proves the renderer runs outside Electron), or a Pro tier (ADR-015 — documented, never scheduled).

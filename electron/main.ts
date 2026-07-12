@@ -17,6 +17,7 @@ import {
   type LogLevel,
   type NotificationRequest,
   type PresenceState,
+  type WindowState,
 } from '@shared/ipc';
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
@@ -121,6 +122,37 @@ function isValidPresenceState(value: unknown): value is PresenceState {
   );
 }
 
+/**
+ * Custom title bar (Phase 21).
+ *
+ * The window buttons are drawn by the OS through `titleBarOverlay`, not by us.
+ * Snap Layouts — the flyout when you hover the maximize button — requires
+ * Windows to own that button, because it is driven by WM_NCHITTEST returning
+ * HTMAXBUTTON, which Electron does not let a renderer answer. Hand-drawn HTML
+ * controls under `frame: false` look identical and silently cost you Snap
+ * Layouts, keyboard access, and high-contrast theming. The overlay is themed to
+ * the brand instead, and the renderer owns everything to its left.
+ *
+ * macOS/Linux get the plain hidden bar; the renderer reads hasOverlay and lays
+ * out accordingly.
+ */
+const TITLE_BAR_HEIGHT = 36;
+const TITLE_BAR_BG = '#0b0e14';
+const TITLE_BAR_SYMBOL = '#e6e8ee';
+const hasWindowsOverlay = process.platform === 'win32';
+
+function currentWindowState(): WindowState {
+  return {
+    isMaximized: mainWindow?.isMaximized() ?? false,
+    hasOverlay: hasWindowsOverlay,
+    height: TITLE_BAR_HEIGHT,
+  };
+}
+
+function pushWindowState(): void {
+  mainWindow?.webContents.send(IpcChannel.WindowState, currentWindowState());
+}
+
 function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -132,6 +164,16 @@ function createMainWindow(): void {
     backgroundColor: '#0b0e14',
     title: 'NightWatch',
     icon: app.isPackaged ? undefined : DEV_ICON_PATH,
+    titleBarStyle: 'hidden',
+    ...(hasWindowsOverlay
+      ? {
+          titleBarOverlay: {
+            color: TITLE_BAR_BG,
+            symbolColor: TITLE_BAR_SYMBOL,
+            height: TITLE_BAR_HEIGHT,
+          },
+        }
+      : {}),
     webPreferences: {
       preload: PRELOAD_PATH,
       contextIsolation: true,
@@ -145,6 +187,12 @@ function createMainWindow(): void {
   mainWindow.once('ready-to-show', () => {
     mainWindow?.show();
   });
+
+  // The title bar squares off its corners when maximized, so it has to know.
+  mainWindow.on('maximize', pushWindowState);
+  mainWindow.on('unmaximize', pushWindowState);
+  mainWindow.on('enter-full-screen', pushWindowState);
+  mainWindow.on('leave-full-screen', pushWindowState);
 
   // Open external links in the system browser, never inside the app.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -212,6 +260,10 @@ function registerIpcHandlers(): void {
     // Clicking "your watch party is starting" should bring the app forward.
     notification.on('click', focusMainWindow);
     notification.show();
+  });
+
+  ipcMain.handle(IpcChannel.WindowGetState, (): WindowState => {
+    return currentWindowState();
   });
 
   const LOG_LEVELS: readonly string[] = ['info', 'warn', 'error'];
