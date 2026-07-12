@@ -5,7 +5,9 @@ import { AboutScreen } from '@/components/AboutScreen';
 import { BrandMark } from '@/components/BrandMark';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { HomeScreen } from '@/components/HomeScreen';
+import { FriendsScreen } from '@/components/FriendsScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
@@ -18,6 +20,7 @@ import { recordParticipation } from '@/lib/social/FriendService';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
+import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
 import {
   createIdentity,
   loadIdentity,
@@ -34,7 +37,7 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   disconnected: 'Disconnected',
 };
 
-type View = 'main' | 'discover' | 'rooms' | 'settings' | 'card' | 'about';
+type View = 'main' | 'discover' | 'rooms' | 'friends' | 'settings' | 'card' | 'about';
 
 interface PendingVideo {
   videoId: string;
@@ -106,6 +109,7 @@ export function App(): JSX.Element {
     }
   }, [pendingJoinCode, identity]);
   const authUser = useAuth();
+  const socialCapabilities = useSocialCapabilities(authUser !== null);
   const isElectron = getPlatformBridge().kind === 'electron';
 
   // Persistent-room banner: look the code up when joining (null = ephemeral).
@@ -271,6 +275,7 @@ export function App(): JSX.Element {
               <span className="nav-icon" aria-hidden="true">▣</span><span className="nav-label">Parties</span>
             </button>
           )}
+          {socialCapabilities.friends && <button type="button" className={`nav-item${view === 'friends' ? ' nav-item-active' : ''}`} onClick={() => setView('friends')}><span className="nav-icon" aria-hidden="true">♧</span><span className="nav-label">Friends</span></button>}
           <span className="nav-section-label">You</span>
           <button
             type="button"
@@ -307,7 +312,7 @@ export function App(): JSX.Element {
         )}
 
         <button type="button" className="sidebar-profile" onClick={() => setView('card')} aria-label="Open your NightWatch profile">
-          {authUser?.avatarUrl ? <img src={authUser.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span className="sidebar-profile-avatar" aria-hidden="true">{(authUser?.name ?? identity?.displayName ?? 'G').slice(0, 1).toUpperCase()}</span>}
+          <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} className="sidebar-profile-avatar" />
           <span className="sidebar-profile-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
           <span className="sidebar-profile-more" aria-hidden="true">›</span>
         </button>
@@ -334,7 +339,7 @@ export function App(): JSX.Element {
               <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}>▶</button>
               <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings">⚙</button>
               <button type="button" className="profile-chip" onClick={() => setView(authUser !== null && isElectron ? 'rooms' : 'settings')} aria-label="Open account settings">
-                {authUser?.avatarUrl ? <img src={authUser.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{(authUser?.name ?? identity?.displayName ?? 'G').slice(0, 1).toUpperCase()}</span>}
+                <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} />
                 <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
               </button>
             </div>
@@ -358,6 +363,7 @@ export function App(): JSX.Element {
         )}
         {view === 'settings' && <SettingsPanel user={authUser} />}
         {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} />}
+        {view === 'friends' && socialCapabilities.friends && <FriendsScreen />}
         {view === 'card' && <UserCard displayName={identity?.displayName ?? ''} />}
         {view === 'about' && <AboutScreen />}
         {/* The room stays mounted while other views are open so the player,

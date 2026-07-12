@@ -40,6 +40,8 @@ Phase 14 — Persistent Community Rooms
 
 ## In Progress
 
+- Phase 20B frontend: Discord CDN/CSP avatar repair and explicit Friends lifecycle UI implemented on `frontend/phase-20b-profile-social`; Messages, presence preferences, moment notes, and profile borders remain next.
+
 - Phase 20A: persistent search, expanded category rail, cinematic video shelves, room-history continuation, collapsible room modules, and chat border correction implemented on `frontend/phase-20a-browse-player`.
 - Phase 20B/20C: backend contract delivered in `PHASE_20_UI_BACKEND_HANDOFF.md`; frontend navigation remains hidden until capabilities report deployed support.
 

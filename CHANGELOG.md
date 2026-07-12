@@ -3,6 +3,11 @@
 
 ## Unreleased
 
+### Phase 20B social frontend
+
+- Fixed packaged Discord avatars by allowing Discord CDN images in the production CSP and adding stable initial fallbacks across every account surface.
+- Added capability-gated Friends navigation with accepted friends, incoming/outgoing requests, co-watcher suggestions, realtime refresh, and working lifecycle actions.
+
 ### Phase 20A — Browse and player shell
 
 - Replaced the featured-billboard Browse page with persistent video search, fifteen working category filters, paginated cinematic shelves, room-history continuation, and compact media actions.

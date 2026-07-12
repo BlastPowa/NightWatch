@@ -13,7 +13,7 @@ function productionCsp(): PluginOption {
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://www.google.com https://apis.google.com blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: https://i.ytimg.com https://*.googleusercontent.com https://*.ggpht.com; " +
+    "img-src 'self' data: https://i.ytimg.com https://*.googleusercontent.com https://*.ggpht.com https://cdn.discordapp.com https://media.discordapp.net; " +
     "frame-src https://www.youtube.com https://www.youtube-nocookie.com; " +
     "child-src https://www.youtube.com blob:; " +
     "worker-src blob:; " +

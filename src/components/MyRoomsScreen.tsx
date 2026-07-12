@@ -3,6 +3,7 @@ import { extractVideoId } from '@shared/youtube';
 import { InsightsPanel } from '@/components/InsightsPanel';
 import { RoomMilestones } from '@/components/RoomMilestones';
 import { RoomSchedule } from '@/components/RoomSchedule';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuthError } from '@/hooks/useAuth';
 import { signInWithDiscord, signOut, type AuthUser } from '@/lib/auth';
 import {
@@ -167,7 +168,7 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
 
       <section className="card settings-card">
         <div className="about-header">
-          {user.avatarUrl !== null && <img className="auth-avatar" src={user.avatarUrl} alt="" />}
+          <ProfileAvatar className="auth-avatar" src={user.avatarUrl} name={user.name} />
           <div>
             <p className="user-name">{user.name}</p>
             <p className="user-sub">{rooms.length}/10 persistent rooms</p>

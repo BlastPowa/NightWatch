@@ -9,6 +9,7 @@ import {
   settingsStore,
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 interface SettingsPanelProps {
   user: AuthUser | null;
@@ -117,7 +118,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'account' && (
-          <><SettingsHeader title="Account" description="Discord identity powers persistent rooms. YouTube account connection is intentionally not enabled without secure OAuth." /><section className="settings-grid"><div className="card settings-card account-card">{user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="account-avatar" /> : <span className="member-avatar account-avatar">{user?.name.slice(0,1).toUpperCase() ?? '?'}</span>}<div><h2>{user?.name ?? 'Guest mode'}</h2><p>{user ? 'Connected with Discord' : 'Sign in to create and manage persistent rooms.'}</p></div><button type="button" className="button button-primary" onClick={() => void (user ? signOut() : signInWithDiscord())}>{user ? 'Sign out' : 'Connect Discord'}</button></div><div className="card settings-card settings-card-muted"><h2>YouTube account</h2><p>Planned separately after Google OAuth, secure token storage, consent, revocation, and scope review. NightWatch never signs into or alters the embedded player session.</p></div></section></>
+          <><SettingsHeader title="Account" description="Discord identity powers persistent rooms. YouTube account connection is intentionally not enabled without secure OAuth." /><section className="settings-grid"><div className="card settings-card account-card"><ProfileAvatar src={user?.avatarUrl ?? null} name={user?.name ?? 'Guest'} className="account-avatar" /><div><h2>{user?.name ?? 'Guest mode'}</h2><p>{user ? 'Connected with Discord' : 'Sign in to create and manage persistent rooms.'}</p></div><button type="button" className="button button-primary" onClick={() => void (user ? signOut() : signInWithDiscord())}>{user ? 'Sign out' : 'Connect Discord'}</button></div><div className="card settings-card settings-card-muted"><h2>YouTube account</h2><p>Planned separately after Google OAuth, secure token storage, consent, revocation, and scope review. NightWatch never signs into or alters the embedded player session.</p></div></section></>
         )}
 
         {section === 'data' && (
