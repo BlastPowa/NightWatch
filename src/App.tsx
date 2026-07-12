@@ -10,6 +10,7 @@ import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { MessagesScreen } from '@/components/MessagesScreen';
 import { CreatorClubScreen } from '@/components/CreatorClubScreen';
 import { NotificationCenter } from '@/components/NotificationCenter';
+import { RoomInvitesPanel } from '@/components/RoomInvitesPanel';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,7 @@ import { useRoom } from '@/hooks/useRoom';
 import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
 import { createDirectConversation } from '@/lib/social/MessagingService';
 import { heartbeat } from '@/lib/social/PresenceService';
+import { setProfileAvatar } from '@/lib/social/SocialProfileService';
 import {
   createIdentity,
   loadIdentity,
@@ -125,6 +127,17 @@ export function App(): JSX.Element {
     }
   }, [pendingJoinCode, identity]);
   const authUser = useAuth();
+
+  // Publish the Discord avatar to the profile row (0020). Without this nobody
+  // else can see it: the avatar lives in the auth session, which is private to
+  // this client. The server enforces a Discord-CDN allowlist, so a rejected URL
+  // simply does not publish rather than becoming a beacon in other people's UI.
+  useEffect(() => {
+    if (authUser === null) {
+      return;
+    }
+    void setProfileAvatar(authUser.avatarUrl);
+  }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
   const isElectron = getPlatformBridge().kind === 'electron';
 
@@ -404,7 +417,12 @@ export function App(): JSX.Element {
           </div>
         )}
         {view === 'settings' && <SettingsPanel user={authUser} />}
-        {view === 'rooms' && <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />}
+        {view === 'rooms' && (
+          <>
+            {socialCapabilities.friends && <RoomInvitesPanel onJoin={handleJoinPersistentRoom} />}
+            <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />
+          </>
+        )}
         {view === 'friends' && socialCapabilities.friends && <FriendsScreen onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
         {view === 'messages' && socialCapabilities.messaging && authUser !== null && <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} />}
         {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
