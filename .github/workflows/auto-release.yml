@@ -1,0 +1,78 @@
+name: Auto-release on merge
+
+# Publishes a patch release when shipped code lands on main.
+#
+# THE LOOP GUARD IS THE WHOLE TRICK. The Release workflow bumps the version and
+# pushes that commit back to main -- which is a push to main, which would
+# re-trigger this, which would release again, forever. Two independent guards
+# stop that:
+#
+#   1. Skip anything pushed by github-actions[bot] (the version commit is).
+#   2. Skip a commit whose message is a bare version number ("0.1.19"), which is
+#      exactly what `npm version` writes.
+#
+# Either alone would do it. Both are here because a runaway release loop burns
+# CI minutes and spams users with updates, and it is not the kind of bug you
+# want to be relying on a single condition to prevent.
+#
+# Docs-only merges do not release: shipping an installer to every user because
+# a markdown file changed is noise. A release needs a change under src/,
+# electron/, or shared/. Put [skip release] in the merge commit to opt out.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  release:
+    if: >-
+      github.actor != 'github-actions[bot]' &&
+      !contains(github.event.head_commit.message, '[skip release]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Decide whether this merge ships anything
+        id: decide
+        shell: bash
+        run: |
+          message=$(git log -1 --format=%s)
+
+          # `npm version` commits are a bare version number. Releasing off one
+          # would mean releasing the release.
+          if [[ "$message" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Version commit ('$message') -- this is the release's own push."
+            echo "ship=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          changed=$(git diff --name-only HEAD^ HEAD || true)
+          if echo "$changed" | grep -qE '^(src/|electron/|shared/|package\.json|electron-builder\.yml)'; then
+            echo "ship=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Docs/SQL only -- nothing for a user to install."
+            echo "ship=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish a patch release
+        if: steps.decide.outputs.ship == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: { bump: 'patch' },
+            });
+            core.summary
+              .addHeading('Release dispatched')
+              .addRaw('A patch release is building from main.')
+              .write();

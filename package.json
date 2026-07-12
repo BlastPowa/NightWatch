@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lanes": "powershell -ExecutionPolicy Bypass -File scripts/git/lane-status.ps1"
   },
   "dependencies": {
     "@discord/embedded-app-sdk": "^1.9.0",

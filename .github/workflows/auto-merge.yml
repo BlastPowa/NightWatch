@@ -1,0 +1,87 @@
+name: Auto-merge lane PRs
+
+# Merges a lane PR once its validation run has actually passed.
+#
+# Why workflow_run and not `on: pull_request`: a job triggered by the PR itself
+# cannot know whether the OTHER job succeeded without racing it. workflow_run
+# fires after "Feature PR" has finished and carries its conclusion, so a merge
+# can only happen behind a green build. There is no path here that merges an
+# unvalidated branch.
+#
+# The merge is performed by GITHUB_TOKEN, so it is attributed to the Actions bot
+# rather than to any person, and it deliberately does NOT re-trigger workflows.
+
+on:
+  workflow_run:
+    workflows: ['Feature PR']
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    # A failed or cancelled validation run merges nothing.
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head = context.payload.workflow_run.head_branch;
+
+            // Only the two working lanes. Nothing else auto-merges, and main is
+            // never a head branch, so this cannot merge main into itself.
+            if (!/^(backend|frontend)\//.test(head)) {
+              core.notice(`${head} is not a lane branch; not auto-merging.`);
+              return;
+            }
+
+            const { data: pulls } = await github.rest.pulls.list({
+              owner, repo, state: 'open', base: 'main', head: `${owner}:${head}`,
+            });
+            const pr = pulls[0];
+            if (pr === undefined) {
+              core.notice(`No open PR for ${head}.`);
+              return;
+            }
+
+            // A draft is a work-in-progress by definition. Respect it.
+            if (pr.draft) {
+              core.notice(`PR #${pr.number} is a draft; leaving it alone.`);
+              return;
+            }
+
+            // mergeable is computed asynchronously by GitHub and is null until
+            // it settles. Polling beats merging on a stale answer, and a real
+            // conflict must surface as a failure rather than a silent skip.
+            let mergeable = pr.mergeable;
+            for (let i = 0; mergeable === null && i < 5; i++) {
+              await new Promise((r) => setTimeout(r, 3000));
+              const { data: fresh } = await github.rest.pulls.get({
+                owner, repo, pull_number: pr.number,
+              });
+              mergeable = fresh.mergeable;
+            }
+
+            if (mergeable === false) {
+              core.setFailed(
+                `PR #${pr.number} (${head}) has conflicts with main. ` +
+                `Rebase it: git rebase origin/main && git push --force-with-lease`,
+              );
+              return;
+            }
+
+            await github.rest.pulls.merge({
+              owner, repo, pull_number: pr.number,
+              merge_method: 'squash',
+              commit_title: `${pr.title} (#${pr.number})`,
+            });
+
+            core.summary
+              .addHeading(`Merged #${pr.number}`)
+              .addRaw(`\`${head}\` -> \`main\`, after a green validation run.`)
+              .write();
