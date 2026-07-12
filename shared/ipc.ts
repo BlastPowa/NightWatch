@@ -15,6 +15,8 @@ export const IpcChannel = {
   AuthCallback: 'auth:callback',
   /** Push channel (main → renderer) carrying a room code from an invite. */
   JoinLink: 'join:link',
+  /** Desktop notification (e.g. a scheduled watch party is starting). */
+  NotifyShow: 'notify:show',
   LogWrite: 'log:write',
 } as const;
 
@@ -76,10 +78,20 @@ export interface IpcInvokeContract {
     args: [];
     result: void;
   };
+  [IpcChannel.NotifyShow]: {
+    args: [NotificationRequest];
+    result: void;
+  };
   [IpcChannel.LogWrite]: {
     args: [LogLevel, string];
     result: void;
   };
+}
+
+/** A desktop notification raised by the renderer (Phase 19). */
+export interface NotificationRequest {
+  title: string;
+  body: string;
 }
 
 export type LogLevel = 'info' | 'warn' | 'error';
@@ -102,6 +114,8 @@ export interface NightWatchBridge {
   onAuthCallback(callback: (url: string) => void): () => void;
   /** Subscribe to invite deep links (nightwatch://join/CODE). */
   onJoinLink(callback: (code: string) => void): () => void;
+  /** Raise a desktop notification (fire-and-forget). */
+  notify(request: NotificationRequest): Promise<void>;
   /** Append a line to the local log file (fire-and-forget). */
   log(level: LogLevel, message: string): Promise<void>;
 }

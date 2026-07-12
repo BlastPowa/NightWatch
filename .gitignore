@@ -3,6 +3,7 @@ dist/
 dist-electron/
 dist-web/
 release/
+supabase/.temp/
 .env
 .env.local
 *.log

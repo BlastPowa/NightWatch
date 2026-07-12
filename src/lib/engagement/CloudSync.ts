@@ -42,6 +42,21 @@ let initialized = false;
 let state: CloudSyncState = { synced: false, shareStats: true };
 const stateListeners = new Set<(state: CloudSyncState) => void>();
 
+/**
+ * Resolves once we know whether the user is signed in AND, if so, what their
+ * real share_stats consent is. Callers that act on consent (the Phase 19
+ * friend graph) must await this: shareStats defaults to true, so acting before
+ * the cloud row lands could record an opted-out user.
+ */
+let markReady: () => void = () => {};
+const readyPromise = new Promise<void>((resolve) => {
+  markReady = resolve;
+});
+
+export function whenSyncReady(): Promise<void> {
+  return readyPromise;
+}
+
 /** Recompute the cached snapshot; identity changes only when values change. */
 function publishState(): void {
   const next: CloudSyncState = { synced: userId !== null, shareStats };
@@ -178,15 +193,20 @@ export function initCloudSync(): void {
   }
   initialized = true;
 
-  void supabase.auth.getSession().then(({ data }) => {
-    if (data.session !== null) {
-      void onSignIn(data.session).catch(() => {});
-    }
-  });
+  void supabase.auth
+    .getSession()
+    .then(async ({ data }) => {
+      if (data.session !== null) {
+        await onSignIn(data.session).catch(() => {});
+      }
+    })
+    .finally(markReady);
 
   supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' && session !== null) {
-      void onSignIn(session).catch(() => {});
+      void onSignIn(session)
+        .catch(() => {})
+        .finally(markReady);
     }
     if (event === 'SIGNED_OUT') {
       flushSync();

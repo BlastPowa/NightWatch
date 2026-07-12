@@ -4,6 +4,7 @@ import {
   type AppInfo,
   type LogLevel,
   type NightWatchBridge,
+  type NotificationRequest,
   type PresenceState,
   type UpdateStatusMessage,
 } from '@shared/ipc';
@@ -58,6 +59,9 @@ const bridge: NightWatchBridge = {
     return () => {
       ipcRenderer.removeListener(IpcChannel.JoinLink, listener);
     };
+  },
+  notify: (request: NotificationRequest): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.NotifyShow, request) as Promise<void>;
   },
   log: (level: LogLevel, message: string): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.LogWrite, level, message) as Promise<void>;

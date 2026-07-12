@@ -22,4 +22,7 @@ export const electronBridge: PlatformBridge = {
   getFixedRoomCode: () => Promise.resolve(null),
   // Electron identity flows through Supabase auth / guest names, not here.
   getPlatformIdentity: () => Promise.resolve(null),
+  notify: (request) => {
+    window.nightwatch.notify(request).catch(() => {});
+  },
 };

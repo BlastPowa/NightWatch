@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
 import { InsightsPanel } from '@/components/InsightsPanel';
 import { RoomMilestones } from '@/components/RoomMilestones';
+import { RoomSchedule } from '@/components/RoomSchedule';
 import { useAuthError } from '@/hooks/useAuth';
 import { signInWithDiscord, signOut, type AuthUser } from '@/lib/auth';
 import {
@@ -180,6 +181,8 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
           </button>
         </div>
       </section>
+
+      <RoomSchedule onJoinRoom={onJoinRoom} />
 
       <section className="card settings-card">
         <h2 className="settings-heading">Create a room</h2>

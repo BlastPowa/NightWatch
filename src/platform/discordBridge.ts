@@ -105,5 +105,8 @@ export async function createDiscordBridge(clientId: string): Promise<PlatformBri
     },
     getFixedRoomCode: () => Promise.resolve(fixedRoomCode),
     getPlatformIdentity: () => identityPromise,
+    // The Activity is already inside Discord, and its iframe is sandboxed away
+    // from the Notification API — the room is on screen, so this is a no-op.
+    notify: () => {},
   };
 }
