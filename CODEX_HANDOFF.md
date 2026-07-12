@@ -252,7 +252,7 @@ Gate every surface on `getSocialCapabilities()` and **hide**, do not disable, an
 
 ---
 
-## Notification retention (`0018`) — new, needs applying
+## Notification retention (`0018`) — ✅ applied
 
 0013 gave notifications a writer but no way out: the table grew without bound (one row per member per bounty opened, forever) and a user could not dismiss anything, because there was a SELECT and an UPDATE policy and **no DELETE policy**.
 

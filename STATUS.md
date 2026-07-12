@@ -99,7 +99,7 @@ Completed:
 ✅ Phase 20D — notification emitters + bell, with realtime (0013, applied; test green)
 ✅ Phase 21 (backend) — group system messages (0014, applied), set_conversation_role RPC, vitest suite + CI gate
 ✅ Phase 21 (platform) — custom title bar (native overlay controls, so Snap Layouts survives), typed window IPC, branded assisted installer
-✅ Phase 21 (features) — club discovery with moderation (0015), highlight reels (0016), unwinnable-border fix (0017), notification dismissal + retention (0018)
+✅ Phase 21 (features) — club discovery with moderation (0015), highlight reels (0016), unwinnable-border fix (0017), notification dismissal + retention (0018, applied)
 
 Current Work:
 Owner: merge `backend/phase-21-completion` and redeploy the `log-session` Edge Function (highlights return nothing without it); hand-verify the installer round trip. Realtime publication VERIFIED 2026-07-12 — messages, friend_requests, and notifications are all in `supabase_realtime`; the backend has no unverified assumptions left. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).
