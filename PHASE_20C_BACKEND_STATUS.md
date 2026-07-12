@@ -1,9 +1,8 @@
 # Phase 20C — Backend Status (for the frontend lane)
 
-Branch: `backend/phase-20c-creator`, **stacked on `backend/phase-20b-social`**.
-**Merge 20B's PR first** — this branch contains 20B's commits and its migrations assume 20B's schema.
+Branch: `backend/phase-20c-creator`. 20B is **merged into `main`**, so this branch is now a single commit on top of it — no stacking to untangle.
 
-Backend lane: code complete, **migrations not yet applied and tests not yet run**.
+Backend lane: **complete. Migrations `0011`/`0012` applied, acceptance test green** (`ALL PHASE 20C TESTS PASSED`, first run).
 
 ---
 
@@ -53,42 +52,26 @@ Illegal transitions are refused server-side, so the UI cannot skip judging. `set
 
 ---
 
-## What needs to be run / pushed
+## Database state
 
-### 1. Apply the migrations (SQL Editor, in order)
+`0011` and `0012` are **applied**. The acceptance test **passes** against the live project.
 
-```
-supabase/migrations/0011_creator_clubs.sql
-supabase/migrations/0012_creator_rpcs.sql
-```
+It covers: role hierarchy (a moderator cannot mint moderators; the owner cannot be removed or leave), draft invisibility, every illegal bounty transition, submit/vote windows, self-voting, vote-moving, blocked-user isolation in voting and results, withdrawal, the moderation queue, audit completeness, the append-only audit policy, and the no-payment-columns scope boundary.
 
-Close the running NightWatch app first (DDL against live tables — see the `0006` deadlock).
+Re-run `supabase/tests/phase20c_rls_test.sql` after any change to the creator RPCs. It rolls back, so it is safe against the live project.
 
-### 2. Run the acceptance test
-
-```
-supabase/tests/phase20c_rls_test.sql
-```
-
-Runs in a transaction and rolls back; safe against the live project. Expect `ALL PHASE 20C TESTS PASSED`.
-
-Covers: role hierarchy (a moderator cannot mint moderators; the owner cannot be removed or leave), draft invisibility, every illegal bounty transition, submit/vote windows, self-voting, vote-moving, blocked-user isolation in voting and results, withdrawal, the moderation queue, audit completeness, the append-only audit policy, and the no-payment-columns scope boundary.
-
-**Until this passes, `creatorClubs` should be treated as false.**
-
-### 3. Push
+## To ship
 
 ```
 git push -u origin backend/phase-20c-creator
 ```
 
-Open the PR against `main` **after 20B's PR has merged**.
+Then open a PR against `main`. Nothing else to run.
 
 ---
 
 ## Honest caveats
 
-- **The SQL has not been executed.** No `psql` in the dev environment; migrations and tests are reviewed but machine-unverified. Expect at least one round of fixes, as 20B needed two.
 - **Notifications are a table with no writer.** The schema, RLS, and read/mark-read RPCs exist, but nothing *emits* a notification yet (e.g. "your submission was accepted"). Wiring emitters into the bounty/submission transitions is a small follow-up — say the word.
 - **Clubs have no discovery.** You can create, join by id, and list your own; there is no public club directory or invite flow. Deliberate — a directory needs its own moderation story.
 - **`creator_reports.target_id` is `text`, not a typed FK**, because it points at four different tables. Nothing enforces that the target exists.
