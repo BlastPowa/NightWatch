@@ -1,7 +1,8 @@
 # Phase 20B — Backend Status (for the frontend lane)
 
 Branch: `backend/phase-20b-social`, based on `origin/main` @ v0.1.16.
-Backend lane: complete pending the acceptance run below. Phase 20C: **not started** (deliberately — the handoff gates it on 20B being done).
+Backend lane: **complete. Migrations 0006–0009 applied, acceptance test green.**
+Phase 20C: **not started** (deliberately — the handoff gates it on 20B being done).
 
 ---
 
@@ -75,11 +76,9 @@ The branch is committed locally but **not pushed**, and the acceptance test has 
 
 ### 1. Apply the migrations (Supabase SQL Editor, in order)
 
-`0006`, `0007`, and `0008` are already applied to the project. **`0009` is not** — apply it:
+**All four migrations (`0006`–`0009`) are applied to the project.** Nothing to run.
 
-```
-supabase/migrations/0009_fix_social_graph.sql
-```
+If you are rebuilding the database from scratch, apply them in numeric order.
 
 Close the running NightWatch app first. `0006` deadlocked once because the app polls `player_stats` while `ALTER TABLE` holds an exclusive lock; the migrations now set `lock_timeout` and touch `player_stats` last, but an idle app is still the safest way to run DDL.
 
@@ -93,12 +92,14 @@ It impersonates users via `request.jwt.claims`, asserts, and **rolls back** — 
 
 It covers: blocked-user isolation in both directions, the 30-member group cap (including refilling a freed slot), unread cursors, seq ordering under a `created_at` tie, soft deletion preserving cursor slots, moment-note visibility across friend/non-friend/blocked, presence opt-out, and border validation.
 
-**Status: not yet green.** Two real bugs found so far, both fixed:
+**Status: PASSING** against the live project (`ALL PHASE 20B TESTS PASSED`).
 
-1. `unread_count drops after marking read` — messages sharing a `created_at` (it is the *transaction* timestamp) were never counted, and the UUID tiebreak made ordering non-deterministic. Fixed by `0008` (monotonic `seq` cursor).
-2. `blocked user is absent from the blocker graph` — `42702`, a plpgsql variable/column ambiguity: in a `RETURNS TABLE` function the OUT names are also variables, and `get_social_graph` had a bare `created_at`. Fixed by `0009`.
+It found two real defects on the way there, both fixed — neither would have been caught by a typecheck or a build:
 
-**Do not treat 20B as done until this file runs green.**
+1. `unread_count drops after marking read` — messages sharing a `created_at` (it is the *transaction* timestamp) were never counted, and the UUID tiebreak made ordering non-deterministic, so cursor paging could skip or repeat a message. Fixed by `0008` (monotonic `seq` cursor).
+2. `blocked user is absent from the blocker graph` — `42702`, a plpgsql variable/column ambiguity: in a `RETURNS TABLE` function the OUT names are also variables, and `get_social_graph` had a bare `created_at`. It would have thrown for **any** user who had blocked someone. Fixed by `0009`.
+
+Re-run this file after any change to the social RPCs.
 
 ### 3. Push and open the PR
 
