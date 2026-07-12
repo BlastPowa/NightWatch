@@ -228,6 +228,15 @@ export function RoomScreen({
                 <span className="member-name">
                   {member.displayName}
                   {member.id === selfId && <span className="member-you"> (you)</span>}
+                  {member.streakDays >= 3 && (
+                    <span
+                      className="member-streak"
+                      title={`${member.streakDays}-day watch streak`}
+                    >
+                      {' '}
+                      🔥{member.streakDays}
+                    </span>
+                  )}
                 </span>
                 {member.isHost && <span className="member-host">HOST</span>}
               </li>

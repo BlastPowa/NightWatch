@@ -77,6 +77,8 @@ export interface PresenceMeta {
   displayName: string;
   /** Unix epoch ms when this member joined — drives host assignment. */
   joinedAt: number;
+  /** Watch streak in days (Phase 18); optional for older clients. */
+  streakDays?: number;
 }
 
 /** A member of a room as derived from Presence state. */
@@ -85,4 +87,5 @@ export interface RoomMember {
   displayName: string;
   joinedAt: number;
   isHost: boolean;
+  streakDays: number;
 }

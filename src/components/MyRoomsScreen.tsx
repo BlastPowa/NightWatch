@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
 import { InsightsPanel } from '@/components/InsightsPanel';
+import { RoomMilestones } from '@/components/RoomMilestones';
 import { useAuthError } from '@/hooks/useAuth';
 import { signInWithDiscord, signOut, type AuthUser } from '@/lib/auth';
 import {
@@ -216,6 +217,7 @@ export function MyRoomsScreen({ user, onJoinRoom }: MyRoomsScreenProps): JSX.Ele
                 <span className="room-row-meta">
                   <span className="side-code">{room.code}</span> · {formatSchedule(room.scheduledAt)}
                 </span>
+                <RoomMilestones roomCode={room.code} />
               </div>
               {editingCode === room.code ? (
                 <span className="room-row-actions">

@@ -1,5 +1,26 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { ACHIEVEMENTS, achievementTracker } from '@/lib/engagement/AchievementTracker';
+import {
+  getCloudSyncState,
+  setShareStats,
+  subscribeCloudSync,
+} from '@/lib/engagement/CloudSync';
+import {
+  getLeaderboard,
+  LEADERBOARD_METRICS,
+  type LeaderboardEntry,
+  type LeaderboardMetric,
+} from '@/lib/engagement/LeaderboardService';
+
+function formatMetricValue(metric: LeaderboardMetric, value: number): string {
+  if (metric === 'watch_seconds') {
+    return `${Math.floor(value / 3600)}h ${Math.floor((value % 3600) / 60)}m`;
+  }
+  if (metric === 'streak_days') {
+    return `${value}🔥`;
+  }
+  return String(value);
+}
 
 interface UserCardProps {
   displayName: string;
@@ -18,6 +39,30 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
     () => achievementTracker.get(),
   );
   const unlocked = new Set(snapshot.unlockedIds);
+
+  // Leaderboard (Phase 18, temporary UI — frontend lane restyles).
+  const { synced: cloud, shareStats: share } = useSyncExternalStore(
+    subscribeCloudSync,
+    getCloudSyncState,
+  );
+  const [metric, setMetric] = useState<LeaderboardMetric>('watch_seconds');
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+
+  useEffect(() => {
+    if (!cloud) {
+      setEntries([]);
+      return;
+    }
+    let active = true;
+    void getLeaderboard(metric).then((rows) => {
+      if (active) {
+        setEntries(rows);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [cloud, metric]);
 
   return (
     <div className="settings-page fade-up">
@@ -55,7 +100,62 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
             <span className="stat-value">{snapshot.stats.videosLoaded}</span>
             <span className="stat-label">Videos</span>
           </div>
+          <div className="stat">
+            <span className="stat-value">
+              {snapshot.stats.streakDays > 0 ? `🔥${snapshot.stats.streakDays}` : '—'}
+            </span>
+            <span className="stat-label">Streak</span>
+          </div>
         </div>
+      </section>
+
+      <section className="card settings-card">
+        <h2 className="settings-heading">Friend leaderboard</h2>
+        {!cloud && (
+          <p className="user-sub">
+            Sign in with Discord (My Rooms) to sync your stats across devices and join the
+            leaderboard.
+          </p>
+        )}
+        {cloud && (
+          <>
+            <div className="insights-sessions">
+              {LEADERBOARD_METRICS.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`source-tab${metric === m.id ? ' source-tab-active' : ''}`}
+                  onClick={() => setMetric(m.id)}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            {entries.length === 0 && <p className="user-sub">No shared stats yet.</p>}
+            <ol className="leaderboard-list">
+              {entries.map((entry, index) => (
+                <li key={`${entry.displayName}-${index}`} className="leaderboard-row">
+                  <span className="leaderboard-rank">#{index + 1}</span>
+                  <span className="leaderboard-name">{entry.displayName}</span>
+                  <span className="leaderboard-value">
+                    {formatMetricValue(metric, entry.value)}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <label className="toggle-row">
+              <input
+                type="checkbox"
+                checked={share}
+                onChange={(e) => setShareStats(e.target.checked)}
+              />
+              <span>
+                Show me on the leaderboard
+                <span className="toggle-hint"> — your Discord name and stats only</span>
+              </span>
+            </label>
+          </>
+        )}
       </section>
 
       <section className="card settings-card">
@@ -76,7 +176,9 @@ export function UserCard({ displayName }: UserCardProps): JSX.Element {
             );
           })}
         </ul>
-        <p className="user-sub">Stored on this device only.</p>
+        <p className="user-sub">
+          {cloud ? 'Synced across your devices.' : 'Stored on this device only.'}
+        </p>
       </section>
     </div>
   );

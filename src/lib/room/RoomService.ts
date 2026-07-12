@@ -5,6 +5,7 @@ import {
   type RealtimeEventName,
 } from '@shared/events';
 import type { PresenceMeta, RoomMember } from '@shared/room';
+import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';
 import { ChannelName, type ConnectionStatus } from '@/lib/realtime/types';
@@ -41,6 +42,10 @@ function deriveMembers(presence: Record<string, PresenceMeta[]>): RoomMember[] {
     displayName: meta.displayName,
     joinedAt: meta.joinedAt,
     isHost: index === 0,
+    streakDays:
+      typeof meta.streakDays === 'number' && Number.isFinite(meta.streakDays)
+        ? Math.max(0, Math.min(9999, Math.floor(meta.streakDays)))
+        : 0,
   }));
 }
 
@@ -154,6 +159,7 @@ export class RoomService {
           memberId: this.identity.id,
           displayName: this.identity.displayName,
           joinedAt: this.joinedAt,
+          streakDays: achievementTracker.get().stats.streakDays,
         };
         void this.handle?.track({ ...meta });
         break;

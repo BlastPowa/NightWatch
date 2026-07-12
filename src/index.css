@@ -1522,6 +1522,58 @@ input {
   font-size: 0.78rem;
 }
 
+/* ===== Gamification (Phase 18 — temporary, frontend lane restyles) ===== */
+
+.leaderboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.65rem;
+  background: var(--nw-bg-sunken);
+  border: 1px solid var(--nw-border);
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.leaderboard-rank {
+  width: 2rem;
+  font-family: Consolas, monospace;
+  color: var(--nw-text-muted);
+}
+
+.leaderboard-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.leaderboard-value {
+  color: var(--nw-accent);
+  font-weight: 700;
+}
+
+.member-streak {
+  font-size: 0.78rem;
+  color: var(--nw-accent);
+}
+
+.room-milestones {
+  font-size: 0.78rem;
+  color: var(--nw-text-muted);
+}
+
 /* ===== Insights (Phase 17 — temporary, frontend lane restyles) ===== */
 
 .insights-panel {
@@ -1908,6 +1960,9 @@ input {
 .discovery-skeleton { min-height: 230px; border: 0; background: linear-gradient(105deg, var(--nw-bg-raised) 25%, color-mix(in srgb, var(--nw-text) 7%, var(--nw-bg-raised)) 42%, var(--nw-bg-raised) 60%); background-size: 220% 100%; animation: shimmer 1.6s linear infinite; }
 .discovery-empty { display: grid; place-items: center; min-height: 210px; margin-top: 1rem; border: 1px dashed var(--nw-border); border-radius: var(--nw-radius-lg); color: var(--nw-text-muted); text-align: center; }
 .discovery-empty span { font-size: 2.2rem; color: var(--nw-accent); }
+
+.discovery-more { display: flex; justify-content: center; margin-top: 0.9rem; }
+.discovery-more-btn { min-width: 12rem; }
 
 .player-frame { border-radius: calc(var(--nw-radius-lg) + 4px); }
 .room-main { background: linear-gradient(180deg, color-mix(in srgb, var(--nw-bg-raised) 96%, transparent), var(--nw-bg-raised)); }

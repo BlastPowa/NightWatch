@@ -1,4 +1,4 @@
-// Supabase Edge Function: search-youtube (§7.6, ADR-011 + Phase 16)
+// Supabase Edge Function: search-youtube (§7.6, ADR-011 + Phase 16 + Phase 18)
 //
 // Proxies YouTube Data API v3 so the Google API key never ships in the
 // Electron binary. Handles both search and trending (Discovery Hub).
@@ -7,10 +7,24 @@
 //   supabase secrets set YOUTUBE_API_KEY=<your key>
 //
 // Request:  POST { kind?: 'search' | 'trending', query?: string,
-//                  categoryId?: string, callerId: string }
+//                  categoryId?: string, pageToken?: string, callerId: string }
 //           (kind defaults to 'search' for backward compatibility)
-// Response: { results: { videoId, title, channelTitle, thumbnailUrl,
-//                        durationText }[] }
+// Response: { results: VideoResult[], nextPageToken?: string }
+//           (nextPageToken is absent on the last page; old clients ignore it)
+//
+// QUOTA MODEL (the whole point of the paging design below)
+// --------------------------------------------------------
+// The free tier is 10,000 units/day. search.list costs 100 units *regardless
+// of maxResults* (cap 50); videos.list costs 1 unit. So paginating by calling
+// search.list again with YouTube's own pageToken would cost 100 units *per
+// Show More click* — the fastest way to burn the free quota.
+//
+// Instead we fetch wide once (48 items, one search.list = the same 100 units a
+// 12-item search already cost), cache that set, and serve it to the client in
+// pages of 12. Every Show More is a cache slice and costs ZERO units. Browse is
+// hard-capped at those 48 results, so a single query can never cost more than
+// 101 units no matter how many times the user pages. On top of that, a global
+// daily unit budget stops us calling YouTube at all once the day's spend is up.
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -19,28 +33,28 @@ const CORS_HEADERS = {
 
 const JSON_HEADERS = { ...CORS_HEADERS, 'Content-Type': 'application/json' };
 
-const MAX_RESULTS = 12;
-const DAILY_LIMIT_PER_CALLER = 80;
+/** Items pulled from YouTube in one shot. 50 is the API's hard cap. */
+const UPSTREAM_FETCH = 48;
+/** Items handed to the client per page. Page 1 matches the pre-Phase-18 size. */
+const PAGE_SIZE = 12;
+
+/** Quota unit costs, per the YouTube Data API v3 cost table. */
+const COST_SEARCH_LIST = 100;
+const COST_VIDEOS_LIST = 1;
+
+/**
+ * Stop calling YouTube once the day's estimated spend passes this. The free
+ * allowance is 10,000 units/day; the headroom absorbs other instances, since
+ * this counter is per-instance and cannot see them.
+ */
+const DAILY_UNIT_BUDGET = 9_000;
+
+/** Per-caller daily caps. Only upstream calls consume the expensive budget. */
+const UPSTREAM_SEARCHES_PER_CALLER = 25;
+const REQUESTS_PER_CALLER = 300;
+
+const SEARCH_CACHE_MS = 30 * 60 * 1000;
 const TRENDING_CACHE_MS = 10 * 60 * 1000;
-
-// Coarse per-instance rate limit (resets when the instance recycles and
-// daily). Good enough to protect the free quota per ADR-011.
-const usage = new Map<string, { day: string; count: number }>();
-
-function isRateLimited(callerId: string): boolean {
-  const today = new Date().toISOString().slice(0, 10);
-  const entry = usage.get(callerId);
-  if (entry === undefined || entry.day !== today) {
-    usage.set(callerId, { day: today, count: 1 });
-    return false;
-  }
-  entry.count += 1;
-  return entry.count > DAILY_LIMIT_PER_CALLER;
-}
-
-// Trending barely changes minute-to-minute; a small cache keeps the whole
-// friend group browsing off ~1 quota unit per 10 minutes per category.
-const trendingCache = new Map<string, { at: number; results: VideoResult[] }>();
 
 interface VideoResult {
   videoId: string;
@@ -48,6 +62,110 @@ interface VideoResult {
   channelTitle: string;
   thumbnailUrl: string;
   durationText: string;
+}
+
+/** A full 48-item result set, paged out of memory rather than re-fetched. */
+interface CachedSet {
+  at: number;
+  results: VideoResult[];
+}
+
+const searchCache = new Map<string, CachedSet>();
+const trendingCache = new Map<string, CachedSet>();
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ---------------------------------------------------------------------------
+// Quota accounting. All state is per-instance and resets when the instance
+// recycles — coarse by design (ADR-011), but it is the backstop that keeps the
+// project inside the free tier.
+// ---------------------------------------------------------------------------
+
+const spend = { day: today(), units: 0 };
+
+function unitsRemaining(): number {
+  if (spend.day !== today()) {
+    spend.day = today();
+    spend.units = 0;
+  }
+  return DAILY_UNIT_BUDGET - spend.units;
+}
+
+function chargeUnits(units: number): void {
+  unitsRemaining();
+  spend.units += units;
+}
+
+interface CallerUsage {
+  day: string;
+  requests: number;
+  upstreamSearches: number;
+}
+
+const usage = new Map<string, CallerUsage>();
+
+function callerUsage(callerId: string): CallerUsage {
+  const day = today();
+  const entry = usage.get(callerId);
+  if (entry === undefined || entry.day !== day) {
+    const fresh: CallerUsage = { day, requests: 0, upstreamSearches: 0 };
+    usage.set(callerId, fresh);
+    return fresh;
+  }
+  return entry;
+}
+
+/** Cheap ceiling on total calls, so cached paging still cannot be abused. */
+function isRateLimited(callerId: string): boolean {
+  const entry = callerUsage(callerId);
+  entry.requests += 1;
+  return entry.requests > REQUESTS_PER_CALLER;
+}
+
+/** May this caller trigger a 100-unit search.list right now? */
+function canSpendOnSearch(callerId: string): boolean {
+  return (
+    callerUsage(callerId).upstreamSearches < UPSTREAM_SEARCHES_PER_CALLER &&
+    unitsRemaining() >= COST_SEARCH_LIST + COST_VIDEOS_LIST
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Continuation tokens. These are OURS, not YouTube's: they address an offset
+// into a cached result set, which is what makes Show More free. They carry the
+// query so a page can be rebuilt if the instance recycled and lost its cache.
+// ---------------------------------------------------------------------------
+
+interface PageCursor {
+  kind: 'search' | 'trending';
+  query: string;
+  categoryId: string;
+  offset: number;
+}
+
+function encodeCursor(cursor: PageCursor): string {
+  return btoa(JSON.stringify(cursor));
+}
+
+function decodeCursor(token: string): PageCursor | null {
+  try {
+    const parsed = JSON.parse(atob(token)) as Partial<PageCursor>;
+    const kind = parsed.kind === 'trending' ? 'trending' : 'search';
+    const offset = Number(parsed.offset);
+    if (!Number.isInteger(offset) || offset < 0 || offset >= UPSTREAM_FETCH) {
+      return null;
+    }
+    return {
+      kind,
+      query: typeof parsed.query === 'string' ? parsed.query.slice(0, 120) : '',
+      categoryId: typeof parsed.categoryId === 'string' ? parsed.categoryId.slice(0, 4) : '',
+      offset,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function parseIsoDuration(iso: string): string {
@@ -67,15 +185,25 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }
 
+/**
+ * Not a type predicate on purpose: a *stale* entry is still a CachedSet, and we
+ * fall back to serving one when the quota budget is spent.
+ */
+function isFresh(entry: CachedSet | undefined, ttlMs: number): boolean {
+  return entry !== undefined && Date.now() - entry.at < ttlMs;
+}
+
 async function fetchDurations(apiKey: string, ids: string[]): Promise<Map<string, string>> {
   const durations = new Map<string, string>();
   if (ids.length === 0) {
     return durations;
   }
+  // One videos.list call covers up to 50 ids for a flat 1 unit.
   const url = new URL('https://www.googleapis.com/youtube/v3/videos');
   url.searchParams.set('part', 'contentDetails');
-  url.searchParams.set('id', ids.join(','));
+  url.searchParams.set('id', ids.slice(0, 50).join(','));
   url.searchParams.set('key', apiKey);
+  chargeUnits(COST_VIDEOS_LIST);
   const response = await fetch(url);
   if (!response.ok) {
     return durations;
@@ -91,14 +219,16 @@ async function fetchDurations(apiKey: string, ids: string[]): Promise<Map<string
   return durations;
 }
 
-async function handleSearch(apiKey: string, query: string): Promise<VideoResult[]> {
+/** Fetch the full 48-item set for a query (100 + 1 units). Cached afterwards. */
+async function fetchSearchSet(apiKey: string, query: string): Promise<VideoResult[]> {
   const searchUrl = new URL('https://www.googleapis.com/youtube/v3/search');
   searchUrl.searchParams.set('part', 'snippet');
   searchUrl.searchParams.set('type', 'video');
-  searchUrl.searchParams.set('maxResults', String(MAX_RESULTS));
+  searchUrl.searchParams.set('maxResults', String(UPSTREAM_FETCH));
   searchUrl.searchParams.set('q', query);
   searchUrl.searchParams.set('key', apiKey);
 
+  chargeUnits(COST_SEARCH_LIST);
   const response = await fetch(searchUrl);
   if (!response.ok) {
     throw new Error('upstream');
@@ -129,23 +259,19 @@ async function handleSearch(apiKey: string, query: string): Promise<VideoResult[
   }));
 }
 
-async function handleTrending(apiKey: string, categoryId: string): Promise<VideoResult[]> {
-  const cacheKey = categoryId === '' ? 'all' : categoryId;
-  const cached = trendingCache.get(cacheKey);
-  if (cached !== undefined && Date.now() - cached.at < TRENDING_CACHE_MS) {
-    return cached.results;
-  }
-
+/** Fetch the full 48-item trending set for a category (1 unit). */
+async function fetchTrendingSet(apiKey: string, categoryId: string): Promise<VideoResult[]> {
   const url = new URL('https://www.googleapis.com/youtube/v3/videos');
   url.searchParams.set('part', 'snippet,contentDetails');
   url.searchParams.set('chart', 'mostPopular');
-  url.searchParams.set('maxResults', String(MAX_RESULTS));
+  url.searchParams.set('maxResults', String(UPSTREAM_FETCH));
   url.searchParams.set('regionCode', 'US');
   if (categoryId !== '') {
     url.searchParams.set('videoCategoryId', categoryId);
   }
   url.searchParams.set('key', apiKey);
 
+  chargeUnits(COST_VIDEOS_LIST);
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error('upstream');
@@ -162,7 +288,7 @@ async function handleTrending(apiKey: string, categoryId: string): Promise<Video
     }>;
   };
 
-  const results = (data.items ?? [])
+  return (data.items ?? [])
     .filter((item) => typeof item.id === 'string')
     .map((item) => ({
       videoId: item.id!,
@@ -174,8 +300,39 @@ async function handleTrending(apiKey: string, categoryId: string): Promise<Video
           ? parseIsoDuration(item.contentDetails.duration)
           : '',
     }));
+}
 
-  trendingCache.set(cacheKey, { at: Date.now(), results });
+/** Resolve the cached set for a cursor, fetching upstream only if we must. */
+async function resolveSet(
+  apiKey: string,
+  callerId: string,
+  cursor: PageCursor,
+): Promise<VideoResult[] | 'rate-limited'> {
+  if (cursor.kind === 'trending') {
+    const key = cursor.categoryId === '' ? 'all' : cursor.categoryId;
+    const cached = trendingCache.get(key);
+    if (cached !== undefined && isFresh(cached, TRENDING_CACHE_MS)) {
+      return cached.results;
+    }
+    if (unitsRemaining() < COST_VIDEOS_LIST) {
+      // Budget gone: stale results beat a quota breach.
+      return cached?.results ?? 'rate-limited';
+    }
+    const results = await fetchTrendingSet(apiKey, cursor.categoryId);
+    trendingCache.set(key, { at: Date.now(), results });
+    return results;
+  }
+
+  const cached = searchCache.get(cursor.query);
+  if (cached !== undefined && isFresh(cached, SEARCH_CACHE_MS)) {
+    return cached.results;
+  }
+  if (!canSpendOnSearch(callerId)) {
+    return cached?.results ?? 'rate-limited';
+  }
+  callerUsage(callerId).upstreamSearches += 1;
+  const results = await fetchSearchSet(apiKey, cursor.query);
+  searchCache.set(cursor.query, { at: Date.now(), results });
   return results;
 }
 
@@ -192,14 +349,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse({ error: 'not-configured' }, 503);
   }
 
-  let body: { kind?: unknown; query?: unknown; categoryId?: unknown; callerId?: unknown };
+  let body: {
+    kind?: unknown;
+    query?: unknown;
+    categoryId?: unknown;
+    pageToken?: unknown;
+    callerId?: unknown;
+  };
   try {
     body = await req.json();
   } catch {
     return jsonResponse({ error: 'bad-request' }, 400);
   }
 
-  const kind = body.kind === 'trending' ? 'trending' : 'search';
   const callerId = typeof body.callerId === 'string' ? body.callerId.slice(0, 64) : '';
   if (callerId.length === 0) {
     return jsonResponse({ error: 'bad-request' }, 400);
@@ -208,18 +370,44 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse({ error: 'rate-limited' }, 429);
   }
 
-  try {
-    if (kind === 'trending') {
-      const categoryId =
-        typeof body.categoryId === 'string' ? body.categoryId.replace(/\D/g, '').slice(0, 4) : '';
-      return jsonResponse({ results: await handleTrending(apiKey, categoryId) });
-    }
-
-    const query = typeof body.query === 'string' ? body.query.trim().slice(0, 120) : '';
-    if (query.length === 0) {
+  // A page token fully describes the page being asked for; without one this is
+  // a fresh page-1 request built from the body.
+  let cursor: PageCursor;
+  if (typeof body.pageToken === 'string' && body.pageToken.length > 0) {
+    const decoded = decodeCursor(body.pageToken);
+    if (decoded === null) {
       return jsonResponse({ error: 'bad-request' }, 400);
     }
-    return jsonResponse({ results: await handleSearch(apiKey, query) });
+    cursor = decoded;
+  } else {
+    const kind = body.kind === 'trending' ? 'trending' : 'search';
+    cursor = {
+      kind,
+      query: typeof body.query === 'string' ? body.query.trim().slice(0, 120) : '',
+      categoryId:
+        typeof body.categoryId === 'string' ? body.categoryId.replace(/\D/g, '').slice(0, 4) : '',
+      offset: 0,
+    };
+  }
+
+  if (cursor.kind === 'search' && cursor.query.length === 0) {
+    return jsonResponse({ error: 'bad-request' }, 400);
+  }
+
+  try {
+    const set = await resolveSet(apiKey, callerId, cursor);
+    if (set === 'rate-limited') {
+      return jsonResponse({ error: 'rate-limited' }, 429);
+    }
+
+    const page = set.slice(cursor.offset, cursor.offset + PAGE_SIZE);
+    const nextOffset = cursor.offset + PAGE_SIZE;
+    const hasMore = nextOffset < Math.min(set.length, UPSTREAM_FETCH);
+
+    return jsonResponse({
+      results: page,
+      ...(hasMore ? { nextPageToken: encodeCursor({ ...cursor, offset: nextOffset }) } : {}),
+    });
   } catch {
     return jsonResponse({ error: 'upstream-error' }, 502);
   }
