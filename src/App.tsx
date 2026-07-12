@@ -307,6 +307,19 @@ export function App(): JSX.Element {
 
       <main className="content">
         {view === 'discover' && (
+          <header className="browse-topbar">
+            <div className="browse-topbar-title"><span className="eyebrow">NightWatch</span><strong>Browse</strong></div>
+            <div className="browse-topbar-actions">
+              <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}>▶</button>
+              <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings">⚙</button>
+              <button type="button" className="profile-chip" onClick={() => setView(authUser !== null && isElectron ? 'rooms' : 'settings')} aria-label="Open account settings">
+                {authUser?.avatarUrl ? <img src={authUser.avatarUrl} alt="" referrerPolicy="no-referrer" /> : <span aria-hidden="true">{(authUser?.name ?? identity?.displayName ?? 'G').slice(0, 1).toUpperCase()}</span>}
+                <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
+              </button>
+            </div>
+          </header>
+        )}
+        {view === 'discover' && (
           <div className="discover-layout fade-up">
             <div className="discover-main card">
               <h1 className="page-title">Browse</h1>

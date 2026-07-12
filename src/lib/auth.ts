@@ -18,10 +18,22 @@ export function mapSessionToUser(session: Session | null): AuthUser | null {
     (typeof meta['full_name'] === 'string' && meta['full_name']) ||
     (typeof meta['name'] === 'string' && meta['name']) ||
     'Discord user';
+  const identities = session.user.identities ?? [];
+  const discordIdentity = identities.find((identity) => identity.provider === 'discord');
+  const providerMeta = (discordIdentity?.identity_data ?? {}) as Record<string, unknown>;
+  const avatarCandidates = [
+    meta['avatar_url'],
+    meta['picture'],
+    providerMeta['avatar_url'],
+    providerMeta['picture'],
+  ];
+  const avatarUrl = avatarCandidates.find(
+    (candidate): candidate is string => typeof candidate === 'string' && /^https:\/\//i.test(candidate),
+  );
   return {
     id: session.user.id,
     name: name.slice(0, 24),
-    avatarUrl: typeof meta['avatar_url'] === 'string' ? meta['avatar_url'] : null,
+    avatarUrl: avatarUrl ?? null,
   };
 }
 

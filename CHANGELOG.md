@@ -14,6 +14,7 @@
 - Expanded accessibility with interface text scaling, reduced transparency, and enhanced keyboard focus; added playback volume shortcuts and Neutral/Cinema/Vivid picture presets.
 - Refined Settings with macOS-inspired glass depth, luminous accent actions, tactile switches, and a reduced-motion-aware orbit loading treatment.
 - Expanded Atmosphere from three themes to eight with Moonlit Violet, Crimson Theatre, Oceanic, Evergreen, and Rose Noir presets.
+- Added a Browse profile toolbar with working room/settings shortcuts and robust Discord avatar metadata fallbacks.
 
 ### Backend/platform
 
