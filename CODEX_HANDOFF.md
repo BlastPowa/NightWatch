@@ -8,6 +8,8 @@ Frontend shell update: Codex has added a dependency-free SVG icon system and exp
 
 Messages update: the frontend now renders `kind === 'system'` as centred notices, pages older rows by `seq`, preserves scroll position while prepending history, searches the conversation list, and uses a collapsible group composer. After the Phase 21 rebase, wire the new role/member RPCs into the existing message header rather than replacing this workspace.
 
+Creator moderation update: the frontend now exposes member bounty reports plus the staff-only report queue, action/dismiss transitions, and append-only audit history using the existing v0.1.18 services. After rebase, add the `0015` public directory/visibility controls around this board; do not replace the moderation surface.
+
 ## Frontend correction — current state after the original handoff
 
 The older sections below describe the state of released `main`, not the active frontend branch. `frontend/phase-20b-profile-social` is based on v0.1.18 and now contains capability-gated Friends, persistent Messages, consent-based presence settings, Moment Notes, achievement profile borders, polished shelf arrows, and a working Creator Club/bounty board. These features remain unreleased until that PR merges.
