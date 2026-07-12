@@ -237,13 +237,9 @@ Gate every surface on `getSocialCapabilities()` and **hide**, do not disable, an
    supabase functions deploy log-session --no-verify-jwt
    ```
    (No new secrets.) Sessions recorded before this deploy have no video attribution and can never produce highlights; the code drops them rather than guessing.
-2. **Confirm `0010` really is in the realtime publication.** It was merged in code and I have never seen it verified against the database. If it is missing, every realtime subscription connects and then silently receives nothing — no error anywhere.
-   ```sql
-   select tablename from pg_publication_tables
-   where pubname = 'supabase_realtime'
-     and tablename in ('messages', 'friend_requests', 'notifications');
-   ```
-   Three rows is correct. Fewer means the corresponding migration was not applied.
+2. ~~Confirm `0010` is in the realtime publication~~ — **VERIFIED against the database (2026-07-12).** `pg_publication_tables` returns all three of `messages`, `friend_requests`, `notifications` under `supabase_realtime`. Live chat, friend-request updates, and the notification bell will all stream. This was the last unverified assumption in the backend; there are none left.
+
+   (Note for anyone tempted to re-run `0010`: don't. `alter publication ... add table` is **not** idempotent and raises `42710` on a table that is already a member. Use the `select` above to check, never the migration.)
 3. **Merge `backend/phase-21-completion`.** CI opens the PR automatically on push. Contains: `0014` (already applied), `set_conversation_role`, the vitest suite + CI gate, the custom title bar, and the branded installer.
 4. **Verify the installer by hand** before the next release: clean install, upgrade from v0.1.18, silent auto-update, uninstall, and cancelled install. Automated tests cannot cover this and a broken installer is the one bug every user hits.
 5. **Blocked on you:** the public rename (needs the exact name plus trademark/domain checks) and the installer sidebar/header BMPs (need the brand pack). Neither is startable without you.

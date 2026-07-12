@@ -102,7 +102,7 @@ Completed:
 ✅ Phase 21 (features) — club discovery with moderation (0015), highlight reels (0016), unwinnable-border fix (0017)
 
 Current Work:
-Owner: merge `backend/phase-21-completion`; confirm `0010` is in the realtime publication (still never verified against the database); hand-verify the installer round trip. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).
+Owner: merge `backend/phase-21-completion` and redeploy the `log-session` Edge Function (highlights return nothing without it); hand-verify the installer round trip. Realtime publication VERIFIED 2026-07-12 — messages, friend_requests, and notifications are all in `supabase_realtime`; the backend has no unverified assumptions left. Blocked on owner: the public rename (exact name + trademark/domain checks) and the installer sidebar/header BMPs (brand pack).
 
 Codex: building the Phase 20 UI on `frontend/phase-20b-profile-social` — FriendsScreen, MessagesScreen, and a capabilities hook are in flight. See `CODEX_HANDOFF.md`.
 
