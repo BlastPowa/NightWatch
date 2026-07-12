@@ -202,8 +202,8 @@ export function RoomScreen({
             }}
           />
 
-          <section className="room-module" aria-labelledby="queue-title">
-          <div className="module-heading"><span className="eyebrow">Playlist</span><h2 id="queue-title">Up next</h2></div>
+          <details className="room-module room-collapsible" open>
+          <summary><span><span className="eyebrow">Playlist</span><strong>Up next</strong></span><span aria-hidden="true">⌄</span></summary>
           <QueuePanel
             queue={queue}
             selfId={selfId}
@@ -211,14 +211,14 @@ export function RoomScreen({
             isHost={selfIsHost}
             onPlayNext={handlePlayNext}
           />
-          </section>
+          </details>
         </div>
 
-        <aside className="room-aside card">
-          <div className="module-heading"><span className="eyebrow">Watch party</span><h2>Conversation</h2></div>
+        <aside className="room-aside card room-dock">
+          <div className="room-dock-heading"><div><span className="eyebrow">Watch party</span><h2>Conversation</h2></div><span className="member-count">{room.members.length}</span></div>
           <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
 
-          <div className="member-heading"><h3>Watching now</h3><span>{room.members.length}</span></div>
+          <details className="members-collapsible" open><summary><span>Watching now</span><span aria-hidden="true">⌄</span></summary>
           <ul className="member-list">
             {room.members.map((member) => (
               <li key={member.id} className="member">
@@ -245,6 +245,7 @@ export function RoomScreen({
               <li className="member member-empty">Waiting for presence…</li>
             )}
           </ul>
+          </details>
 
           <button type="button" className="button" onClick={onLeave}>
             Leave Room

@@ -1,6 +1,6 @@
 # Current Status
 
-Frontend Track: `v0.1.15` is released. Browse/watch-room visual overhaul is active on `frontend/browse-room-overhaul`; typecheck, Activity build, and Electron package pass locally.
+Frontend Track: `v0.1.16` is released. Phase 20A professional Browse/player shell is active on `frontend/phase-20a-browse-player`; social and Creator Club navigation remains gated on the Phase 20 backend capabilities.
 
 Parallel Frontend Track: Cinematic midnight brand and shell implementation is in progress on `frontend/nightwatch-cinematic`. The Figma target file exists; canvas construction is paused at discovery because the Starter-plan MCP quota was reached.
 
