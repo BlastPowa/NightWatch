@@ -52,11 +52,15 @@ jobs:
             exit 0
           fi
 
-          changed=$(git diff --name-only HEAD^ HEAD || true)
+          # Test files live alongside the code they cover, so a naive path match
+          # would ship an installer to every user because a *.test.ts changed --
+          # a release nobody can see, for a change that cannot reach them.
+          # Strip tests first, then ask whether anything shippable is left.
+          changed=$(git diff --name-only HEAD^ HEAD | grep -vE '\.test\.tsx?$' || true)
           if echo "$changed" | grep -qE '^(src/|electron/|shared/|package\.json|electron-builder\.yml)'; then
             echo "ship=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Docs/SQL only -- nothing for a user to install."
+            echo "Docs, SQL, or tests only -- nothing for a user to install."
             echo "ship=false" >> "$GITHUB_OUTPUT"
           fi
 
