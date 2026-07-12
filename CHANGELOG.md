@@ -3,6 +3,14 @@
 
 ## Unreleased
 
+### Browse, profile, and atmosphere polish
+
+- Removed the nested focus rectangle inside the composite Browse search control while preserving the visible outer focus state.
+- Added real YouTube channel thumbnails to search/trending results through one cached, batched channels lookup with initial fallbacks.
+- Replaced the circular card Play control with a conventional labeled action and rebuilt My Card as a responsive two-column dashboard with a six-stat grid.
+- Added Avengers: Doomsday, Spider-Man: Brand New Day, Alien X, and Obsidian Black atmosphere palettes.
+- Added a backward-compatible Custom Atmosphere builder for canvas, surface, and panel colours, plus visual Backdrop cards.
+
 ### Runtime QA follow-up
 
 - Prevented stale Browse category/search/pagination responses from replacing the current view and made retry preserve search/history intent.

@@ -105,7 +105,7 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
   }, [cloud, metric, scope]);
 
   return (
-    <div className="settings-page fade-up">
+    <div className="settings-page user-card-page fade-up">
       <h1 className="page-title">My Card</h1>
 
       <section className="card user-card">
@@ -163,7 +163,7 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
         </section>
       )}
 
-      <section className="card settings-card">
+      <section className="card settings-card leaderboard-card">
         <h2 className="settings-heading">Leaderboard</h2>
         {!cloud && (
           <p className="user-sub">
@@ -237,7 +237,7 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
         )}
       </section>
 
-      <section className="card settings-card">
+      <section className="card settings-card achievements-card">
         <h2 className="settings-heading">Achievements</h2>
         <ul className="achievement-grid">
           {ACHIEVEMENTS.map((achievement) => {

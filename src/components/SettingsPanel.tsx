@@ -7,6 +7,7 @@ import {
   NEUTRAL_FILTERS,
   THEMES,
   settingsStore,
+  type BackgroundStyle,
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -42,6 +43,11 @@ const THEME_PREVIEW: Record<string, string> = {
   oceanic: 'linear-gradient(135deg,#04111b 50%,#164b68 50%)',
   evergreen: 'linear-gradient(135deg,#06110e 50%,#1d4a3b 50%)',
   'rose-noir': 'linear-gradient(135deg,#120912 50%,#512640 50%)',
+  doomsday: 'linear-gradient(135deg,#090b0d 42%,#24352e 42% 72%,#a76a2a 72%)',
+  'brand-new-day': 'linear-gradient(135deg,#07101f 42%,#163c73 42% 68%,#b8172b 68%)',
+  'alien-x': 'linear-gradient(135deg,#020507 44%,#e7f5ef 44% 56%,#0ba86b 56%)',
+  obsidian: 'linear-gradient(135deg,#000 50%,#111217 50%)',
+  custom: 'conic-gradient(from 225deg,#050507,#512640,#164b68,#1d4a3b,#050507)',
 };
 
 const THEME_DESCRIPTION: Record<string, string> = {
@@ -53,7 +59,18 @@ const THEME_DESCRIPTION: Record<string, string> = {
   oceanic: 'Abyssal navy with clear ocean-blue contrast.',
   evergreen: 'Forest-black with calm emerald detail.',
   'rose-noir': 'Near-black plum with cinematic rose accents.',
+  doomsday: 'Latverian steel, shadowed emerald, and molten bronze.',
+  'brand-new-day': 'Suit-red energy over midnight blue and cool web-silver.',
+  'alien-x': 'Starfield black, cosmic white, and transformed green light.',
+  obsidian: 'True black canvas with crisp graphite surfaces.',
+  custom: 'Build a personal canvas, surface, and panel palette.',
 };
+
+const BACKDROPS: ReadonlyArray<{ id: BackgroundStyle; label: string; description: string }> = [
+  { id: 'midnight', label: 'Midnight', description: 'Focused darkness with a restrained accent horizon.' },
+  { id: 'aurora', label: 'Aurora', description: 'Layered colour bloom for a more atmospheric room.' },
+  { id: 'studio', label: 'Studio', description: 'A flat, distraction-free background for maximum clarity.' },
+];
 
 export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
   const settings = useSettings();
@@ -100,6 +117,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
                   ))}
                 </div>
               </div>
+              {settings.theme === 'custom' && <div className="card settings-card settings-card-wide custom-atmosphere-card"><div><h2>Custom atmosphere</h2><p>Choose your structural colours. Accent, glow, and accessibility controls still apply separately.</p></div><div className="custom-atmosphere-grid">{([['canvas','Canvas'],['surface','Surface'],['panel','Panel']] as const).map(([key,label]) => <label key={key} className="atmosphere-color"><input type="color" value={settings.customAtmosphere[key]} aria-label={`${label} colour`} onChange={(event) => settingsStore.update({ customAtmosphere: { [key]: event.target.value } })} /><span><strong>{label}</strong><small>{settings.customAtmosphere[key]}</small></span></label>)}</div></div>}
               <div className="card settings-card">
                 <h2>Accent</h2>
                 <div className="swatch-row">
@@ -115,7 +133,9 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
               </div>
               <div className="card settings-card">
                 <h2>Backdrop</h2>
-                <Segmented values={['midnight','aurora','studio']} active={settings.backgroundStyle} onSelect={(backgroundStyle) => settingsStore.update({ backgroundStyle })} />
+                <div className="backdrop-grid">
+                  {BACKDROPS.map((backdrop) => <button key={backdrop.id} type="button" className={`backdrop-option${settings.backgroundStyle === backdrop.id ? ' backdrop-option-active' : ''}`} aria-pressed={settings.backgroundStyle === backdrop.id} onClick={() => settingsStore.update({ backgroundStyle: backdrop.id })}><span className={`backdrop-preview backdrop-preview-${backdrop.id}`} aria-hidden="true" /><span><strong>{backdrop.label}</strong><small>{backdrop.description}</small></span></button>)}
+                </div>
               </div>
             </section>
           </>
@@ -142,7 +162,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'data' && (
-          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
+          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, custom atmosphere, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, customAtmosphere: DEFAULT_SETTINGS.customAtmosphere, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
         )}
       </div>
     </div>

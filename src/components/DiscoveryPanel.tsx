@@ -105,6 +105,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
       videoId: entry.videoId,
       title: entry.title,
       channelTitle: 'Watched with this room',
+      channelThumbnailUrl: '',
       thumbnailUrl: `https://i.ytimg.com/vi/${entry.videoId}/mqdefault.jpg`,
       durationText: '',
     }));
@@ -297,21 +298,23 @@ function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, 
           <img src={result.thumbnailUrl} alt="" loading="lazy" onError={onImageError} />
           {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
           <div className="media-card-actions">
-            {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId)} aria-label={`Play ${result.title}`}><Icon name="play" size={19} /></button>}
+            {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId)} aria-label={`Play ${result.title}`}><Icon name="play" size={15} />Play</button>}
             <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queuedId === result.videoId ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
           </div>
         </div>
-        <div className="media-card-copy"><ChannelAvatar name={result.channelTitle || result.title} /><span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span></div>
+        <div className="media-card-copy"><ChannelAvatar name={result.channelTitle || result.title} src={result.channelThumbnailUrl} /><span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span></div>
       </li>)}
     </ul>
     </div>
   </section>;
 }
 
-function ChannelAvatar({ name }: { name: string }): JSX.Element {
+function ChannelAvatar({ name, src }: { name: string; src: string }): JSX.Element {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
   const seed = Array.from(name).reduce((value, character) => ((value * 31) + character.charCodeAt(0)) % 360, 217);
   const style = { '--channel-hue': seed } as CSSProperties;
-  return <span className="channel-avatar" style={style} aria-hidden="true"><span>{name.trim().slice(0, 1).toUpperCase() || 'N'}</span></span>;
+  return <span className="channel-avatar" style={style} aria-hidden="true">{src !== '' && !failed ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /> : <span>{name.trim().slice(0, 1).toUpperCase() || 'N'}</span>}</span>;
 }
 
 function BrowseLoading(): JSX.Element {

@@ -80,6 +80,7 @@ export async function createDiscordBridge(clientId: string): Promise<PlatformBri
     { prefix: '/supabase', target: supabaseHost },
     { prefix: '/youtube', target: 'www.youtube.com' },
     { prefix: '/ytimg', target: 'i.ytimg.com' },
+    { prefix: '/ytchannel', target: 'yt3.ggpht.com' },
     { prefix: '/ytstatic', target: 's.ytimg.com' },
     { prefix: '/discordcdn', target: 'cdn.discordapp.com' },
   ]);
