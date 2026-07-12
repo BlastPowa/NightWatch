@@ -14,6 +14,7 @@ Four migrations and five client services. **No UI** — that is yours.
 | `0006_social_phase20b.sql` | Tables + RLS: `friend_requests`, `friendships`, `user_blocks`, `presence_preferences`, `conversations`, `conversation_members`, `messages`, `video_moment_notes`, `profile_borders`, `player_border_unlocks`. Adds `player_stats.selected_border_id`. Rate-limit helpers. |
 | `0007_social_rpcs.sql` | All RPCs: social graph, friend transitions, presence, conversations/messages, moment notes, borders. |
 | `0008_message_ordering.sql` | Adds `messages.seq` (monotonic) and moves the unread count + message cursor onto it. |
+| `0009_fix_social_graph.sql` | Fixes a plpgsql variable/column ambiguity (42702) in `get_social_graph`. |
 
 | Service (`src/lib/social/`) | Exposes |
 | --- | --- |
@@ -74,10 +75,10 @@ The branch is committed locally but **not pushed**, and the acceptance test has 
 
 ### 1. Apply the migrations (Supabase SQL Editor, in order)
 
-`0006` and `0007` are already applied to the project. **`0008` is not** — apply it:
+`0006`, `0007`, and `0008` are already applied to the project. **`0009` is not** — apply it:
 
 ```
-supabase/migrations/0008_message_ordering.sql
+supabase/migrations/0009_fix_social_graph.sql
 ```
 
 Close the running NightWatch app first. `0006` deadlocked once because the app polls `player_stats` while `ALTER TABLE` holds an exclusive lock; the migrations now set `lock_timeout` and touch `player_stats` last, but an idle app is still the safest way to run DDL.
@@ -92,7 +93,12 @@ It impersonates users via `request.jwt.claims`, asserts, and **rolls back** — 
 
 It covers: blocked-user isolation in both directions, the 30-member group cap (including refilling a freed slot), unread cursors, seq ordering under a `created_at` tie, soft deletion preserving cursor slots, moment-note visibility across friend/non-friend/blocked, presence opt-out, and border validation.
 
-**Status: last run failed on `unread_count drops after marking read`.** That was a real bug (timestamp ties), fixed by `0008`. The test has not been re-run since. **Do not treat 20B as done until it passes.**
+**Status: not yet green.** Two real bugs found so far, both fixed:
+
+1. `unread_count drops after marking read` — messages sharing a `created_at` (it is the *transaction* timestamp) were never counted, and the UUID tiebreak made ordering non-deterministic. Fixed by `0008` (monotonic `seq` cursor).
+2. `blocked user is absent from the blocker graph` — `42702`, a plpgsql variable/column ambiguity: in a `RETURNS TABLE` function the OUT names are also variables, and `get_social_graph` had a bare `created_at`. Fixed by `0009`.
+
+**Do not treat 20B as done until this file runs green.**
 
 ### 3. Push and open the PR
 
