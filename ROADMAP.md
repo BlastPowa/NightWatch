@@ -1,8 +1,8 @@
 # NightWatch Development Roadmap
 
-## Current delivery state (2026-07-12)
+## Current delivery state (2026-07-15)
 
-`v0.1.21` contains the Phase 20-22 Browse/player/social/creator UI, advanced Settings/accessibility, native Windows shell, new NightWatch brand family, custom installer, and the Windows startup-window fix. The active work is runtime QA and the narrowly scoped Phase 23 social-profile backend contract documented in `PHASE_23_SOCIAL_UI_BACKEND_HANDOFF.md`. Historical phase descriptions below are retained as the delivery ledger; `STATUS.md` and `TASKS.md` are authoritative for current work.
+`v0.1.22` is the clean baseline. Phases 24–28 are the active cinematic UI program: reusable shell and grid-first Browse; player-first room dock; banner profiles, Friends, and Messages; remaining-screen consistency; then packaged accessibility and regression hardening. Phase 29 is a separately gated source-neutral library for user-owned local and Google Drive files. It does not download YouTube, scrape streaming sites, bypass DRM, or host a shared media catalog. `STATUS.md`, `TASKS.md`, and `CODEX_HANDOFF.md` are authoritative for active work; historical phase entries below remain the delivery ledger.
 
 ## Project Goal
 

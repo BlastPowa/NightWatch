@@ -1,36 +1,41 @@
 # NightWatch current status
 
-Last updated: 2026-07-13.
+Last updated: 2026-07-15.
 
-## Release state
+## Release baseline
 
-- Current tag: `v0.1.21` at `f34963e`. Current `main`: `285c0be`, including runtime fixes and the Phase 23 backend/UI.
-- The Release GitHub Action completed successfully.
-- Phase 22 UI/brand work shipped in `v0.1.20`; `v0.1.21` adds the Windows startup-window fix.
-- All earlier frontend and backend lane branches were merged before the runtime-fix follow-up began.
+- Current public release and clean implementation baseline: `v0.1.22` at `6bb11fb`.
+- Strict TypeScript and all 43 unit tests pass on that baseline.
+- Phase 20 social, messaging, moment-note, presence, Creator Club, notification, and profile contracts are merged. Capability checks still hide unavailable server surfaces.
+- Releases remain intentional GitHub Actions runs after reviewed feature PRs; no direct push to `main`.
 
-## Shipped UI
+## Active delivery
 
-- Professional Browse search, fifteen categories, cinematic shelves, explicit arrow navigation, pagination, history, and thumbnail fallbacks.
-- Player-first room with the official YouTube iframe, below-player host controls, queue, chat, members, reactions, sync state, schedules/premieres, insights, moment notes, and discovery.
-- Friends, persistent DMs/groups, presence preferences, profile borders, notifications, Creator Clubs/bounties/moderation, and highlight timestamps.
-- Thirteen atmosphere choices (including Obsidian and Custom), custom accents, glow/radius/density/backdrop, playback filters, privacy, accessibility, and local reset controls after the active polish branch merges.
-- New NightWatch eclipse logo family, startup treatment, taskbar icon, Discord/Activity assets, native Windows title bar, and custom NSIS artwork.
+- Phase 24 frontend branch: `frontend/phase-24-cinematic-shell`.
+- Phase 24 backend-support branch: `backend/phase-24-ui-support`.
+- Supplied Papaya-style screenshots are the visual hierarchy reference. NightWatch retains its name, eclipse logo, atmosphere system, official YouTube iframe, and original assets.
+- Phase 24 builds a persistent shell, centered global search, grid-first Browse, arrow-controlled history shelves, expanded categories, canonical/proxied avatar assets, and responsive rail/mobile navigation.
+- Phase 25–28 cover the player dock, social/profile screens, Creator/settings consistency, and packaged accessibility/regression hardening.
+- Phase 29 local and Google Drive media is separately gated and is not part of the current UI completion goal.
 
-## Active branch
+## Phase 24 verified so far
 
-`frontend/phase-22-card-theme-polish` fixes Browse search focus, real YouTube channel avatars, conventional card Play actions, the My Card dashboard grid, four new presets, Custom Atmosphere, and visual Backdrop choices.
+- Strict TypeScript passes.
+- All 43 unit tests pass.
+- Discord Activity production build passes.
+- Browser visual review passes at 1280×800, 940×600, 820px collapsed rail, and 600px mobile navigation.
+- Global search submission, result replacement, category controls, pagination UI, and zero horizontal page overflow were verified.
 
-## Verified gates
+## Required external/platform delivery
 
-- Phase 22 merge: strict TypeScript, 39 unit tests, Activity build, Electron renderer/main/preload build, and Windows NSIS packaging passed.
-- The active polish branch passes strict TypeScript, 43 unit tests, Activity build, Electron renderer/main/preload build, and Windows NSIS packaging with `--publish never`.
+- Preserve Activity identity `avatarUrl`, normalize Discord CDN URLs, and expose optional validated member avatars.
+- Add privacy-safe media presence and friend presence v2 without room codes.
+- Add cached `search-youtube` details mode for trusted metadata on arbitrary YouTube URLs.
+- Deploy migrations/functions and URL mappings before enabling dependent UI.
 
-## Not yet proven
+## Still not proven
 
-- Hands-on packaged visual review at desktop, sub-900px, and compact Activity sizes.
-- Packaged two-client create/join/sync/chat/reactions/queue/host migration/reconnect regression.
-- Real Discord Activity launch and high-latency drift verification.
-- Installed updater path from `v0.1.20` to `v0.1.21`.
-- Release asset presence (`.exe`, `.blockmap`, `latest.yml`) in the GitHub Release entry.
-- Phase 23 migration `0020` and its acceptance test have not yet been verified against the live Supabase project.
+- Packaged two-client create/join/sync/chat/reactions/queue/notes/host-migration/reconnect regression on the Phase 24–28 result.
+- Real Discord Activity launch, avatar mappings, and high-latency drift.
+- Installed updater round-trip from `v0.1.22` to the final overhaul release.
+- Phase 28 accessibility matrix and packaged visual sign-off.

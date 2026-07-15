@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent, type SyntheticEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type SyntheticEvent } from 'react';
 import { getTrending, searchYouTube, type SearchResult } from '@/lib/search/SearchService';
 import { listHistory } from '@/lib/rooms/HistoryService';
 import { Icon, type IconName } from '@/components/Icon';
+import { resolveExternalAssetUrl } from '@/lib/assets';
 
 interface DiscoveryPanelProps {
   callerId: string;
   isHost: boolean;
   roomCode: string;
-  onPlayNow(videoId: string): void;
+  searchRequest: { query: string; nonce: number } | null;
+  onSearchBusyChange?(busy: boolean): void;
+  onPlayNow(videoId: string, title: string): void;
   onQueueAdd(videoId: string, title: string): boolean;
 }
 
@@ -30,6 +33,13 @@ const CATEGORIES: readonly Category[] = [
   { id: '26', label: 'How-to', icon: 'tools' },
   { id: '15', label: 'Pets', icon: 'pets' },
   { id: '2', label: 'Autos', icon: 'autos' },
+  { id: 'animation', label: 'Animation', icon: 'film', query: 'animation' },
+  { id: 'documentaries', label: 'Documentaries', icon: 'news', query: 'documentary' },
+  { id: 'cooking', label: 'Cooking', icon: 'sparkle', query: 'cooking recipes' },
+  { id: 'fitness', label: 'Fitness', icon: 'sports', query: 'fitness workout' },
+  { id: 'fashion', label: 'Fashion', icon: 'profile', query: 'fashion style' },
+  { id: 'podcasts', label: 'Podcasts', icon: 'live', query: 'video podcast' },
+  { id: 'lifestyle', label: 'Lifestyle', icon: 'home', query: 'lifestyle' },
 ];
 
 const OUTCOME_MESSAGE: Record<string, string> = {
@@ -38,9 +48,8 @@ const OUTCOME_MESSAGE: Record<string, string> = {
   error: 'Videos could not be loaded. Check your connection and retry.',
 };
 
-export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
+export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
   const [mode, setMode] = useState<BrowseMode>('trending');
-  const [query, setQuery] = useState('');
   const [activeQuery, setActiveQuery] = useState('');
   const [category, setCategory] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -113,13 +122,6 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
     return nextHistory;
   }
 
-  async function handleSearch(event: FormEvent): Promise<void> {
-    event.preventDefault();
-    const clean = query.trim();
-    if (clean.length === 0 || loading) return;
-    await loadSearch(clean);
-  }
-
   async function loadSearch(clean: string): Promise<void> {
     const generation = ++requestGenerationRef.current;
     setMode('search');
@@ -128,9 +130,14 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
     setLoadingMore(false);
     setMessage(null);
     setNextToken(null);
+    onSearchBusyChange?.(true);
     const outcome = await searchYouTube(clean, callerId);
-    if (generation !== requestGenerationRef.current) return;
+    if (generation !== requestGenerationRef.current) {
+      onSearchBusyChange?.(false);
+      return;
+    }
     setLoading(false);
+    onSearchBusyChange?.(false);
     if (outcome.status === 'ok') {
       setResults(outcome.results);
       setNextToken(outcome.nextPageToken);
@@ -193,6 +200,9 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
 
   useEffect(() => { void Promise.all([loadTrending(''), loadHistory()]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { void loadHistory(); }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (searchRequest !== null) void loadSearch(searchRequest.query);
+  }, [searchRequest?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function queue(result: SearchResult): void {
     if (onQueueAdd(result.videoId, result.title)) {
@@ -206,29 +216,8 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
     event.currentTarget.parentElement?.classList.add('thumbnail-unavailable');
   }
 
-  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
-    if (event.key === 'Escape' && query !== '') {
-      event.preventDefault();
-      setQuery('');
-    }
-  }
-
-  const firstShelf = results.slice(0, 8);
-  const secondShelf = results.slice(8, 16);
-  const remainingShelf = results.slice(16);
-
   return (
     <div className="browse-hub">
-      <form className="browse-search" role="search" onSubmit={(event) => void handleSearch(event)}>
-        <span className="browse-search-icon"><Icon name="search" size={20} /></span>
-        <label className="browse-search-field">
-          <span>Find your next watch</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={handleSearchKeyDown} placeholder="Search videos, creators, and topics" aria-label="Search videos" />
-        </label>
-        {query !== '' && <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="Clear search"><Icon name="close" size={16} /></button>}
-        <button type="submit" className="button button-primary" disabled={loading || query.trim() === ''}>{loading && mode === 'search' ? 'Searching…' : 'Search'}</button>
-      </form>
-
       <div className="browse-category-row">
         <button type="button" className="category-scroll category-scroll-left" disabled={!categoryEdges.left} onClick={() => moveCategories(-1)} aria-label="Scroll video categories left"><Icon name="chevron-left" /></button>
         <nav className="browse-categories" ref={categoryRef} aria-label="Video categories">
@@ -252,11 +241,9 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
       {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 
       {!loading && mode !== 'history' && results.length > 0 && (
-        <div className="browse-shelves">
+        <div className="browse-results">
           {history.length > 0 && <VideoShelf title="Continue watching" eyebrow="Pick up together" items={history.slice(0, 8)} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
-          <VideoShelf title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={firstShelf} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
-          {secondShelf.length > 0 && <VideoShelf title="More to explore" eyebrow="Keep the party going" items={secondShelf} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
-          {remainingShelf.length > 0 && <VideoShelf title="Fresh picks" eyebrow="More from NightWatch discovery" items={remainingShelf} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+          <VideoGrid title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={results} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
         </div>
       )}
 
@@ -267,7 +254,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, onPlayNow, onQueueA
 
 interface ShelfProps {
   title: string; eyebrow: string; items: readonly SearchResult[]; isHost: boolean; queuedId: string | null;
-  onPlay(videoId: string): void; onQueue(result: SearchResult): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void;
+  onPlay(videoId: string, title: string): void; onQueue(result: SearchResult): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void;
 }
 
 function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
@@ -293,20 +280,34 @@ function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, 
     <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><div className="shelf-controls"><span>{items.length} videos</span><button type="button" disabled={!edges.left} onClick={() => move(-1)} aria-label={`Scroll ${title} left`}><Icon name="chevron-left" /></button><button type="button" disabled={!edges.right} onClick={() => move(1)} aria-label={`Scroll ${title} right`}><Icon name="chevron-right" /></button></div></header>
     <div className="shelf-viewport" data-can-scroll-left={edges.left} data-can-scroll-right={edges.right}>
     <ul className="shelf-track" ref={trackRef} tabIndex={0} aria-label={`${title} videos`}>
-      {items.map((result) => <li key={result.videoId} className="media-card">
-        <div className="media-thumb">
-          <img src={result.thumbnailUrl} alt="" loading="lazy" onError={onImageError} />
-          {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
-          <div className="media-card-actions">
-            {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId)} aria-label={`Play ${result.title}`}><Icon name="play" size={15} />Play</button>}
-            <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queuedId === result.videoId ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
-          </div>
-        </div>
-        <div className="media-card-copy"><ChannelAvatar name={result.channelTitle || result.title} src={result.channelThumbnailUrl} /><span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span></div>
-      </li>)}
+      {items.map((result) => <MediaCard key={result.videoId} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
     </ul>
     </div>
   </section>;
+}
+
+function VideoGrid({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
+  const headingId = `grid-${title.replace(/\W/g, '-').toLowerCase()}`;
+  return <section className="video-grid-section" aria-labelledby={headingId}>
+    <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={headingId}>{title}</h2></div><span className="result-count">{items.length} videos · YouTube</span></header>
+    <ul className="media-grid">
+      {items.map((result) => <MediaCard key={result.videoId} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
+    </ul>
+  </section>;
+}
+
+function MediaCard({ result, isHost, queued, onPlay, onQueue, onImageError }: { result: SearchResult; isHost: boolean; queued: boolean; onPlay(videoId: string, title: string): void; onQueue(result: SearchResult): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void }): JSX.Element {
+  return <li className="media-card">
+    <div className="media-thumb">
+      <img src={resolveExternalAssetUrl(result.thumbnailUrl) ?? ''} alt="" loading="lazy" onError={onImageError} />
+      {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
+      <div className="media-card-actions">
+        {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId, result.title)} aria-label={`Play ${result.title}`}><Icon name="play" size={15} />Play now</button>}
+        <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queued ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
+      </div>
+    </div>
+    <div className="media-card-copy"><ChannelAvatar name={result.channelTitle || result.title} src={result.channelThumbnailUrl} /><span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span></div>
+  </li>;
 }
 
 function ChannelAvatar({ name, src }: { name: string; src: string }): JSX.Element {
@@ -314,7 +315,8 @@ function ChannelAvatar({ name, src }: { name: string; src: string }): JSX.Elemen
   useEffect(() => setFailed(false), [src]);
   const seed = Array.from(name).reduce((value, character) => ((value * 31) + character.charCodeAt(0)) % 360, 217);
   const style = { '--channel-hue': seed } as CSSProperties;
-  return <span className="channel-avatar" style={style} aria-hidden="true">{src !== '' && !failed ? <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /> : <span>{name.trim().slice(0, 1).toUpperCase() || 'N'}</span>}</span>;
+  const resolved = resolveExternalAssetUrl(src);
+  return <span className="channel-avatar" style={style} aria-hidden="true">{resolved !== null && resolved !== '' && !failed ? <img src={resolved} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /> : <span>{name.trim().slice(0, 1).toUpperCase() || 'N'}</span>}</span>;
 }
 
 function BrowseLoading(): JSX.Element {
