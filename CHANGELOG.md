@@ -3,6 +3,11 @@
 
 ## Unreleased
 
+### Browse variety and infinite scroll
+
+- Rebuilt trending as a deep, shuffled pool (up to four cheap `mostPopular` pages / ~200 videos) that reshuffles each cache refresh and rotates to a random start per open, so Browse no longer shows the same handful every launch and pages much deeper. Search remains relevance-ordered and quota-protected.
+- Added scroll-triggered loading to the Browse hub (IntersectionObserver sentinel) so more videos load as you scroll; the explicit "Load more" button stays as a keyboard/fallback control.
+
 ### Phase 24 backend: identity, friend media presence, video details
 
 - Added `sanitizeAvatarUrl` (canonical Discord-CDN-only, query/hash/credential/port-stripped, length-capped) and additive `avatarUrl` on `PresenceMeta`/`RoomMember`; room presence now publishes and validates a member avatar, with the Discord OAuth / Activity avatar carried into presence non-persistently.
