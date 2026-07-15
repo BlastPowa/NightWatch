@@ -276,22 +276,33 @@ begin
   -- =========================================================================
   -- Old-client (v0.1.22) compatibility.
   -- =========================================================================
-  -- The old heartbeat still works and leaves video_id null.
+  -- The old heartbeat_presence only knows status/title: it never writes a video
+  -- id and, crucially, does not clear one left in the column by an earlier
+  -- media heartbeat. v2 must therefore gate the id on STATUS — an 'online'
+  -- (non-watching) friend is not watching anything to join, even if a stale id
+  -- lingers in the row and activity sharing is on.
   perform pg_temp.act_as(bob);
   perform heartbeat_presence('online', 'Old Client Video');
-  perform pg_temp.check(
-    (select video_id from presence_preferences where user_id = bob) is null,
-    'old heartbeat_presence clears the video id (never writes one)'
-  );
-  -- And v2 surfaces that row with a null id even under full activity consent.
   perform pg_temp.act_as(alice);
   perform pg_temp.check(
     (select video_id from get_friend_presence_v2() where user_id = bob) is null,
-    'an old-client presence row shows a null video id in v2'
+    'an online (non-watching) friend never exposes a video id, even a stale one'
   );
   perform pg_temp.check(
     (select status from get_friend_presence_v2() where user_id = bob) = 'online',
     'an old-client presence row still exposes status in v2'
+  );
+  perform pg_temp.check(
+    (select video_title from get_friend_presence_v2() where user_id = bob) = 'Old Client Video',
+    'an old-client presence row still exposes its (freshly written) title in v2'
+  );
+  -- Watching again re-exposes the id: the gate follows status, not a one-way flip.
+  perform pg_temp.act_as(bob);
+  perform heartbeat_media_presence('watching', 'Back Again', vid);
+  perform pg_temp.act_as(alice);
+  perform pg_temp.check(
+    (select video_id from get_friend_presence_v2() where user_id = bob) = vid,
+    'returning to watching re-exposes the video id'
   );
   -- The old reader keeps working unchanged.
   perform pg_temp.check(

@@ -131,7 +131,16 @@ begin
     public.validated_border(pp.user_id),
     pp.status,
     case when pp.share_activity then pp.video_title else null end,
-    case when pp.share_activity then pp.video_id else null end,
+    -- The video id is exposed only when the friend is actually watching, not
+    -- merely online. The old heartbeat_presence writes status/title but never
+    -- clears video_id, so a stale id can linger in the column after someone
+    -- stops watching; gating on status guarantees "join what they're watching"
+    -- can never point at something they left.
+    case
+      when pp.share_activity and pp.status in ('watching', 'in_party')
+      then pp.video_id
+      else null
+    end,
     pp.updated_at
   from presence_preferences pp
   join friendships f
