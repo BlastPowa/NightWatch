@@ -1,59 +1,45 @@
 # NightWatch frontend/backend handoff
 
-Last updated: 2026-07-13 after `main` reached `285c0be`.
+Last updated: 2026-07-15 from `v0.1.22` (`6bb11fb`).
 
-## Current coordination state
+## Lane ownership
 
-- Phase 23 backend and UI are merged into `main` through PRs #31 and #32.
-- The active frontend branch is `frontend/phase-22-card-theme-polish`. Do not edit its Browse, Settings, UserCard, SearchService, `discordBridge`, or `search-youtube` files from another lane.
-- NightWatch is the final product name.
-- Reviewed lane commits use the `Automerge: reviewed` trailer; ordinary pushes remain open. Releases are owner-initiated through **Actions > Release**.
-- Never replace, obscure, proxy, or place interactive controls over the official YouTube iframe.
+- Codex owns `frontend/phase-24-cinematic-shell` and the visual Phases 24–28.
+- Claude owns `backend/phase-24-ui-support`; its exact typed contract is in `PHASE_24_UI_BACKEND_HANDOFF.md` in the backend worktree.
+- Claude must not edit React visual components or shared CSS. Codex does not alter room event contracts, RLS, Electron bridges, or Edge Function security without the typed handoff.
+- Feature PRs validate automatically. Reviewed automerge uses the repository trailer. Releases are manual Actions runs after packaged acceptance.
 
-## Active frontend polish
+## Frontend direction
 
-This branch adds:
+The user-supplied screenshots replace further Figma inspection. Adapt their compact shell, centered search, media hierarchy, player/recommendation relationship, banner profiles, hover actions, and purple-glass depth to NightWatch variables. Do not copy Papaya branding/assets. Preserve the NightWatch name, eclipse logo, 13 atmospheres, Custom Atmosphere, accessibility settings, and local/system fonts.
 
-- a clean composite Browse focus state and conventional labeled Play button;
-- real YouTube channel thumbnails through one cached, batched channels lookup, with initial fallbacks;
-- a responsive My Card dashboard grid and six-column statistics;
-- Avengers: Doomsday, Spider-Man: Brand New Day, Alien X, and Obsidian Black presets;
-- a backward-compatible Custom Atmosphere builder for canvas/surface/panel colours;
-- visual Midnight, Aurora, and Studio Backdrop choices.
+Browse is grid-first for discovery/search and uses shelves only for activity/history. The official YouTube iframe remains unchanged. No enabled control may be decorative or fake.
 
-Do not duplicate these changes in the backend lane.
+## Backend support required before dependent UI is enabled
 
-## Phase 23 contracts now available
-
-`SocialProfileService` exposes privacy-safe social profiles, blocked-user management, conversation-member presentation, and persistent-room invitations. `Relation` carries `avatarUrl` and `selectedBorderId`.
-
-Rules the UI must preserve:
-
-1. Missing stats, achievements, or mutual rooms mean they are private; never render invented zero values.
-2. Blocked profiles return `blocked`, not an empty profile shell.
-3. Stats and achievements have separate opt-ins.
-4. Selected borders are server-validated; null means no valid public border.
-5. Public avatars are restricted to Discord CDN URLs.
-6. Invitations expire after seven days, are revocable/audited, and are limited to 20 per day.
-7. Presence never exposes room codes and suggestions are not automatic friends.
-
-## Owner/deployment steps before v0.1.22
-
-1. Apply Phase 23 migration `0020` and run `supabase/tests/phase23_profiles_test.sql`. Until then the new social surfaces correctly hide behind `not-ready`.
-2. Deploy the updated YouTube function for channel avatars:
-   `supabase functions deploy search-youtube --no-verify-jwt`
-3. Add `/ytchannel` -> `yt3.ggpht.com` to Discord Developer Portal URL Mappings before the next Activity deploy.
-4. Verify migration `0019_list_my_clubs_visibility.sql` and redeploy `log-session` if highlights return no data.
-5. Run packaged two-client create/join/sync/chat/reaction/queue/host-migration/reconnect tests.
-6. Run a real Discord Activity launch, high-latency drift test, and updater verification.
-7. Trigger the next release only after both the database and frontend polish are merged and verified.
+1. `PlatformIdentity.avatarUrl` retains a canonical Discord CDN value and the platform resolver rewrites it for Activity.
+2. `PresenceMeta` and `RoomMember` gain backward-compatible optional `avatarUrl`; public borders remain server validated.
+3. `heartbeat_media_presence` publishes a coarse state plus optional safe title and strict 11-character YouTube ID.
+4. `get_friend_presence_v2` respects explicit sharing and blocks, can return a safe avatar/border/video ID, and never returns room codes.
+5. `search-youtube` `kind: "details"` returns the normalized media result shape with caching, quota accounting, and explicit unavailable/rate-limited outcomes.
+6. Add migration/RLS tests for consent, blocks, invalid identifiers, and old-client compatibility.
 
 ## Stable invariants
 
-- Social services return `SocialResult<T>`; `not-ready` means hide the feature.
+- Social services return typed explicit outcomes; `not-ready` hides capability-gated navigation.
 - Message paging uses `seq`; soft-deleted rows remain tombstone cursor slots.
-- Do not derive private/server-filtered state from directory search results.
-- Highlights are timestamps and official-player seeks, never downloadable video.
-- Client secrets and OAuth tokens remain server-side.
+- Public profiles never invent private stats, achievements, or mutual rooms.
+- Presence is consent-safe and never exposes private room codes.
+- YouTube content uses the official iframe only; NightWatch synchronizes state and never downloads/proxies video content.
+- Client secrets and OAuth refresh tokens remain outside Supabase/browser state.
 
-Exact Figma node inspection remains blocked by the Starter MCP quota; supplied screenshots and existing design references remain the visual source.
+## Validation and merge order
+
+1. Merge Claude's typed support contracts and tests.
+2. Rebase the frontend phase onto current `main`.
+3. Run `npm ci`, typecheck, tests, Activity build, Electron build with `--publish never`, and Windows packaging.
+4. Review packaged desktop/compact visuals and two-client behavior.
+5. Merge the reviewed frontend PR and deploy migrations/functions before enabling their UI.
+6. Trigger Release manually only after acceptance.
+
+Phase 29 local/Drive playback remains separately gated from the Phases 24–28 UI completion goal.
