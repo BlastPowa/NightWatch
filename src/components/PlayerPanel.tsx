@@ -17,6 +17,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { YouTubePlayer } from '@/lib/player/YouTubePlayer';
 import type { RoomService } from '@/lib/room/RoomService';
 import { getVideoDetails, type VideoDetails } from '@/lib/search/SearchService';
+import { heartbeatMedia } from '@/lib/social/PresenceService';
 import { settingsStore } from '@/lib/settings';
 import { SyncEngine } from '@/lib/sync/SyncEngine';
 
@@ -221,6 +222,9 @@ export function PlayerPanel({
       const videoTitle = playerRef.current?.getVideoTitle() ?? null;
       setVideoTitle(videoTitle);
       updateRichPresence({ roomCode, videoTitle });
+      if (authUser !== null && socialCapabilities.friendMediaPresence) {
+        void heartbeatMedia('in_party', videoTitle, videoId);
+      }
       // Persistent-room watch history (Phase 16): host writes one entry;
       // the server ignores ephemeral codes and dedupes repeats.
       if (isHostRef.current) {
@@ -228,7 +232,7 @@ export function PlayerPanel({
       }
     }, 2500);
     return () => window.clearTimeout(timer);
-  }, [roomCode, videoId]);
+  }, [authUser, roomCode, socialCapabilities.friendMediaPresence, videoId]);
 
   useEffect(() => {
     return () => updateRichPresence(null);

@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState, type CSSProperties, type SyntheticEvent } from 'react';
-import { getTrending, searchYouTube, type SearchResult } from '@/lib/search/SearchService';
+import { getTrending, getVideoDetails, searchYouTube, type SearchResult } from '@/lib/search/SearchService';
 import { listHistory } from '@/lib/rooms/HistoryService';
 import { Icon, type IconName } from '@/components/Icon';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { resolveExternalAssetUrl } from '@/lib/assets';
+import { getFriendMediaPresence, type FriendMediaPresence } from '@/lib/social/PresenceService';
 
 interface DiscoveryPanelProps {
   callerId: string;
   isHost: boolean;
   roomCode: string;
   searchRequest: { query: string; nonce: number } | null;
+  friendMediaPresence: boolean;
   onSearchBusyChange?(busy: boolean): void;
   onPlayNow(videoId: string, title: string): void;
   onQueueAdd(videoId: string, title: string): boolean;
@@ -16,6 +19,7 @@ interface DiscoveryPanelProps {
 
 type BrowseMode = 'trending' | 'search' | 'history';
 type Category = { id: string; label: string; icon: IconName; query?: string };
+type BrowseItem = SearchResult & { friendActivity?: FriendMediaPresence };
 
 const CATEGORIES: readonly Category[] = [
   { id: '', label: 'All', icon: 'sparkle' },
@@ -48,12 +52,13 @@ const OUTCOME_MESSAGE: Record<string, string> = {
   error: 'Videos could not be loaded. Check your connection and retry.',
 };
 
-export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
+export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, friendMediaPresence, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
   const [mode, setMode] = useState<BrowseMode>('trending');
   const [activeQuery, setActiveQuery] = useState('');
   const [category, setCategory] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [history, setHistory] = useState<SearchResult[]>([]);
+  const [friendResults, setFriendResults] = useState<BrowseItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -202,6 +207,27 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSe
   useEffect(() => { void Promise.all([loadTrending(''), loadHistory()]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { void loadHistory(); }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
+    let active = true;
+    if (!friendMediaPresence) {
+      setFriendResults([]);
+      return () => { active = false; };
+    }
+    const refresh = async (): Promise<void> => {
+      const presenceResult = await getFriendMediaPresence();
+      if (!active || presenceResult.status !== 'ok') return;
+      const watching = presenceResult.data.filter((friend) => friend.videoId !== null && (friend.status === 'watching' || friend.status === 'in_party'));
+      const hydrated = await Promise.all(watching.map(async (friend): Promise<BrowseItem | null> => {
+        if (friend.videoId === null) return null;
+        const details = await getVideoDetails(friend.videoId, callerId);
+        return details.status === 'ok' ? { ...details.details, friendActivity: friend } : null;
+      }));
+      if (active) setFriendResults(hydrated.filter((item): item is BrowseItem => item !== null));
+    };
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, 30_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [callerId, friendMediaPresence]);
+  useEffect(() => {
     if (searchRequest !== null) void loadSearch(searchRequest.query);
   }, [searchRequest?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -259,6 +285,8 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSe
       {loading && <BrowseLoading />}
       {!loading && message !== null && <div className="discovery-empty" role="status"><Icon name="search" size={28} /><strong>{message}</strong><button type="button" className="button" onClick={() => void retryCurrentView()}>{mode === 'history' ? 'Refresh history' : 'Try again'}</button></div>}
 
+      {!loading && friendResults.length > 0 && <VideoShelf title="Friends are watching" eyebrow="Shared by friends" items={friendResults} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+
       {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 
       {!loading && mode !== 'history' && results.length > 0 && (
@@ -279,8 +307,8 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSe
 }
 
 interface ShelfProps {
-  title: string; eyebrow: string; items: readonly SearchResult[]; isHost: boolean; queuedId: string | null;
-  onPlay(videoId: string, title: string): void; onQueue(result: SearchResult): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void;
+  title: string; eyebrow: string; items: readonly BrowseItem[]; isHost: boolean; queuedId: string | null;
+  onPlay(videoId: string, title: string): void; onQueue(result: BrowseItem): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void;
 }
 
 function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
@@ -306,7 +334,7 @@ function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, 
     <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><div className="shelf-controls"><span>{items.length} videos</span><button type="button" disabled={!edges.left} onClick={() => move(-1)} aria-label={`Scroll ${title} left`}><Icon name="chevron-left" /></button><button type="button" disabled={!edges.right} onClick={() => move(1)} aria-label={`Scroll ${title} right`}><Icon name="chevron-right" /></button></div></header>
     <div className="shelf-viewport" data-can-scroll-left={edges.left} data-can-scroll-right={edges.right}>
     <ul className="shelf-track" ref={trackRef} tabIndex={0} aria-label={`${title} videos`}>
-      {items.map((result) => <MediaCard key={result.videoId} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
+      {items.map((result) => <MediaCard key={`${result.videoId}-${result.friendActivity?.userId ?? 'media'}`} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
     </ul>
     </div>
   </section>;
@@ -317,16 +345,17 @@ function VideoGrid({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, o
   return <section className="video-grid-section" aria-labelledby={headingId}>
     <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={headingId}>{title}</h2></div><span className="result-count">{items.length} videos · YouTube</span></header>
     <ul className="media-grid">
-      {items.map((result) => <MediaCard key={result.videoId} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
+      {items.map((result) => <MediaCard key={`${result.videoId}-${result.friendActivity?.userId ?? 'media'}`} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
     </ul>
   </section>;
 }
 
-function MediaCard({ result, isHost, queued, onPlay, onQueue, onImageError }: { result: SearchResult; isHost: boolean; queued: boolean; onPlay(videoId: string, title: string): void; onQueue(result: SearchResult): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void }): JSX.Element {
+function MediaCard({ result, isHost, queued, onPlay, onQueue, onImageError }: { result: BrowseItem; isHost: boolean; queued: boolean; onPlay(videoId: string, title: string): void; onQueue(result: BrowseItem): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void }): JSX.Element {
   return <li className="media-card">
     <div className="media-thumb">
       <img src={resolveExternalAssetUrl(result.thumbnailUrl) ?? ''} alt="" loading="lazy" onError={onImageError} />
       {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
+      {result.friendActivity !== undefined && <span className="friend-watch-chip"><ProfileAvatar src={result.friendActivity.avatarUrl} name={result.friendActivity.displayName} className={result.friendActivity.selectedBorderId !== null ? `friend-watch-avatar border-${result.friendActivity.selectedBorderId}` : 'friend-watch-avatar'} /><span><strong>{result.friendActivity.displayName}</strong><small>watching now</small></span></span>}
       <div className="media-card-actions">
         {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId, result.title)} aria-label={`Play ${result.title}`}><Icon name="play" size={15} />Play now</button>}
         <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queued ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
