@@ -50,6 +50,23 @@ begin
 end;
 $$;
 
+-- Some guards (a column check constraint) raise a message we do not want to
+-- pin exactly. This asserts only that the statement fails somehow.
+create or replace function pg_temp.expect_any_raise(p_sql text, p_case text)
+returns void
+language plpgsql
+as $$
+begin
+  begin
+    execute p_sql;
+  exception
+    when others then
+      return;
+  end;
+  raise exception 'FAILED: % (expected a raise, but it succeeded)', p_case;
+end;
+$$;
+
 do $$
 declare
   alice uuid := gen_random_uuid();
@@ -162,19 +179,28 @@ begin
   );
 
   -- =========================================================================
-  -- Safe avatar: only a canonical Discord CDN url survives to a friend's row.
+  -- Safe avatar: only a canonical Discord CDN url can be stored (the 0020
+  -- column constraint) AND only one survives the read helper (defense in depth).
   -- =========================================================================
   perform pg_temp.check(
     (select avatar_url from get_friend_presence_v2() where user_id = bob) = good_avatar,
     'a Discord CDN avatar is exposed'
   );
-  -- Poison the stored value directly (set_profile_avatar does not gate host).
-  update player_stats set avatar_url = evil_avatar where user_id = bob;
-  perform pg_temp.check(
-    (select avatar_url from get_friend_presence_v2() where user_id = bob) is null,
-    'a non-Discord avatar host is stripped to null on the way out'
+  -- Write-time guard: the column constraint refuses a non-Discord host.
+  perform pg_temp.expect_any_raise(
+    format('update player_stats set avatar_url = %L where user_id = %L', evil_avatar, bob),
+    'the avatar_url column constraint rejects a non-Discord host'
   );
-  update player_stats set avatar_url = good_avatar where user_id = bob;
+  -- Read-time guard: safe_avatar_url strips anything not a Discord CDN url, so a
+  -- future migration that loosens the column still cannot leak a foreign host.
+  perform pg_temp.check(
+    public.safe_avatar_url(evil_avatar) is null,
+    'safe_avatar_url strips a non-Discord host'
+  );
+  perform pg_temp.check(
+    public.safe_avatar_url(good_avatar) = good_avatar,
+    'safe_avatar_url passes a canonical Discord url'
+  );
 
   -- =========================================================================
   -- Validated border: a forged (locked) selection renders as null.
