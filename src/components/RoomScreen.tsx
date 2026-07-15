@@ -224,7 +224,22 @@ export function RoomScreen({
             <span className="member-count" aria-label={`${room.members.length} watching`}>{room.members.length}</span>
           </div>
 
-          <div className="room-dock-tabs" role="tablist" aria-label="Room companion">
+          <div
+            className="room-dock-tabs"
+            role="tablist"
+            aria-label="Room companion"
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+              const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+              const currentIndex = tabs.indexOf(document.activeElement as HTMLButtonElement);
+              if (currentIndex < 0 || tabs.length === 0) return;
+              event.preventDefault();
+              const direction = event.key === 'ArrowRight' ? 1 : -1;
+              const next = tabs[(currentIndex + direction + tabs.length) % tabs.length];
+              next?.focus();
+              next?.click();
+            }}
+          >
             <DockTab id="queue" label="Up next" icon="play" current={dockTab} onSelect={setDockTab} />
             <DockTab id="chat" label="Chat" icon="message" current={dockTab} onSelect={setDockTab} />
             <DockTab id="people" label="People" icon="users" current={dockTab} onSelect={setDockTab} />
@@ -232,7 +247,7 @@ export function RoomScreen({
             <DockTab id="discovery" label="Discover" icon="search" current={dockTab} onSelect={setDockTab} />
           </div>
 
-          <div className={`room-dock-panel room-dock-${dockTab}`} role="tabpanel" aria-label={`${dockTab} panel`}>
+          <div id={`room-dock-panel-${dockTab}`} className={`room-dock-panel room-dock-${dockTab}`} role="tabpanel" aria-labelledby={`room-dock-tab-${dockTab}`} tabIndex={0}>
             {dockTab === 'queue' && <QueuePanel queue={queue} selfId={selfId} selfName={self?.displayName ?? 'Me'} isHost={selfIsHost} onPlayNext={handlePlayNext} />}
             {dockTab === 'chat' && <div className="room-chat-section"><ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} /></div>}
             {dockTab === 'people' && (
@@ -273,10 +288,9 @@ export function RoomScreen({
 type DockTabId = 'queue' | 'chat' | 'people' | 'moments' | 'discovery';
 
 function DockTab({ id, label, icon, current, onSelect }: { id: DockTabId; label: string; icon: 'play' | 'message' | 'users' | 'clock' | 'search'; current: DockTabId; onSelect(value: DockTabId): void }): JSX.Element {
-  return <button type="button" role="tab" aria-selected={current === id} className={current === id ? 'room-dock-tab room-dock-tab-active' : 'room-dock-tab'} onClick={() => onSelect(id)}><Icon name={icon} size={17} /><span>{label}</span></button>;
+  return <button id={`room-dock-tab-${id}`} type="button" role="tab" aria-selected={current === id} aria-controls={`room-dock-panel-${id}`} tabIndex={current === id ? 0 : -1} className={current === id ? 'room-dock-tab room-dock-tab-active' : 'room-dock-tab'} onClick={() => onSelect(id)}><Icon name={icon} size={17} /><span>{label}</span></button>;
 }
 
 function memberAvatarUrl(member: RoomState['members'][number]): string | null {
-  const value = (member as RoomState['members'][number] & { avatarUrl?: unknown }).avatarUrl;
-  return typeof value === 'string' ? value : null;
+  return member.avatarUrl ?? null;
 }

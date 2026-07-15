@@ -3916,6 +3916,9 @@ input {
 .player-media-copy { display: grid; min-width: 0; gap: .14rem; }
 .player-media-copy h2 { overflow: hidden; margin: 0; font-size: clamp(.95rem,1.5vw,1.2rem); letter-spacing: -.025em; text-overflow: ellipsis; white-space: nowrap; }
 .player-media-copy small { overflow: hidden; color: var(--nw-text-muted); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+.player-channel-line { display: flex; min-width: 0; align-items: center; gap: .45rem; }
+.player-channel-avatar { width: 22px; height: 22px; flex: 0 0 22px; border: 1px solid color-mix(in srgb,var(--nw-accent) 42%,var(--nw-border)); border-radius: 50%; object-fit: cover; }
+.player-channel-line small { min-width: 0; }
 .player-media-state { display: flex; align-items: center; gap: .55rem; }
 .sync-readout { display: inline-flex; align-items: center; gap: .35rem; color: var(--nw-text-muted); font-size: .68rem; white-space: nowrap; }
 
