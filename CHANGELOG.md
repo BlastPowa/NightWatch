@@ -3,6 +3,16 @@
 
 ## Unreleased
 
+### Phases 25-28 cinematic UI completion
+
+- Rebuilt the watch room around a responsive Up Next, Chat, People, Moments, and Discover dock while preserving the untouched official YouTube iframe and every existing room/sync contract.
+- Added trusted details-mode title, channel avatar, channel name, and duration below arbitrary loaded YouTube videos; room members now use validated Discord avatars with stable fallbacks.
+- Added a capability-gated Friends Are Watching shelf backed by consent-safe presence v2, trusted video details, and media heartbeats that never expose room codes.
+- Rebuilt Profile as an atmosphere-generated banner dashboard; restyled Friends as searchable relationship cards; and resolved Message avatars from authorized conversation rosters with clearer unread, system, failure, group, and compact states.
+- Added a live Settings mini-shell, custom-palette contrast/separation guidance, improved backdrop previews, refreshed Parties/lobby surfaces, and a cinematic About/update journal.
+- Added dev-only React Testing Library, user-event, and jsdom with shell navigation/search, avatar fallback, and keyboard-operable room-dock tests; the full suite now contains 55 passing tests.
+- Applied the non-breaking Discord REST/Undici security update, removing the production high-severity audit finding without forcing breaking Electron, Vite, or Activity SDK upgrades.
+
 ### Browse variety and infinite scroll
 
 - Rebuilt trending as a deep, shuffled pool (up to four cheap `mostPopular` pages / ~200 videos) that reshuffles each cache refresh and rotates to a random start per open, so Browse no longer shows the same handful every launch and pages much deeper. Search remains relevance-ordered and quota-protected.

@@ -8,6 +8,7 @@ import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { Icon } from '@/components/Icon';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -47,10 +48,7 @@ export function RoomScreen({
   onLeave,
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
-  const [queueOpen, setQueueOpen] = useState(true);
-  const [chatOpen, setChatOpen] = useState(true);
-  const [membersOpen, setMembersOpen] = useState(true);
-  const [discoveryOpen, setDiscoveryOpen] = useState(false);
+  const [dockTab, setDockTab] = useState<'queue' | 'chat' | 'people' | 'moments' | 'discovery'>('queue');
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
@@ -135,6 +133,15 @@ export function RoomScreen({
       });
   }
 
+  function openMomentTools(): void {
+    const module = document.querySelector<HTMLDetailsElement>('.player-community-module');
+    if (module !== null) {
+      module.open = true;
+      module.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      module.querySelector<HTMLElement>('summary')?.focus();
+    }
+  }
+
   return (
     <section className="room-view fade-up">
       <header className="room-header card">
@@ -209,33 +216,6 @@ export function RoomScreen({
             }}
           />
 
-          <details className="room-module room-collapsible" open={queueOpen} onToggle={(event) => setQueueOpen(event.currentTarget.open)}>
-            <summary>
-              <span><span className="eyebrow">Playlist</span><strong>Up next</strong></span>
-              <Icon name="chevron-right" size={18} className="room-summary-chevron" />
-            </summary>
-            <div className="room-module-body">
-              <QueuePanel
-                queue={queue}
-                selfId={selfId}
-                selfName={self?.displayName ?? 'Me'}
-                isHost={selfIsHost}
-                onPlayNext={handlePlayNext}
-              />
-            </div>
-          </details>
-
-          {selfIsHost && (
-            <details className="room-module room-collapsible room-discovery-module" open={discoveryOpen} onToggle={(event) => setDiscoveryOpen(event.currentTarget.open)}>
-              <summary>
-                <span><span className="eyebrow">Find the next video</span><strong>Discovery</strong></span>
-                <Icon name="chevron-right" size={18} className="room-summary-chevron" />
-              </summary>
-              <div className="room-module-body">
-                <SearchBox callerId={selfId} onSelect={(videoId) => loadVideoRef.current?.(videoId)} />
-              </div>
-            </details>
-          )}
         </div>
 
         <aside className="room-aside card room-dock">
@@ -244,28 +224,37 @@ export function RoomScreen({
             <span className="member-count" aria-label={`${room.members.length} watching`}>{room.members.length}</span>
           </div>
 
-          <details className="room-side-section room-chat-section" open={chatOpen} onToggle={(event) => setChatOpen(event.currentTarget.open)}>
-            <summary>
-              <span><Icon name="message" size={17} /> Conversation</span>
-              <Icon name="chevron-right" size={17} className="room-summary-chevron" />
-            </summary>
-            <div className="room-side-section-body">
-              <ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} />
-            </div>
-          </details>
+          <div
+            className="room-dock-tabs"
+            role="tablist"
+            aria-label="Room companion"
+            onKeyDown={(event) => {
+              if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+              const tabs = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+              const currentIndex = tabs.indexOf(document.activeElement as HTMLButtonElement);
+              if (currentIndex < 0 || tabs.length === 0) return;
+              event.preventDefault();
+              const direction = event.key === 'ArrowRight' ? 1 : -1;
+              const next = tabs[(currentIndex + direction + tabs.length) % tabs.length];
+              next?.focus();
+              next?.click();
+            }}
+          >
+            <DockTab id="queue" label="Up next" icon="play" current={dockTab} onSelect={setDockTab} />
+            <DockTab id="chat" label="Chat" icon="message" current={dockTab} onSelect={setDockTab} />
+            <DockTab id="people" label="People" icon="users" current={dockTab} onSelect={setDockTab} />
+            <DockTab id="moments" label="Moments" icon="clock" current={dockTab} onSelect={setDockTab} />
+            <DockTab id="discovery" label="Discover" icon="search" current={dockTab} onSelect={setDockTab} />
+          </div>
 
-          <details className="room-side-section members-collapsible" open={membersOpen} onToggle={(event) => setMembersOpen(event.currentTarget.open)}>
-            <summary>
-              <span><Icon name="users" size={17} /> Watching now</span>
-              <Icon name="chevron-right" size={17} className="room-summary-chevron" />
-            </summary>
-            <div className="room-side-section-body">
+          <div id={`room-dock-panel-${dockTab}`} className={`room-dock-panel room-dock-${dockTab}`} role="tabpanel" aria-labelledby={`room-dock-tab-${dockTab}`} tabIndex={0}>
+            {dockTab === 'queue' && <QueuePanel queue={queue} selfId={selfId} selfName={self?.displayName ?? 'Me'} isHost={selfIsHost} onPlayNext={handlePlayNext} />}
+            {dockTab === 'chat' && <div className="room-chat-section"><ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} /></div>}
+            {dockTab === 'people' && (
               <ul className="member-list">
                 {room.members.map((member) => (
                   <li key={member.id} className="member">
-                    <span className="member-avatar" aria-hidden="true">
-                      {member.displayName.slice(0, 1).toUpperCase()}
-                    </span>
+                    <ProfileAvatar src={memberAvatarUrl(member)} name={member.displayName} className="member-avatar" />
                     <span className="member-name">
                       {member.displayName}
                       {member.id === selfId && <span className="member-you"> (you)</span>}
@@ -282,8 +271,10 @@ export function RoomScreen({
                   <li className="member member-empty">Waiting for presence…</li>
                 )}
               </ul>
-            </div>
-          </details>
+            )}
+            {dockTab === 'moments' && <div className="dock-empty-state"><span className="dock-empty-icon"><Icon name="clock" size={24} /></span><strong>Shared moments</strong><p>Reactions and timestamp notes stay below the official player, where they never cover YouTube controls.</p><button type="button" className="button button-glow" onClick={openMomentTools}>Open moment tools</button></div>}
+            {dockTab === 'discovery' && (selfIsHost ? <SearchBox callerId={selfId} onSelect={(videoId) => loadVideoRef.current?.(videoId)} /> : <div className="dock-empty-state"><span className="dock-empty-icon"><Icon name="search" size={24} /></span><strong>Host discovery</strong><p>The host chooses what loads next. Add your pick to Up Next so everyone can vote.</p><button type="button" className="button" onClick={() => setDockTab('queue')}>Open queue</button></div>)}
+          </div>
 
           <button type="button" className="button room-leave-button" onClick={onLeave}>
             Leave Room
@@ -292,4 +283,14 @@ export function RoomScreen({
       </div>
     </section>
   );
+}
+
+type DockTabId = 'queue' | 'chat' | 'people' | 'moments' | 'discovery';
+
+function DockTab({ id, label, icon, current, onSelect }: { id: DockTabId; label: string; icon: 'play' | 'message' | 'users' | 'clock' | 'search'; current: DockTabId; onSelect(value: DockTabId): void }): JSX.Element {
+  return <button id={`room-dock-tab-${id}`} type="button" role="tab" aria-selected={current === id} aria-controls={`room-dock-panel-${id}`} tabIndex={current === id ? 0 : -1} className={current === id ? 'room-dock-tab room-dock-tab-active' : 'room-dock-tab'} onClick={() => onSelect(id)}><Icon name={icon} size={17} /><span>{label}</span></button>;
+}
+
+function memberAvatarUrl(member: RoomState['members'][number]): string | null {
+  return member.avatarUrl ?? null;
 }

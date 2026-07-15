@@ -2,7 +2,7 @@
 
 ## Current delivery state (2026-07-15)
 
-`v0.1.22` is the clean baseline. Phases 24–28 are the active cinematic UI program: reusable shell and grid-first Browse; player-first room dock; banner profiles, Friends, and Messages; remaining-screen consistency; then packaged accessibility and regression hardening. Phase 29 is a separately gated source-neutral library for user-owned local and Google Drive files. It does not download YouTube, scrape streaming sites, bypass DRM, or host a shared media catalog. `STATUS.md`, `TASKS.md`, and `CODEX_HANDOFF.md` are authoritative for active work; historical phase entries below remain the delivery ledger.
+`v0.1.22` is the public baseline. Phase 24 is merged. Phases 25–28 are implemented on the reviewed frontend branch: player-first room dock; banner profiles, Friends, authorized-roster Messages, friend-media discovery; remaining-screen consistency; component interaction tests; responsive visual QA; and Windows packaging. Owner acceptance still covers real two-client, Discord Activity, SQL deployment, and updater round-trip. Phase 29 remains a separately gated source-neutral library for user-owned local and Google Drive files. It does not download YouTube, scrape streaming sites, bypass DRM, or host a shared media catalog. `STATUS.md`, `TASKS.md`, and `CODEX_HANDOFF.md` are authoritative for active work; historical phase entries below remain the delivery ledger.
 
 ## Project Goal
 

@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-15 during Phase 24 backend integration.
+Last updated: 2026-07-15 during Phases 25-28 integration.
 
 ## Phase 24 backend lane (`backend/phase-24-ui-support`)
 
@@ -10,7 +10,7 @@ Last updated: 2026-07-15 during Phase 24 backend integration.
 - [x] `search-youtube` `kind: "details"` + typed `getVideoDetails(videoId, callerId)`.
 - [x] `sanitizeAvatarUrl` unit tests + `phase24_media_presence_test.sql` (consent, blocks, invalid ids, safe avatar/border, stale parity, old-client compat, no room code).
 - [x] Merge current `main` after the Phase 24 shell/Browse PR and preserve both UI and typed backend contracts.
-- [ ] Owner: run the SQL test on a disposable DB; deploy `0021` then redeploy `search-youtube`; enable capability-gated Browse UI.
+- [ ] Owner: run the SQL test on a disposable DB; deploy `0021` then redeploy `search-youtube`; the client capability gate enables the friend-media shelf only when ready.
 
 ## Phase 24 — shell, identity, and Browse
 
@@ -24,35 +24,37 @@ Last updated: 2026-07-15 during Phase 24 backend integration.
 - [x] Preserve stale-request protection, pagination, rate-limit/error states, channel identity, Play, and Queue.
 - [x] Add collapsed rail below 900px and mobile navigation below 620px.
 - [x] Verify TypeScript, 43 tests, Activity build, and responsive browser layouts.
-- [ ] Merge Claude's typed avatar/presence/details contracts, then rebase and enable safe dependent UI.
-- [ ] Run Electron/NSIS packaging and reviewed Phase 24 PR delivery.
+- [x] Merge Claude's typed avatar/presence/details contracts, then rebase and enable safe dependent UI.
+- [x] Run Electron/NSIS packaging and reviewed Phase 24 PR delivery.
 
 ## Phase 25 — player-first room
 
-- [ ] Build a wide official-iframe stage with metadata and host controls below it.
-- [ ] Add a responsive Up Next, Chat, People, Moments, and Discovery dock.
-- [ ] Preserve queue, reactions, notes, schedules, premieres, highlights, insights, sync, and host migration.
-- [ ] Finish one-border chat composition and real validated participant avatars.
+- [x] Build a wide official-iframe stage with trusted metadata and host controls below it.
+- [x] Add a responsive Up Next, Chat, People, Moments, and Discovery dock.
+- [x] Preserve queue, reactions, notes, schedules, premieres, highlights, insights, sync, and host migration contracts.
+- [x] Finish one-border chat composition, real validated participant avatars, and keyboard tab navigation.
 
 ## Phase 26 — profiles, friends, and messaging
 
-- [ ] Build banner-led profiles with implemented-data-only tabs and permission-gated actions.
-- [ ] Restyle Friends as searchable responsive cards with explicit relationship state.
-- [ ] Add the consent-safe desktop activity rail when backend presence v2 is ready.
-- [ ] Resolve message sender avatars from authorized rosters and polish unread/system/failure/group states.
+- [x] Build banner-led profiles with implemented-data-only tabs and server-validated cosmetics.
+- [x] Restyle Friends as searchable responsive cards with explicit relationship state.
+- [x] Add a capability-gated, consent-safe Friends Are Watching shelf backed by presence v2 and trusted details.
+- [x] Resolve message sender avatars from authorized rosters and polish unread/system/failure/group states.
 
 ## Phase 27 — remaining screens and controls
 
-- [ ] Unify Creator Club, Parties, lobby/join, About, notifications, empty/error states, and settings previews.
-- [ ] Expand the local SVG icon system without runtime UI packages.
-- [ ] Split global CSS by shell, discovery, room, social, and shared controls while preserving contracts.
+- [x] Unify Creator Club's existing cinematic system with refreshed Parties, lobby/join, About, empty/error states, and settings previews.
+- [x] Keep the dependency-free local SVG icon system; no runtime UI package was added.
+- [x] Begin stylesheet separation with dedicated social and secondary-screen modules while preserving legacy class/variable contracts.
 
 ## Phase 28 — hardening and completion
 
-- [ ] Add dev-only React Testing Library, user-event, and jsdom.
-- [ ] Complete keyboard, screen-reader, touch, contrast, text scale, reduced transparency, and reduced motion checks.
-- [ ] Run Electron, Activity, Windows packaging, two-client regression, Discord Activity, and updater round-trip.
-- [ ] Update all documentation and publish only after packaged acceptance.
+- [x] Add dev-only React Testing Library, user-event, and jsdom.
+- [x] Add shell, avatar, and room-dock keyboard interaction tests; verify responsive layouts and preference variants in code/browser review.
+- [x] Run clean install, strict typecheck, 55 tests, Activity build, Electron build, and Windows packaging.
+- [ ] Owner: run packaged two-client, real Discord Activity, and updater round-trip acceptance.
+- [x] Update active documentation; publish only after the remaining owner acceptance.
+- [ ] Plan the breaking Electron/Vite/Discord Activity SDK security upgrades as a separate platform PR; do not force them into this UI release.
 
 ## Phase 29 — separately gated media library
 

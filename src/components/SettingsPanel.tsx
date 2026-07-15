@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, type CSSProperties } from 'react';
 import type { AuthUser } from '@/lib/auth';
 import { signInWithDiscord, signOut } from '@/lib/auth';
 import {
@@ -18,6 +18,7 @@ import {
   type PresencePreferences,
 } from '@/lib/social/PresenceService';
 import './SettingsPanel.css';
+import '@/styles/phase27-secondary.css';
 
 interface SettingsPanelProps {
   user: AuthUser | null;
@@ -75,6 +76,14 @@ const BACKDROPS: ReadonlyArray<{ id: BackgroundStyle; label: string; description
 export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
   const settings = useSettings();
   const [section, setSection] = useState<SettingsSection>('appearance');
+  const customPaletteStatus = getCustomPaletteStatus(settings.customAtmosphere);
+  const previewStyle = {
+    '--p27-preview-accent': settings.accent,
+    '--p27-preview-canvas': settings.theme === 'custom' ? settings.customAtmosphere.canvas : '#070914',
+    '--p27-preview-surface': settings.theme === 'custom' ? settings.customAtmosphere.surface : '#171a2d',
+    '--p27-preview-panel': settings.theme === 'custom' ? settings.customAtmosphere.panel : '#0d1020',
+    '--p27-preview-theme': THEME_PREVIEW[settings.theme],
+  } as CSSProperties;
 
   return (
     <div className="settings-workspace fade-up">
@@ -106,18 +115,32 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
           <>
             <SettingsHeader title="Theme & appearance" description="Shape the room around the way you watch." />
             <section className="settings-grid settings-grid-two">
+              <div className="card settings-card settings-card-wide p27-live-preview-card">
+                <div className="p27-preview-copy">
+                  <span className="eyebrow">Live preview</span>
+                  <h2>Your NightWatch room</h2>
+                  <p>Atmosphere, accent, radius, density, and backdrop changes appear here instantly.</p>
+                </div>
+                <div className={`p27-live-preview p27-preview-${settings.backgroundStyle}`} style={previewStyle} role="img" aria-label={`Preview of ${THEMES.find((theme) => theme.id === settings.theme)?.label ?? 'selected'} atmosphere`}>
+                  <span className="p27-preview-bar"><i /><i /><i /><b /></span>
+                  <span className="p27-preview-shell">
+                    <i className="p27-preview-rail"><b /><b /><b /></i>
+                    <i className="p27-preview-stage"><b /><span><b /><b /><b /></span></i>
+                  </span>
+                </div>
+              </div>
               <div className="card settings-card settings-card-wide">
                 <h2>Atmosphere</h2>
                 <div className="theme-grid">
                   {THEMES.map((theme) => (
                     <button key={theme.id} type="button" className={`theme-tile${settings.theme === theme.id ? ' theme-tile-active' : ''}`} onClick={() => settingsStore.update({ theme: theme.id })} aria-pressed={settings.theme === theme.id}>
                       <span className="theme-preview" style={{ background: THEME_PREVIEW[theme.id] }} aria-hidden="true"><span /></span>
-                      <span className="theme-tile-copy"><strong>{theme.label}</strong><small>{THEME_DESCRIPTION[theme.id]}</small></span>
+                      <span className="theme-tile-copy"><strong>{theme.label}{settings.theme === theme.id && <em>Live</em>}</strong><small>{THEME_DESCRIPTION[theme.id]}</small></span>
                     </button>
                   ))}
                 </div>
               </div>
-              {settings.theme === 'custom' && <div className="card settings-card settings-card-wide custom-atmosphere-card"><div><h2>Custom atmosphere</h2><p>Choose your structural colours. Accent, glow, and accessibility controls still apply separately.</p></div><div className="custom-atmosphere-grid">{([['canvas','Canvas'],['surface','Surface'],['panel','Panel']] as const).map(([key,label]) => <label key={key} className="atmosphere-color"><input type="color" value={settings.customAtmosphere[key]} aria-label={`${label} colour`} onChange={(event) => settingsStore.update({ customAtmosphere: { [key]: event.target.value } })} /><span><strong>{label}</strong><small>{settings.customAtmosphere[key]}</small></span></label>)}</div></div>}
+              {settings.theme === 'custom' && <div className="card settings-card settings-card-wide custom-atmosphere-card p27-custom-atmosphere"><div className="p27-custom-copy"><span className="eyebrow">Palette studio</span><h2>Custom atmosphere</h2><p>Canvas sits behind the app, Surface holds cards, and Panel separates controls. Accent, glow, and accessibility settings remain independent.</p><div className={`p27-contrast-status${customPaletteStatus.safe ? ' p27-contrast-safe' : ' p27-contrast-warning'}`} role="status"><Icon name={customPaletteStatus.safe ? 'sparkle' : 'info'} /><span><strong>{customPaletteStatus.safe ? 'Balanced separation' : 'Contrast needs attention'}</strong><small>{customPaletteStatus.message}</small></span></div></div><div className="custom-atmosphere-grid">{([['canvas','Canvas'],['surface','Surface'],['panel','Panel']] as const).map(([key,label]) => <label key={key} className="atmosphere-color"><input type="color" value={settings.customAtmosphere[key]} aria-label={`${label} colour`} onChange={(event) => settingsStore.update({ customAtmosphere: { [key]: event.target.value } })} /><span><strong>{label}</strong><small>{settings.customAtmosphere[key]}</small></span></label>)}</div></div>}
               <div className="card settings-card">
                 <h2>Accent</h2>
                 <div className="swatch-row">
@@ -134,7 +157,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
               <div className="card settings-card">
                 <h2>Backdrop</h2>
                 <div className="backdrop-grid">
-                  {BACKDROPS.map((backdrop) => <button key={backdrop.id} type="button" className={`backdrop-option${settings.backgroundStyle === backdrop.id ? ' backdrop-option-active' : ''}`} aria-pressed={settings.backgroundStyle === backdrop.id} onClick={() => settingsStore.update({ backgroundStyle: backdrop.id })}><span className={`backdrop-preview backdrop-preview-${backdrop.id}`} aria-hidden="true" /><span><strong>{backdrop.label}</strong><small>{backdrop.description}</small></span></button>)}
+                  {BACKDROPS.map((backdrop) => <button key={backdrop.id} type="button" className={`backdrop-option${settings.backgroundStyle === backdrop.id ? ' backdrop-option-active' : ''}`} aria-pressed={settings.backgroundStyle === backdrop.id} onClick={() => settingsStore.update({ backgroundStyle: backdrop.id })}><span className={`backdrop-preview backdrop-preview-${backdrop.id}`} aria-hidden="true"><i /><b /></span><span><strong>{backdrop.label}{settings.backgroundStyle === backdrop.id && <em>Selected</em>}</strong><small>{backdrop.description}</small></span></button>)}
                 </div>
               </div>
             </section>
@@ -180,7 +203,7 @@ function ToggleCard({ title, description, checked, onChange }: { title: string; 
   const descriptionId = `${id}-description`;
   return <label className="card settings-card toggle-card" htmlFor={id}><span><strong>{title}</strong><small id={descriptionId}>{description}</small></span><input id={id} type="checkbox" checked={checked} aria-describedby={descriptionId} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>;
 }
-function Segmented<T extends string>({ values, active, onSelect }: { values: readonly T[]; active: T; onSelect(value: T): void }): JSX.Element { return <div className="segmented">{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{value}</button>)}</div>; }
+function Segmented<T extends string>({ values, active, onSelect }: { values: readonly T[]; active: T; onSelect(value: T): void }): JSX.Element { return <div className="segmented" role="group" aria-label="Layout density">{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{value}</button>)}</div>; }
 
 function ConfirmResetButton({ label, confirmLabel, danger = false, onConfirm }: { label: string; confirmLabel: string; danger?: boolean; onConfirm(): void }): JSX.Element {
   const [confirming, setConfirming] = useState(false);
@@ -221,9 +244,41 @@ function PresencePrivacyCard(): JSX.Element {
 
   return (
     <div className="card settings-card settings-card-wide presence-card">
-      <div className="presence-card-heading"><div><h2>Friend presence</h2><p>Privacy-first: both options stay off until you choose to share with accepted friends.</p></div><span className={`settings-sync-state settings-sync-${state}`} role="status" aria-live="polite">{(state === 'loading' || state === 'saving') && <span className="settings-mini-loader" aria-hidden="true" />}{state === 'loading' ? 'Loading…' : state === 'saving' ? 'Saving…' : state === 'error' ? 'Could not save' : 'Private by default'}</span></div>
+      <div className="presence-card-heading"><div><h2>Friend presence</h2><p>Privacy-first: both options stay off until you choose to share with accepted friends.</p></div><span className={`settings-sync-state settings-sync-${state}`} role="status" aria-live="polite">{(state === 'loading' || state === 'saving') && <span className="settings-mini-loader" aria-hidden="true" />}{state === 'loading' ? 'Loading...' : state === 'saving' ? 'Saving...' : state === 'error' ? 'Could not save' : 'Private by default'}</span></div>
       <label className="privacy-option"><span><strong>Share online status</strong><small>Friends can see online, watching, or in-party. Your room code is never included.</small></span><input type="checkbox" checked={preferences.shareOnline} disabled={state === 'loading'} onChange={(event) => void update({ shareOnline: event.target.checked, shareActivity: event.target.checked ? preferences.shareActivity : false })} /><span className="toggle-switch" aria-hidden="true" /></label>
       <label className="privacy-option"><span><strong>Share watching activity</strong><small>Also show the current video title. Requires online status sharing.</small></span><input type="checkbox" checked={preferences.shareActivity} disabled={state === 'loading' || !preferences.shareOnline} onChange={(event) => void update({ ...preferences, shareActivity: event.target.checked })} /><span className="toggle-switch" aria-hidden="true" /></label>
     </div>
   );
+}
+
+function getCustomPaletteStatus(palette: { canvas: string; surface: string; panel: string }): { safe: boolean; message: string } {
+  const textContrast = Math.min(
+    contrastRatio('#f4f7ff', palette.canvas),
+    contrastRatio('#f4f7ff', palette.surface),
+    contrastRatio('#f4f7ff', palette.panel),
+  );
+  const structuralSeparation = Math.max(
+    contrastRatio(palette.canvas, palette.surface),
+    contrastRatio(palette.canvas, palette.panel),
+    contrastRatio(palette.surface, palette.panel),
+  );
+  if (textContrast < 4.5) {
+    return { safe: false, message: `Light text reaches only ${textContrast.toFixed(1)}:1 on one surface. Darken that colour for readable copy.` };
+  }
+  if (structuralSeparation < 1.18) {
+    return { safe: false, message: 'The three surfaces are very similar. Increase their separation so cards and panels remain easy to scan.' };
+  }
+  return { safe: true, message: `Light text stays above ${textContrast.toFixed(1)}:1 and the structural layers remain distinct.` };
+}
+
+function contrastRatio(first: string, second: string): number {
+  const firstLuminance = relativeLuminance(first);
+  const secondLuminance = relativeLuminance(second);
+  return (Math.max(firstLuminance, secondLuminance) + 0.05) / (Math.min(firstLuminance, secondLuminance) + 0.05);
+}
+
+function relativeLuminance(hex: string): number {
+  const channels = [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16) / 255);
+  const [red, green, blue] = channels.map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  return (red ?? 0) * 0.2126 + (green ?? 0) * 0.7152 + (blue ?? 0) * 0.0722;
 }

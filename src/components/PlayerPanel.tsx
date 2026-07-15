@@ -9,12 +9,15 @@ import { ReactionOverlay } from '@/components/ReactionOverlay';
 import { TimelineMarkers } from '@/components/TimelineMarkers';
 import { MomentNotesPanel } from '@/components/MomentNotesPanel';
 import { Icon } from '@/components/Icon';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocialCapabilities } from '@/hooks/useSocialCapabilities';
 import { useReactions } from '@/hooks/useReactions';
 import { useSettings } from '@/hooks/useSettings';
 import { YouTubePlayer } from '@/lib/player/YouTubePlayer';
 import type { RoomService } from '@/lib/room/RoomService';
+import { getVideoDetails, type VideoDetails } from '@/lib/search/SearchService';
+import { heartbeatMedia } from '@/lib/social/PresenceService';
 import { settingsStore } from '@/lib/settings';
 import { SyncEngine } from '@/lib/sync/SyncEngine';
 
@@ -55,6 +58,8 @@ export function PlayerPanel({
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [videoTitle, setVideoTitle] = useState<string | null>(null);
+  const [mediaDetails, setMediaDetails] = useState<VideoDetails | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
@@ -120,6 +125,7 @@ export function PlayerPanel({
     const engine = new SyncEngine(service, player, () => isHostRef.current, {
       onVideoChanged: (id) => {
         setVideoId(id);
+        setVideoTitle(null);
         setError(null);
       },
       onDelayMeasured: (delayMs) => setSyncDelayMs(delayMs),
@@ -164,10 +170,35 @@ export function PlayerPanel({
     sessionRecorder.setVideo(videoId);
   }, [videoId]);
 
+  // Hydrate arbitrary shared video ids through the trusted Edge Function.
+  // This only decorates the information below the official iframe; playback,
+  // branding, controls, advertisements, and pointer handling remain YouTube's.
+  useEffect(() => {
+    let cancelled = false;
+    setMediaDetails(null);
+    if (videoId === null) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void getVideoDetails(videoId, service.selfId).then((outcome) => {
+      if (!cancelled && outcome.status === 'ok') {
+        setMediaDetails(outcome.details);
+        setVideoTitle(outcome.details.title);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [service, videoId]);
+
   // Track duration for the timeline strip (0 until a video is loaded) and
   // count active watch time for the local engagement dashboard.
   useEffect(() => {
     if (videoId === null) {
+      setVideoTitle(null);
       return;
     }
     const timer = window.setInterval(() => {
@@ -189,7 +220,11 @@ export function PlayerPanel({
     // Title is available shortly after the video loads.
     const timer = window.setTimeout(() => {
       const videoTitle = playerRef.current?.getVideoTitle() ?? null;
+      setVideoTitle(videoTitle);
       updateRichPresence({ roomCode, videoTitle });
+      if (authUser !== null && socialCapabilities.friendMediaPresence) {
+        void heartbeatMedia('in_party', videoTitle, videoId);
+      }
       // Persistent-room watch history (Phase 16): host writes one entry;
       // the server ignores ephemeral codes and dedupes repeats.
       if (isHostRef.current) {
@@ -197,7 +232,7 @@ export function PlayerPanel({
       }
     }, 2500);
     return () => window.clearTimeout(timer);
-  }, [roomCode, videoId]);
+  }, [authUser, roomCode, socialCapabilities.friendMediaPresence, videoId]);
 
   useEffect(() => {
     return () => updateRichPresence(null);
@@ -248,6 +283,30 @@ export function PlayerPanel({
             {isHost ? 'No video loaded' : 'Waiting for the host to pick a video…'}
           </span>
         )}
+      </div>
+
+      <div className="player-media-info">
+        <div className="player-source-mark" aria-label="Played with the official YouTube player"><Icon name="play" size={18} /></div>
+        <div className="player-media-copy">
+          <span className="eyebrow">YouTube · official player</span>
+          <h2>{mediaDetails?.title ?? videoTitle ?? (hasVideo ? 'Loading video details…' : 'Choose something to watch')}</h2>
+          {hasVideo ? (
+            <span className="player-channel-line">
+              <ProfileAvatar
+                src={mediaDetails?.channelThumbnailUrl || null}
+                name={mediaDetails?.channelTitle || 'YouTube'}
+                className="player-channel-avatar"
+              />
+              <small>{mediaDetails?.channelTitle || `Video ${videoId}`}{mediaDetails?.durationText ? ` · ${mediaDetails.durationText}` : ''}</small>
+            </span>
+          ) : (
+            <small>Paste a link or pick a video from Browse.</small>
+          )}
+        </div>
+        <div className="player-media-state">
+          <span className={`watch-role${isHost ? ' watch-role-host' : ''}`}>{isHost ? 'Host' : 'Viewer'}</span>
+          <span className="sync-readout"><span className="status-dot" aria-hidden="true" />{syncDelayMs === null ? 'Sync ready' : `~${syncDelayMs}ms`}</span>
+        </div>
       </div>
 
       <div className="player-command-bar">

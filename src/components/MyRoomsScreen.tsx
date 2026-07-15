@@ -14,6 +14,7 @@ import {
   updateRoomSettings,
   type PersistentRoom,
 } from '@/lib/rooms/PersistentRoomService';
+import '@/styles/phase27-secondary.css';
 
 interface MyRoomsScreenProps {
   user: AuthUser | null;
@@ -138,9 +139,11 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
 
   if (user === null) {
     return (
-      <div className="settings-page fade-up">
-        <h1 className="page-title">My Rooms</h1>
-        <section className="card settings-card">
+      <div className="settings-page p27-parties-page fade-up">
+        <header className="p27-parties-hero">
+          <div><span className="eyebrow">Persistent watch spaces</span><h1 className="page-title">Parties</h1><p>Schedule premieres and keep one familiar room code for your community.</p></div>
+        </header>
+        <section className="card settings-card p27-parties-signin">
           <p className="user-sub">
             Persistent rooms keep the same code forever and can be scheduled — sign in with
             Discord to create yours. Joining rooms never requires an account.
@@ -164,10 +167,13 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
   }
 
   return (
-    <div className="settings-page fade-up">
-      <h1 className="page-title">My Rooms</h1>
+    <div className="settings-page p27-parties-page fade-up">
+      <header className="p27-parties-hero">
+        <div><span className="eyebrow">Persistent watch spaces</span><h1 className="page-title">Parties</h1><p>Schedule premieres, revisit highlights, and keep your community in one familiar room.</p></div>
+        <span className="p27-room-capacity"><strong>{rooms.length}</strong><small>of 10 rooms</small></span>
+      </header>
 
-      <section className="card settings-card">
+      <section className="card settings-card p27-party-identity">
         <div className="about-header">
           <ProfileAvatar className="auth-avatar" src={user.avatarUrl} name={user.name} />
           <div>
@@ -186,7 +192,7 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
 
       <RoomSchedule onJoinRoom={onJoinRoom} />
 
-      <section className="card settings-card">
+      <section className="card settings-card p27-room-create-card">
         <h2 className="settings-heading">Create a room</h2>
         <form className="room-create-form" onSubmit={(e) => void handleCreate(e)}>
           <input
@@ -211,7 +217,7 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
         </form>
       </section>
 
-      <section className="card settings-card">
+      <section className="card settings-card p27-room-library">
         <h2 className="settings-heading">Your rooms</h2>
         {rooms.length === 0 && <p className="user-sub">No persistent rooms yet.</p>}
         <ul className="room-list">

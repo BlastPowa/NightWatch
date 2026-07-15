@@ -328,6 +328,7 @@ export function App(): JSX.Element {
                 isHost={inRoom ? selfIsHost : true}
                 roomCode={roomCode ?? ''}
                 searchRequest={browseSearchRequest}
+                friendMediaPresence={socialCapabilities.friendMediaPresence}
                 onSearchBusyChange={setBrowseSearching}
                 onPlayNow={(videoId, title) => handleDiscoverPick(videoId, title, 'play')}
                 onQueueAdd={(videoId, title) => {
