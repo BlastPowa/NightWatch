@@ -9,6 +9,7 @@ const NONE: SocialCapabilities = {
   notifications: false,
   clubDiscovery: false,
   highlights: false,
+  friendMediaPresence: false,
 };
 
 export function useSocialCapabilities(enabled: boolean): SocialCapabilities {

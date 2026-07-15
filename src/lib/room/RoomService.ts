@@ -4,7 +4,7 @@ import {
   type EventPayload,
   type RealtimeEventName,
 } from '@shared/events';
-import type { PresenceMeta, RoomMember } from '@shared/room';
+import { sanitizeAvatarUrl, type PresenceMeta, type RoomMember } from '@shared/room';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';
@@ -46,6 +46,9 @@ function deriveMembers(presence: Record<string, PresenceMeta[]>): RoomMember[] {
       typeof meta.streakDays === 'number' && Number.isFinite(meta.streakDays)
         ? Math.max(0, Math.min(9999, Math.floor(meta.streakDays)))
         : 0,
+    // Never trust a peer's avatar value: validate the host/format before it can
+    // reach another member's UI. Invalid or absent → null (render the initial).
+    avatarUrl: sanitizeAvatarUrl(meta.avatarUrl),
   }));
 }
 
@@ -155,11 +158,16 @@ export class RoomService {
       case 'connected': {
         this.hasJoinedOnce = true;
         this.update({ status: 'joined' });
+        // Publish only a validated avatar, and omit the field entirely when
+        // there is none so the presence payload stays identical to older
+        // clients (an explicit `avatarUrl: undefined` would still serialize).
+        const avatarUrl = sanitizeAvatarUrl(this.identity.avatarUrl);
         const meta: PresenceMeta = {
           memberId: this.identity.id,
           displayName: this.identity.displayName,
           joinedAt: this.joinedAt,
           streakDays: achievementTracker.get().stats.streakDays,
+          ...(avatarUrl !== null ? { avatarUrl } : {}),
         };
         void this.handle?.track({ ...meta });
         break;

@@ -57,6 +57,11 @@ const REQUESTS_PER_CALLER = 300;
 
 const SEARCH_CACHE_MS = 30 * 60 * 1000;
 const TRENDING_CACHE_MS = 10 * 60 * 1000;
+/** Single-video details (Phase 24). 30 minutes, per the handoff. */
+const DETAILS_CACHE_MS = 30 * 60 * 1000;
+
+/** Exactly an 11-character YouTube video id. */
+const VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
 
 interface VideoResult {
   videoId: string;
@@ -75,6 +80,17 @@ interface CachedSet {
 
 const searchCache = new Map<string, CachedSet>();
 const trendingCache = new Map<string, CachedSet>();
+
+/**
+ * Details cache. A null result is a KNOWN-unavailable video (deleted, private,
+ * or bad id): we cache the negative too, so a client hammering a dead id cannot
+ * spend quota on every request.
+ */
+interface CachedDetails {
+  at: number;
+  result: VideoResult | null;
+}
+const detailsCache = new Map<string, CachedDetails>();
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -349,6 +365,77 @@ async function fetchTrendingSet(apiKey: string, categoryId: string): Promise<Vid
     }));
 }
 
+/**
+ * Fetch one video's details: title, channel (with avatar), thumbnail, duration.
+ * Returns null when the id resolves to nothing (deleted / private / bogus id).
+ * Costs one videos.list (1 unit) plus one batched channels.list (1 unit).
+ */
+async function fetchVideoDetails(apiKey: string, videoId: string): Promise<VideoResult | null> {
+  const url = new URL('https://www.googleapis.com/youtube/v3/videos');
+  url.searchParams.set('part', 'snippet,contentDetails');
+  url.searchParams.set('id', videoId);
+  url.searchParams.set('key', apiKey);
+
+  chargeUnits(COST_VIDEOS_LIST);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('upstream');
+  }
+  const data = (await response.json()) as {
+    items?: Array<{
+      id?: string;
+      snippet?: {
+        title?: string;
+        channelId?: string;
+        channelTitle?: string;
+        thumbnails?: { medium?: { url?: string } };
+      };
+      contentDetails?: { duration?: string };
+    }>;
+  };
+
+  const item = (data.items ?? [])[0];
+  if (item === undefined || typeof item.id !== 'string') {
+    return null;
+  }
+
+  const channelId = item.snippet?.channelId ?? '';
+  const channelThumbnails = await fetchChannelThumbnails(apiKey, [channelId]);
+
+  return {
+    videoId: item.id,
+    title: item.snippet?.title ?? 'Untitled',
+    channelTitle: item.snippet?.channelTitle ?? '',
+    channelThumbnailUrl: channelThumbnails.get(channelId) ?? '',
+    thumbnailUrl: item.snippet?.thumbnails?.medium?.url ?? '',
+    durationText:
+      typeof item.contentDetails?.duration === 'string'
+        ? parseIsoDuration(item.contentDetails.duration)
+        : '',
+  };
+}
+
+/**
+ * Resolve details from cache, fetching upstream only if the cache is cold and
+ * the day's budget allows it. 'rate-limited' means we could neither serve a
+ * cached value nor afford a fetch; null means the video is genuinely gone.
+ */
+async function resolveDetails(
+  apiKey: string,
+  videoId: string,
+): Promise<VideoResult | null | 'rate-limited'> {
+  const cached = detailsCache.get(videoId);
+  if (cached !== undefined && Date.now() - cached.at < DETAILS_CACHE_MS) {
+    return cached.result;
+  }
+  if (unitsRemaining() < COST_VIDEOS_LIST + COST_CHANNELS_LIST) {
+    return cached?.result ?? 'rate-limited';
+  }
+  const result = await fetchVideoDetails(apiKey, videoId);
+  detailsCache.set(videoId, { at: Date.now(), result });
+  return result;
+}
+
 /** Resolve the cached set for a cursor, fetching upstream only if we must. */
 async function resolveSet(
   apiKey: string,
@@ -401,6 +488,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     query?: unknown;
     categoryId?: unknown;
     pageToken?: unknown;
+    videoId?: unknown;
     callerId?: unknown;
   };
   try {
@@ -415,6 +503,27 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   if (isRateLimited(callerId)) {
     return jsonResponse({ error: 'rate-limited' }, 429);
+  }
+
+  // Single-video details (Phase 24). A standalone request/response — no cursor,
+  // no paging — that returns the same normalized item shape as a search result.
+  if (body.kind === 'details') {
+    const videoId = typeof body.videoId === 'string' ? body.videoId : '';
+    if (!VIDEO_ID_RE.test(videoId)) {
+      return jsonResponse({ error: 'bad-request' }, 400);
+    }
+    try {
+      const detail = await resolveDetails(apiKey, videoId);
+      if (detail === 'rate-limited') {
+        return jsonResponse({ error: 'rate-limited' }, 429);
+      }
+      if (detail === null) {
+        return jsonResponse({ error: 'unavailable' }, 404);
+      }
+      return jsonResponse({ result: detail });
+    } catch {
+      return jsonResponse({ error: 'upstream-error' }, 502);
+    }
   }
 
   // A page token fully describes the page being asked for; without one this is

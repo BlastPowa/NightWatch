@@ -15,6 +15,37 @@ export type SearchOutcome =
   | { status: 'rate-limited' }
   | { status: 'error' };
 
+/** A single video's details (Phase 24). Same item shape as a search result. */
+export type VideoDetails = SearchResult;
+
+export type VideoDetailsOutcome =
+  | { status: 'ok'; details: VideoDetails }
+  | { status: 'unavailable' }
+  | { status: 'not-configured' }
+  | { status: 'rate-limited' }
+  | { status: 'error' };
+
+/** Exactly an 11-character YouTube id, matching the Edge Function's check. */
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
+
+function normalizeResult(value: unknown): SearchResult | null {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+  const r = value as Record<string, unknown>;
+  if (typeof r['videoId'] !== 'string' || typeof r['title'] !== 'string' || typeof r['thumbnailUrl'] !== 'string') {
+    return null;
+  }
+  return {
+    videoId: r['videoId'],
+    title: r['title'],
+    channelTitle: typeof r['channelTitle'] === 'string' ? r['channelTitle'] : '',
+    channelThumbnailUrl: typeof r['channelThumbnailUrl'] === 'string' ? r['channelThumbnailUrl'] : '',
+    thumbnailUrl: r['thumbnailUrl'],
+    durationText: typeof r['durationText'] === 'string' ? r['durationText'] : '',
+  };
+}
+
 /** Trending category chips (YouTube category ids). '' = all. */
 export const TRENDING_CATEGORIES: ReadonlyArray<{ id: string; label: string }> = [
   { id: '', label: 'All' },
@@ -93,6 +124,42 @@ export async function searchYouTube(
     return { status: 'ok', results: [], nextPageToken: null };
   }
   return invoke({ kind: 'search', query: trimmed, callerId, ...(pageToken ? { pageToken } : {}) });
+}
+
+/**
+ * Fetch one video's details via the search-youtube Edge Function (Phase 24).
+ * Used to hydrate a shared video id (e.g. a friend's presence) into a card.
+ * Never changes the search/trending signatures.
+ */
+export async function getVideoDetails(
+  videoId: string,
+  callerId: string,
+): Promise<VideoDetailsOutcome> {
+  if (!YOUTUBE_ID.test(videoId)) {
+    return { status: 'unavailable' };
+  }
+  try {
+    const { data, error } = await supabase.functions.invoke('search-youtube', {
+      body: { kind: 'details', videoId, callerId },
+    });
+    if (error !== null) {
+      const status = (error as { context?: { status?: number } }).context?.status;
+      if (status === 503) {
+        return { status: 'not-configured' };
+      }
+      if (status === 429) {
+        return { status: 'rate-limited' };
+      }
+      if (status === 404) {
+        return { status: 'unavailable' };
+      }
+      return { status: 'error' };
+    }
+    const details = normalizeResult((data as { result?: unknown }).result);
+    return details === null ? { status: 'error' } : { status: 'ok', details };
+  } catch {
+    return { status: 'error' };
+  }
 }
 
 /** Trending grid for the Discovery Hub (Phase 16). categoryId '' = all. */

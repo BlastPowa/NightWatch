@@ -71,6 +71,49 @@ export function isValidRoomCode(code: string): boolean {
   return true;
 }
 
+/**
+ * The only avatar host we accept, and the longest URL we will ever store or
+ * broadcast. A Discord CDN avatar URL is well under this; the cap stops a
+ * crafted presence payload from bloating every peer's member list.
+ */
+const AVATAR_ALLOWED_HOST = 'cdn.discordapp.com';
+const AVATAR_MAX_LENGTH = 256;
+
+/**
+ * Reduce an untrusted avatar value to a canonical, safe-to-render URL or null.
+ *
+ * Presence metadata arrives from other clients and from OAuth sessions, so a
+ * value here is never trusted. We accept ONLY `https://cdn.discordapp.com/...`,
+ * strip any query/hash (a Discord avatar needs neither, and they are the usual
+ * carrier for tracking or cache-busting beacons), reject embedded credentials
+ * and non-HTTPS URLs, and cap the length. Anything else becomes null so the
+ * caller falls back to the initial. Discord Activity rendering rewrites the
+ * canonical host to `/discordcdn/...` at display time — that is a render
+ * concern, so this returns the canonical CDN URL unchanged.
+ */
+export function sanitizeAvatarUrl(raw: unknown): string | null {
+  if (typeof raw !== 'string' || raw.length === 0 || raw.length > AVATAR_MAX_LENGTH) {
+    return null;
+  }
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (
+    url.protocol !== 'https:' ||
+    url.hostname !== AVATAR_ALLOWED_HOST ||
+    url.username !== '' ||
+    url.password !== '' ||
+    url.port !== ''
+  ) {
+    return null;
+  }
+  const canonical = `https://${AVATAR_ALLOWED_HOST}${url.pathname}`;
+  return canonical.length > AVATAR_MAX_LENGTH ? null : canonical;
+}
+
 /** Metadata each member tracks into the room's Presence state. */
 export interface PresenceMeta {
   memberId: string;
@@ -79,6 +122,11 @@ export interface PresenceMeta {
   joinedAt: number;
   /** Watch streak in days (Phase 18); optional for older clients. */
   streakDays?: number;
+  /**
+   * Canonical Discord CDN avatar URL (Phase 24); optional for older clients.
+   * Always validate with sanitizeAvatarUrl when consuming — never render raw.
+   */
+  avatarUrl?: string;
 }
 
 /** A member of a room as derived from Presence state. */
@@ -88,4 +136,6 @@ export interface RoomMember {
   joinedAt: number;
   isHost: boolean;
   streakDays: number;
+  /** Validated Discord CDN avatar URL, or null to render the initial. */
+  avatarUrl: string | null;
 }

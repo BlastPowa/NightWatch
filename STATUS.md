@@ -1,6 +1,11 @@
 # NightWatch current status
 
-Last updated: 2026-07-13.
+Last updated: 2026-07-15.
+
+## Phase 24 backend lane (in progress)
+
+- Branch `backend/phase-24-ui-support` off `main` @ `v0.1.22`: identity/presence avatar contracts, consent-safe friend media presence (migration `0021`), and `search-youtube` video details. All additive; typecheck, JS tests (49), `build:activity`, and Electron `build --publish never` are green.
+- Pending owner (database/deploy): run `supabase/tests/phase24_media_presence_test.sql` against a disposable DB, then deploy migration `0021` → redeploy `search-youtube` → enable capability-gated Browse UI. No new API keys required (`YOUTUBE_API_KEY` already covers `kind: "details"`).
 
 ## Release state
 
