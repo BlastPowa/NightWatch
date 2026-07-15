@@ -3,6 +3,19 @@
 
 ## Unreleased
 
+### Browse variety and infinite scroll
+
+- Rebuilt trending as a deep, shuffled pool (up to four cheap `mostPopular` pages / ~200 videos) that reshuffles each cache refresh and rotates to a random start per open, so Browse no longer shows the same handful every launch and pages much deeper. Search remains relevance-ordered and quota-protected.
+- Added scroll-triggered loading to the Browse hub (IntersectionObserver sentinel) so more videos load as you scroll; the explicit "Load more" button stays as a keyboard/fallback control.
+
+### Phase 24 backend: identity, friend media presence, video details
+
+- Added `sanitizeAvatarUrl` (canonical Discord-CDN-only, query/hash/credential/port-stripped, length-capped) and additive `avatarUrl` on `PresenceMeta`/`RoomMember`; room presence now publishes and validates a member avatar, with the Discord OAuth / Activity avatar carried into presence non-persistently.
+- Added migration `0021`: `heartbeat_media_presence` (status + validated 11-char video id) and `get_friend_presence_v2` (safe avatar, validated border, and the video id only when a friend shares activity), plus a nullable `presence_preferences.video_id`. Existing `heartbeat_presence`/`get_friend_presence` are unchanged for v0.1.22 clients, and no presence surface ever stores or returns a room code.
+- Added a `friendMediaPresence` capability probe (gates the Browse "watch with a friend" shelf until `0021` is deployed) and `FriendMediaPresence` types + `heartbeatMedia`/`getFriendMediaPresence` in the presence service.
+- Extended the `search-youtube` function with `kind: "details"` (strict id, one `videos.list` + batched channel avatar, 30-minute cache, quota accounting, explicit unavailable/rate-limited/not-configured outcomes) and a typed `getVideoDetails(videoId, callerId)` search-service method.
+- Added `sanitizeAvatarUrl` unit tests and a `phase24_media_presence` SQL/RLS test (consent combinations, blocks both directions, friendship transitions, invalid ids, safe avatar/border, stale-presence parity, old-client compatibility, and the no-room-code guarantee).
+
 ### Browse, profile, and atmosphere polish
 
 - Removed the nested focus rectangle inside the composite Browse search control while preserving the visible outer focus state.

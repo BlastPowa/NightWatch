@@ -1,6 +1,16 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-15 from the `v0.1.22` baseline.
+Last updated: 2026-07-15 during Phase 24 backend integration.
+
+## Phase 24 backend lane (`backend/phase-24-ui-support`)
+
+- [x] `sanitizeAvatarUrl` + additive `avatarUrl` on `PresenceMeta`/`RoomMember`; validate on derive, publish validated avatar; carry Discord avatar into presence.
+- [x] Migration `0021`: `heartbeat_media_presence`, `get_friend_presence_v2`, `presence_preferences.video_id`, `safe_avatar_url`, `is_youtube_video_id`.
+- [x] `FriendMediaPresence` type + `heartbeatMedia`/`getFriendMediaPresence`; `friendMediaPresence` capability probe.
+- [x] `search-youtube` `kind: "details"` + typed `getVideoDetails(videoId, callerId)`.
+- [x] `sanitizeAvatarUrl` unit tests + `phase24_media_presence_test.sql` (consent, blocks, invalid ids, safe avatar/border, stale parity, old-client compat, no room code).
+- [x] Merge current `main` after the Phase 24 shell/Browse PR and preserve both UI and typed backend contracts.
+- [ ] Owner: run the SQL test on a disposable DB; deploy `0021` then redeploy `search-youtube`; enable capability-gated Browse UI.
 
 ## Phase 24 — shell, identity, and Browse
 

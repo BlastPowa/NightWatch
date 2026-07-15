@@ -22,6 +22,9 @@ export interface SocialCapabilities {
   clubDiscovery: boolean;
   /** Highlight reels (0016). Room owners only, and only where insights are on. */
   highlights: boolean;
+  /** Playable friend media presence (0021). Gates the Browse "watch with a
+   *  friend" shelf: false until the migration is deployed. */
+  friendMediaPresence: boolean;
 }
 
 const NONE: SocialCapabilities = {
@@ -32,6 +35,7 @@ const NONE: SocialCapabilities = {
   notifications: false,
   clubDiscovery: false,
   highlights: false,
+  friendMediaPresence: false,
 };
 
 let cached: SocialCapabilities = NONE;
@@ -54,21 +58,30 @@ async function detect(): Promise<SocialCapabilities> {
     return NONE;
   }
 
-  const [friends, messaging, momentNotes, creatorClubs, notifications, clubDiscovery, highlights] =
-    await Promise.all([
-      probe('get_social_graph', {}),
-      probe('list_conversations', {}),
-      probe('list_moment_notes', { p_video_id: 'AAAAAAAAAAA' }),
-      probe('list_my_clubs', {}),
-      probe('count_unread_notifications', {}),
-      probe('search_clubs', { p_query: '', p_limit: 1 }),
-      // Probed with a nil session: the function rejects it, but a 'forbidden'
-      // proves it is deployed. Only 42883/42P01 mean not-ready.
-      probe('get_session_highlights', {
-        p_session: '00000000-0000-0000-0000-000000000000',
-        p_limit: 1,
-      }),
-    ]);
+  const [
+    friends,
+    messaging,
+    momentNotes,
+    creatorClubs,
+    notifications,
+    clubDiscovery,
+    highlights,
+    friendMediaPresence,
+  ] = await Promise.all([
+    probe('get_social_graph', {}),
+    probe('list_conversations', {}),
+    probe('list_moment_notes', { p_video_id: 'AAAAAAAAAAA' }),
+    probe('list_my_clubs', {}),
+    probe('count_unread_notifications', {}),
+    probe('search_clubs', { p_query: '', p_limit: 1 }),
+    // Probed with a nil session: the function rejects it, but a 'forbidden'
+    // proves it is deployed. Only 42883/42P01 mean not-ready.
+    probe('get_session_highlights', {
+      p_session: '00000000-0000-0000-0000-000000000000',
+      p_limit: 1,
+    }),
+    probe('get_friend_presence_v2', {}),
+  ]);
 
   return {
     friends,
@@ -78,6 +91,7 @@ async function detect(): Promise<SocialCapabilities> {
     notifications,
     clubDiscovery,
     highlights,
+    friendMediaPresence,
   };
 }
 

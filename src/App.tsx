@@ -28,6 +28,7 @@ import {
   createIdentity,
   loadIdentity,
   updateDisplayName,
+  withAvatarUrl,
   type GuestIdentity,
 } from '@/lib/identity';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
@@ -131,6 +132,14 @@ export function App(): JSX.Element {
     }
     void setProfileAvatar(canonicalDiscordAvatarUrl(authUser.avatarUrl));
   }, [authUser]);
+
+  // Carry the Discord avatar into room presence (Phase 24). Non-persisted and
+  // validated inside withAvatarUrl, so signing out (authUser → null) clears it.
+  useEffect(() => {
+    setIdentity((current) =>
+      current === null ? current : withAvatarUrl(current, authUser?.avatarUrl ?? null),
+    );
+  }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
   const isElectron = getPlatformBridge().kind === 'electron';
 
@@ -185,9 +194,12 @@ export function App(): JSX.Element {
         if (platformIdentity !== null) {
           setPlatformAvatarUrl(canonicalDiscordAvatarUrl(platformIdentity.avatarUrl));
           setIdentity((current) =>
-            current === null
-              ? createIdentity(platformIdentity.name)
-              : updateDisplayName(current, platformIdentity.name),
+            withAvatarUrl(
+              current === null
+                ? createIdentity(platformIdentity.name)
+                : updateDisplayName(current, platformIdentity.name),
+              platformIdentity.avatarUrl,
+            ),
           );
           if (code !== null) {
             setRoomCode(code);

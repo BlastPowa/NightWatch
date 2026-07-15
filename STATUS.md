@@ -2,6 +2,11 @@
 
 Last updated: 2026-07-15.
 
+## Phase 24 backend lane
+
+- Branch `backend/phase-24-ui-support` is rebased through the merged Phase 24 frontend: identity/presence avatar contracts, consent-safe friend media presence (migration `0021`), deeper Browse pagination, and `search-youtube` video details. All additive; typecheck, JS tests (49), `build:activity`, and Electron `build --publish never` are green.
+- Pending owner (database/deploy): run `supabase/tests/phase24_media_presence_test.sql` against a disposable DB, then deploy migration `0021` → redeploy `search-youtube` → enable capability-gated Browse UI. No new API keys required (`YOUTUBE_API_KEY` already covers `kind: "details"`).
+
 ## Release baseline
 
 - Current public release and clean implementation baseline: `v0.1.22` at `6bb11fb`.
@@ -11,7 +16,7 @@ Last updated: 2026-07-15.
 
 ## Active delivery
 
-- Phase 24 frontend branch: `frontend/phase-24-cinematic-shell`.
+- Phase 24 frontend merged through PR #35.
 - Phase 24 backend-support branch: `backend/phase-24-ui-support`.
 - Supplied Papaya-style screenshots are the visual hierarchy reference. NightWatch retains its name, eclipse logo, atmosphere system, official YouTube iframe, and original assets.
 - Phase 24 builds a persistent shell, centered global search, grid-first Browse, arrow-controlled history shelves, expanded categories, canonical/proxied avatar assets, and responsive rail/mobile navigation.

@@ -60,6 +60,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSe
   const [nextToken, setNextToken] = useState<string | null>(null);
   const [queuedId, setQueuedId] = useState<string | null>(null);
   const categoryRef = useRef<HTMLElement | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const requestGenerationRef = useRef(0);
   const [categoryEdges, setCategoryEdges] = useState({ left: false, right: true });
 
@@ -204,6 +205,26 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSe
     if (searchRequest !== null) void loadSearch(searchRequest.query);
   }, [searchRequest?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Infinite scroll: when the sentinel near the end of the list scrolls into
+  // view, pull the next page automatically. The button below stays as a
+  // no-JS/observer-less fallback and for keyboard users.
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (sentinel === null || nextToken === null || loading || mode === 'history') {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void handleShowMore();
+        }
+      },
+      { rootMargin: '400px' },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [nextToken, loading, loadingMore, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function queue(result: SearchResult): void {
     if (onQueueAdd(result.videoId, result.title)) {
       setQueuedId(result.videoId);
@@ -247,7 +268,12 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, onSe
         </div>
       )}
 
-      {nextToken !== null && !loading && mode !== 'history' && <button type="button" className="button browse-load-more" onClick={() => void handleShowMore()} disabled={loadingMore}>{loadingMore ? 'Loading more…' : 'Load more videos'}</button>}
+      {nextToken !== null && !loading && mode !== 'history' && (
+        <>
+          <div ref={loadMoreRef} className="browse-load-sentinel" aria-hidden="true" />
+          <button type="button" className="button browse-load-more" onClick={() => void handleShowMore()} disabled={loadingMore}>{loadingMore ? 'Loading more…' : 'Load more videos'}</button>
+        </>
+      )}
     </div>
   );
 }

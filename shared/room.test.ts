@@ -8,6 +8,7 @@ import {
   isValidRoomCode,
   normalizeRoomCode,
   parseJoinLink,
+  sanitizeAvatarUrl,
 } from './room';
 
 describe('room codes', () => {
@@ -85,5 +86,45 @@ describe('invite links', () => {
   it('rejects a well-formed link carrying a code outside the alphabet', () => {
     // Six alphanumerics pass the regex but 0 and I are not room-code letters.
     expect(parseJoinLink('nightwatch://join/KX0F9I')).toBeNull();
+  });
+});
+
+describe('sanitizeAvatarUrl', () => {
+  const valid = 'https://cdn.discordapp.com/avatars/123/abc.png';
+
+  it('accepts a canonical Discord CDN avatar URL unchanged', () => {
+    expect(sanitizeAvatarUrl(valid)).toBe(valid);
+  });
+
+  it('strips query and hash (the usual tracking/cache-bust carriers)', () => {
+    expect(sanitizeAvatarUrl(`${valid}?size=64&t=1`)).toBe(valid);
+    expect(sanitizeAvatarUrl(`${valid}#frag`)).toBe(valid);
+  });
+
+  it('rejects any host other than cdn.discordapp.com', () => {
+    expect(sanitizeAvatarUrl('https://evil.com/avatars/123/abc.png')).toBeNull();
+    // Subdomain / lookalike hosts must not slip through.
+    expect(sanitizeAvatarUrl('https://cdn.discordapp.com.evil.com/a.png')).toBeNull();
+    expect(sanitizeAvatarUrl('https://evilcdn.discordapp.com/a.png')).toBeNull();
+  });
+
+  it('rejects non-HTTPS schemes', () => {
+    expect(sanitizeAvatarUrl('http://cdn.discordapp.com/avatars/123/abc.png')).toBeNull();
+    expect(sanitizeAvatarUrl('javascript:alert(1)')).toBeNull();
+    expect(sanitizeAvatarUrl('data:text/html,x')).toBeNull();
+  });
+
+  it('rejects embedded credentials, ports, and malformed input', () => {
+    expect(sanitizeAvatarUrl('https://user:pass@cdn.discordapp.com/a.png')).toBeNull();
+    expect(sanitizeAvatarUrl('https://cdn.discordapp.com:8443/a.png')).toBeNull();
+    expect(sanitizeAvatarUrl('not a url')).toBeNull();
+    expect(sanitizeAvatarUrl('')).toBeNull();
+  });
+
+  it('rejects non-string and oversized values', () => {
+    expect(sanitizeAvatarUrl(undefined)).toBeNull();
+    expect(sanitizeAvatarUrl(null)).toBeNull();
+    expect(sanitizeAvatarUrl(42)).toBeNull();
+    expect(sanitizeAvatarUrl(`https://cdn.discordapp.com/${'a'.repeat(300)}.png`)).toBeNull();
   });
 });
