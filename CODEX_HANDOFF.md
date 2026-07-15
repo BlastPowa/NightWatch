@@ -6,7 +6,7 @@ Last updated: 2026-07-15 from public baseline `v0.1.22`.
 
 - Phase 24 frontend is merged through PR #35.
 - Phase 24 backend support is merged through PR #34.
-- Active UI branch `frontend/phase-25-player-room` is rebased onto current `origin/main` and contains Phases 25-28.
+- Phases 25–28 are merged through automated PR #36. Its source branch and `main` trees match exactly, with no outstanding frontend files.
 - The user-supplied screenshots are the visual hierarchy reference. NightWatch keeps its name, eclipse logo, atmosphere system, official YouTube iframe, and original assets.
 
 ## Delivered UI contracts

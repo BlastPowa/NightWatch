@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-15 during Phases 25-28 integration.
+Last updated: 2026-07-15 after Phases 25–28 merged through PR #36.
 
 ## Phase 24 backend lane (`backend/phase-24-ui-support`)
 
@@ -33,6 +33,7 @@ Last updated: 2026-07-15 during Phases 25-28 integration.
 - [x] Add a responsive Up Next, Chat, People, Moments, and Discovery dock.
 - [x] Preserve queue, reactions, notes, schedules, premieres, highlights, insights, sync, and host migration contracts.
 - [x] Finish one-border chat composition, real validated participant avatars, and keyboard tab navigation.
+- [x] Merge the reviewed Phase 25–28 frontend tree through automated PR #36.
 
 ## Phase 26 — profiles, friends, and messaging
 
