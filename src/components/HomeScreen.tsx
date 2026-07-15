@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from '@shared/room';
 import { sanitizeDisplayName } from '@/lib/identity';
+import '@/styles/phase27-secondary.css';
 
 interface HomeScreenProps {
   initialName: string;
@@ -49,7 +50,7 @@ export function HomeScreen({
   }
 
   return (
-    <section className="lobby fade-up" aria-labelledby="home-title">
+    <section className="lobby p27-lobby fade-up" aria-labelledby="home-title">
       <div className="lobby-story">
         <span className="eyebrow hero-eyebrow">Your private screening room</span>
         <h1 id="home-title" className="hero-title">Tonight is better together.</h1>
