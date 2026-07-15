@@ -55,6 +55,7 @@ export function PlayerPanel({
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [videoId, setVideoId] = useState<string | null>(null);
+  const [videoTitle, setVideoTitle] = useState<string | null>(null);
   const [durationSeconds, setDurationSeconds] = useState(0);
   const [currentSeconds, setCurrentSeconds] = useState(0);
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
@@ -120,6 +121,7 @@ export function PlayerPanel({
     const engine = new SyncEngine(service, player, () => isHostRef.current, {
       onVideoChanged: (id) => {
         setVideoId(id);
+        setVideoTitle(null);
         setError(null);
       },
       onDelayMeasured: (delayMs) => setSyncDelayMs(delayMs),
@@ -168,6 +170,7 @@ export function PlayerPanel({
   // count active watch time for the local engagement dashboard.
   useEffect(() => {
     if (videoId === null) {
+      setVideoTitle(null);
       return;
     }
     const timer = window.setInterval(() => {
@@ -189,6 +192,7 @@ export function PlayerPanel({
     // Title is available shortly after the video loads.
     const timer = window.setTimeout(() => {
       const videoTitle = playerRef.current?.getVideoTitle() ?? null;
+      setVideoTitle(videoTitle);
       updateRichPresence({ roomCode, videoTitle });
       // Persistent-room watch history (Phase 16): host writes one entry;
       // the server ignores ephemeral codes and dedupes repeats.
@@ -248,6 +252,19 @@ export function PlayerPanel({
             {isHost ? 'No video loaded' : 'Waiting for the host to pick a video…'}
           </span>
         )}
+      </div>
+
+      <div className="player-media-info">
+        <div className="player-source-mark" aria-label="Played with the official YouTube player"><Icon name="play" size={18} /></div>
+        <div className="player-media-copy">
+          <span className="eyebrow">YouTube · official player</span>
+          <h2>{videoTitle ?? (hasVideo ? 'Loading video details…' : 'Choose something to watch')}</h2>
+          <small>{hasVideo ? `Video ${videoId}` : 'Paste a link or pick a video from Browse.'}</small>
+        </div>
+        <div className="player-media-state">
+          <span className={`watch-role${isHost ? ' watch-role-host' : ''}`}>{isHost ? 'Host' : 'Viewer'}</span>
+          <span className="sync-readout"><span className="status-dot" aria-hidden="true" />{syncDelayMs === null ? 'Sync ready' : `~${syncDelayMs}ms`}</span>
+        </div>
       </div>
 
       <div className="player-command-bar">
