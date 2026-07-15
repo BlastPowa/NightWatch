@@ -2,22 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import type { AppInfo } from '@shared/ipc';
 import { generateRoomCode } from '@shared/room';
 import { AboutScreen } from '@/components/AboutScreen';
-import { BrandMark } from '@/components/BrandMark';
+import { AppShell, type AppView } from '@/components/AppShell';
 import { DiscoveryPanel } from '@/components/DiscoveryPanel';
 import { HomeScreen } from '@/components/HomeScreen';
 import { FriendsScreen } from '@/components/FriendsScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { MessagesScreen } from '@/components/MessagesScreen';
 import { CreatorClubScreen } from '@/components/CreatorClubScreen';
-import { NotificationCenter } from '@/components/NotificationCenter';
 import { RoomInvitesPanel } from '@/components/RoomInvitesPanel';
-import { Icon } from '@/components/Icon';
-import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel } from '@/components/SettingsPanel';
-import { TitleBar } from '@/components/TitleBar';
 import { UserCard } from '@/components/UserCard';
 import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
 import { recordParticipation } from '@/lib/social/FriendService';
@@ -35,26 +31,8 @@ import {
   withAvatarUrl,
   type GuestIdentity,
 } from '@/lib/identity';
-import type { ConnectionStatus } from '@/lib/realtime/types';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
-
-const STATUS_LABEL: Record<ConnectionStatus, string> = {
-  connecting: 'Connecting…',
-  connected: 'Connected',
-  error: 'Connection error',
-  disconnected: 'Disconnected',
-};
-
-type View =
-  | 'main'
-  | 'discover'
-  | 'rooms'
-  | 'friends'
-  | 'messages'
-  | 'creator'
-  | 'settings'
-  | 'card'
-  | 'about';
+import { canonicalDiscordAvatarUrl } from '@/lib/assets';
 
 interface PendingVideo {
   videoId: string;
@@ -70,7 +48,11 @@ export function App(): JSX.Element {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   // The Discover grid is the app's home page; the Room (player) page is
   // where a picked video takes you.
-  const [view, setView] = useState<View>('discover');
+  const [view, setView] = useState<AppView>('discover');
+  const [platformAvatarUrl, setPlatformAvatarUrl] = useState<string | null>(null);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [browseSearchRequest, setBrowseSearchRequest] = useState<{ query: string; nonce: number } | null>(null);
+  const [browseSearching, setBrowseSearching] = useState(false);
   const connectionStatus = useConnectionStatus();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
@@ -148,7 +130,7 @@ export function App(): JSX.Element {
     if (authUser === null) {
       return;
     }
-    void setProfileAvatar(authUser.avatarUrl);
+    void setProfileAvatar(canonicalDiscordAvatarUrl(authUser.avatarUrl));
   }, [authUser]);
 
   // Carry the Discord avatar into room presence (Phase 24). Non-persisted and
@@ -210,6 +192,7 @@ export function App(): JSX.Element {
         }
         setFixedRoomCode(code);
         if (platformIdentity !== null) {
+          setPlatformAvatarUrl(canonicalDiscordAvatarUrl(platformIdentity.avatarUrl));
           setIdentity((current) =>
             withAvatarUrl(
               current === null
@@ -316,113 +299,27 @@ export function App(): JSX.Element {
     [roomCode, identity],
   );
 
+  const displayName = authUser?.name ?? identity?.displayName ?? 'Guest';
+  const displayAvatarUrl = canonicalDiscordAvatarUrl(authUser?.avatarUrl ?? platformAvatarUrl);
+
+  const handleGlobalSearch = useCallback((query: string): void => {
+    const clean = query.trim();
+    if (clean === '') return;
+    setView('discover');
+    setBrowseSearchRequest((current) => ({ query: clean, nonce: (current?.nonce ?? 0) + 1 }));
+  }, []);
+
   return (
-    <div className="app">
-      <TitleBar subtitle={inRoom ? roomMeta?.name ?? 'Watch room' : undefined} />
-      <aside className="sidebar">
-        <div className="brand">
-          <BrandMark />
-          <span className="brand-name">NightWatch</span>
-        </div>
-
-        <nav className="side-nav">
-          <span className="nav-section-label">Watch</span>
-          <button
-            type="button"
-            className={`nav-item${view === 'discover' ? ' nav-item-active' : ''}`}
-            onClick={() => setView('discover')}
-          >
-            <span className="nav-icon"><Icon name="home" /></span><span className="nav-label">Browse</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item${view === 'main' ? ' nav-item-active' : ''}`}
-            onClick={() => setView('main')}
-          >
-            <span className="nav-icon"><Icon name="play" /></span><span className="nav-label">{inRoom ? 'Room' : 'Join'}</span>
-          </button>
-          {isElectron && (
-            <button
-              type="button"
-              className={`nav-item${view === 'rooms' ? ' nav-item-active' : ''}`}
-              onClick={() => setView('rooms')}
-            >
-              <span className="nav-icon"><Icon name="parties" /></span><span className="nav-label">Parties</span>
-            </button>
-          )}
-          {socialCapabilities.friends && <button type="button" className={`nav-item${view === 'friends' ? ' nav-item-active' : ''}`} onClick={() => setView('friends')}><span className="nav-icon"><Icon name="friends" /></span><span className="nav-label">Friends</span></button>}
-          {socialCapabilities.messaging && <button type="button" className={`nav-item${view === 'messages' ? ' nav-item-active' : ''}`} onClick={() => setView('messages')}><span className="nav-icon"><Icon name="message" /></span><span className="nav-label">Messages</span></button>}
-          {socialCapabilities.creatorClubs && <button type="button" className={`nav-item${view === 'creator' ? ' nav-item-active' : ''}`} onClick={() => setView('creator')}><span className="nav-icon"><Icon name="creator" /></span><span className="nav-label">Creator Club</span></button>}
-          <span className="nav-section-label">You</span>
-          <button
-            type="button"
-            className={`nav-item${view === 'card' ? ' nav-item-active' : ''}`}
-            onClick={() => setView('card')}
-          >
-            <span className="nav-icon"><Icon name="profile" /></span><span className="nav-label">Profile</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item${view === 'settings' ? ' nav-item-active' : ''}`}
-            onClick={() => setView('settings')}
-          >
-            <span className="nav-icon"><Icon name="settings" /></span><span className="nav-label">Settings</span>
-          </button>
-          <button
-            type="button"
-            className={`nav-item${view === 'about' ? ' nav-item-active' : ''}`}
-            onClick={() => setView('about')}
-          >
-            <span className="nav-icon"><Icon name="info" /></span><span className="nav-label">About</span>
-          </button>
-        </nav>
-
-        {inRoom && (
-          <div className="side-room">
-            <span className="side-label">Current room</span>
-            <span className="side-code">{session.state.code}</span>
-            <span className="side-members">
-              {session.state.members.length}{' '}
-              {session.state.members.length === 1 ? 'person' : 'people'} watching
-            </span>
-          </div>
-        )}
-
-        <button type="button" className="sidebar-profile" onClick={() => setView('card')} aria-label="Open your NightWatch profile">
-          <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} className="sidebar-profile-avatar" />
-          <span className="sidebar-profile-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
-          <span className="sidebar-profile-more" aria-hidden="true">›</span>
-        </button>
-
-        <div className="side-footer">
-          <span className={`status-indicator status-${connectionStatus}`}>
-            <span className="status-dot" />
-            {STATUS_LABEL[connectionStatus]}
-          </span>
-          {bridgeError !== null && <span className="side-meta">{bridgeError}</span>}
-          {appInfo !== null && (
-            <span className="side-meta">
-              v{appInfo.version} · Electron {appInfo.electronVersion}
-            </span>
-          )}
-        </div>
-      </aside>
-
-      <main className="content">
-        {view === 'discover' && (
-          <header className="browse-topbar">
-            <div className="browse-topbar-title"><span className="eyebrow">NightWatch</span><strong>Browse</strong></div>
-            <div className="browse-topbar-actions">
-              <button type="button" className="topbar-icon" onClick={() => setView('main')} aria-label={inRoom ? 'Open current room' : 'Create or join a room'} title={inRoom ? 'Current room' : 'Create or join'}><Icon name="play" /></button>
-              <button type="button" className="topbar-icon" onClick={() => setView('settings')} aria-label="Open settings" title="Settings"><Icon name="settings" /></button>
-              {socialCapabilities.notifications && <NotificationCenter />}
-              <button type="button" className="profile-chip" onClick={() => setView('card')} aria-label="Open your profile">
-                <ProfileAvatar src={authUser?.avatarUrl ?? null} name={authUser?.name ?? identity?.displayName ?? 'Guest'} />
-                <span className="profile-chip-copy"><strong>{authUser?.name ?? identity?.displayName ?? 'Guest'}</strong><small>{authUser !== null ? 'Discord connected' : 'Local profile'}</small></span>
-              </button>
-            </div>
-          </header>
-        )}
+    <AppShell
+      view={view}
+      onNavigate={setView}
+      isElectron={isElectron}
+      capabilities={socialCapabilities}
+      room={{ active: inRoom, code: inRoom ? session.state.code : '', name: roomMeta?.name ?? 'Watch room', memberCount: inRoom ? session.state.members.length : 0 }}
+      identity={{ name: displayName, avatarUrl: displayAvatarUrl, connected: authUser !== null || platformAvatarUrl !== null }}
+      runtime={{ connectionStatus, bridgeError, appInfo }}
+      search={{ query: globalSearchQuery, busy: browseSearching, onQueryChange: setGlobalSearchQuery, onSubmit: handleGlobalSearch }}
+    >
         {view === 'discover' && (
           <div className="discover-layout discover-layout-full fade-up">
             <div className="discover-main">
@@ -430,7 +327,9 @@ export function App(): JSX.Element {
                 callerId={identity?.id ?? 'anonymous'}
                 isHost={inRoom ? selfIsHost : true}
                 roomCode={roomCode ?? ''}
-                onPlayNow={(videoId) => handleDiscoverPick(videoId, '', 'play')}
+                searchRequest={browseSearchRequest}
+                onSearchBusyChange={setBrowseSearching}
+                onPlayNow={(videoId, title) => handleDiscoverPick(videoId, title, 'play')}
                 onQueueAdd={(videoId, title) => {
                   handleDiscoverPick(videoId, title, 'queue');
                   return true;
@@ -483,7 +382,6 @@ export function App(): JSX.Element {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </AppShell>
   );
 }

@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-15 during Phase 24 backend lane.
+Last updated: 2026-07-15 during Phase 24 backend integration.
 
 ## Phase 24 backend lane (`backend/phase-24-ui-support`)
 
@@ -9,50 +9,54 @@ Last updated: 2026-07-15 during Phase 24 backend lane.
 - [x] `FriendMediaPresence` type + `heartbeatMedia`/`getFriendMediaPresence`; `friendMediaPresence` capability probe.
 - [x] `search-youtube` `kind: "details"` + typed `getVideoDetails(videoId, callerId)`.
 - [x] `sanitizeAvatarUrl` unit tests + `phase24_media_presence_test.sql` (consent, blocks, invalid ids, safe avatar/border, stale parity, old-client compat, no room code).
+- [x] Merge current `main` after the Phase 24 shell/Browse PR and preserve both UI and typed backend contracts.
 - [ ] Owner: run the SQL test on a disposable DB; deploy `0021` then redeploy `search-youtube`; enable capability-gated Browse UI.
 
-## Runtime QA follow-up
+## Phase 24 — shell, identity, and Browse
 
-- [x] Remove the nested Browse search focus rectangle.
-- [x] Add real YouTube channel avatars with a resilient fallback.
-- [x] Rebuild My Card panels and statistics as responsive grids.
-- [x] Replace the circular Browse Play control with a conventional labeled button.
-- [x] Add four atmosphere presets, a Custom Atmosphere builder, and visual Backdrop choices.
-- [ ] Deploy the updated `search-youtube` Edge Function for channel avatars.
-- [ ] Add the Discord Activity `/ytchannel` URL mapping for `yt3.ggpht.com`.
+- [x] Create clean frontend/backend phase branches and audit the stale frontend stash.
+- [x] Write `PHASE_24_UI_BACKEND_HANDOFF.md` for Claude.
+- [x] Add a reusable persistent application shell and centered search across screens.
+- [x] Preserve the Activity-provided Discord avatar and add canonical Activity asset resolution.
+- [x] Replace result shelves with a dense 3/2/1-column media grid.
+- [x] Keep history as an accessible arrow-controlled shelf with touch swiping.
+- [x] Add Animation, Documentaries, Cooking, Fitness, Fashion, Podcasts, and Lifestyle queries.
+- [x] Preserve stale-request protection, pagination, rate-limit/error states, channel identity, Play, and Queue.
+- [x] Add collapsed rail below 900px and mobile navigation below 620px.
+- [x] Verify TypeScript, 43 tests, Activity build, and responsive browser layouts.
+- [ ] Merge Claude's typed avatar/presence/details contracts, then rebase and enable safe dependent UI.
+- [ ] Run Electron/NSIS packaging and reviewed Phase 24 PR delivery.
 
-- [x] Guard Browse category/search requests against stale responses.
-- [x] Preserve search/history intent when retrying.
-- [x] Make Browse actions visible on touch/coarse-pointer devices.
-- [x] Make compact navigation scrollable instead of clipping destinations.
-- [x] Add confirmation for appearance/all-settings resets.
-- [x] Add persistent-message edit/delete and group rename.
-- [x] Apply the sender-side profanity preference to persistent messages.
-- [x] Make Reactions, Moment Notes, and room Discovery collapsible.
-- [x] Run strict typecheck, unit tests, Activity build, Electron build, and NSIS packaging on the complete follow-up diff.
-- [x] Merge the green runtime follow-up PR without starting another release.
+## Phase 25 — player-first room
 
-## Manual acceptance
+- [ ] Build a wide official-iframe stage with metadata and host controls below it.
+- [ ] Add a responsive Up Next, Chat, People, Moments, and Discovery dock.
+- [ ] Preserve queue, reactions, notes, schedules, premieres, highlights, insights, sync, and host migration.
+- [ ] Finish one-border chat composition and real validated participant avatars.
 
-- [ ] Review packaged Browse, Room, Messages, Friends, Creator Club, Settings, About, startup, title bar, and installer visuals.
-- [ ] Verify desktop, sub-900px, 620px/coarse-pointer, and compact Discord Activity layouts.
-- [ ] Run two packaged clients through create/join/leave, sync, queue/voting, reactions, chat, notes, reconnect, and host migration.
-- [ ] Test keyboard-only focus order, screen-reader names, touch targets, high contrast, reduced transparency, text scaling, and reduced motion.
-- [ ] Verify `v0.1.20` to `v0.1.21` update installation.
-- [ ] Confirm the GitHub Release contains installer, blockmap, and `latest.yml`.
-- [ ] Complete a real Discord Activity launch and high-latency drift test.
+## Phase 26 — profiles, friends, and messaging
 
-## Phase 23 deployment
+- [ ] Build banner-led profiles with implemented-data-only tabs and permission-gated actions.
+- [ ] Restyle Friends as searchable responsive cards with explicit relationship state.
+- [ ] Add the consent-safe desktop activity rail when backend presence v2 is ready.
+- [ ] Resolve message sender avatars from authorized rosters and polish unread/system/failure/group states.
 
-- [x] Privacy-safe public profiles, blocked-user management, member presentation, and persistent-room invitation backend.
-- [x] Phase 23 Friends/Profile/Invitations frontend.
-- [ ] Apply migration `0020` and run `supabase/tests/phase23_profiles_test.sql`.
+## Phase 27 — remaining screens and controls
 
-## Deferred or deliberately unavailable
+- [ ] Unify Creator Club, Parties, lobby/join, About, notifications, empty/error states, and settings previews.
+- [ ] Expand the local SVG icon system without runtime UI packages.
+- [ ] Split global CSS by shell, discovery, room, social, and shared controls while preserving contracts.
 
-- [ ] YouTube account OAuth only after Google scopes, secure token storage, consent, revocation, and review are approved.
-- [ ] Exact Figma node inspection after the Starter MCP quota resets.
-- [ ] Code signing when a trusted Windows signing certificate is available.
-- [ ] Broader discovery volume after YouTube API quota and pagination deployment are verified.
+## Phase 28 — hardening and completion
 
-NightWatch remains the final product name. No rename work remains.
+- [ ] Add dev-only React Testing Library, user-event, and jsdom.
+- [ ] Complete keyboard, screen-reader, touch, contrast, text scale, reduced transparency, and reduced motion checks.
+- [ ] Run Electron, Activity, Windows packaging, two-client regression, Discord Activity, and updater round-trip.
+- [ ] Update all documentation and publish only after packaged acceptance.
+
+## Phase 29 — separately gated media library
+
+- [ ] Add source-neutral playback descriptors/adapters without changing YouTube behavior.
+- [ ] Add owner-private Library metadata and device-local file mappings.
+- [ ] Add Electron-only Google Drive Picker/PKCE/safeStorage/range playback after security review.
+- [ ] Never download YouTube, bypass DRM, scrape catalogs, or relay participant media bytes.
