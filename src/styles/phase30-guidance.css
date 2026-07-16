@@ -293,10 +293,27 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 }
 
 .account-integration-error {
-  display: block;
+  display: grid;
+  gap: .35rem;
   color: color-mix(in srgb, #ff7188 76%, var(--nw-text));
   font-size: .76rem;
   line-height: 1.45;
+}
+
+.account-oauth-testing-help {
+  color: var(--nw-text-muted);
+}
+
+.account-oauth-testing-help a {
+  color: var(--nw-accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--nw-accent) 52%, transparent);
+  text-underline-offset: .18em;
+}
+
+.account-oauth-testing-help a:hover {
+  color: color-mix(in srgb, var(--nw-accent) 78%, #fff);
 }
 
 .faq-page {

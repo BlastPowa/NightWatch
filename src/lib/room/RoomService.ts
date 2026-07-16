@@ -4,7 +4,12 @@ import {
   type EventPayload,
   type RealtimeEventName,
 } from '@shared/events';
-import { sanitizeAvatarUrl, type PresenceMeta, type RoomMember } from '@shared/room';
+import {
+  sanitizeAvatarUrl,
+  sanitizeSocialUserId,
+  type PresenceMeta,
+  type RoomMember,
+} from '@shared/room';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';
@@ -49,6 +54,7 @@ function deriveMembers(presence: Record<string, PresenceMeta[]>): RoomMember[] {
     // Never trust a peer's avatar value: validate the host/format before it can
     // reach another member's UI. Invalid or absent → null (render the initial).
     avatarUrl: sanitizeAvatarUrl(meta.avatarUrl),
+    socialUserId: sanitizeSocialUserId(meta.socialUserId),
   }));
 }
 
@@ -162,12 +168,14 @@ export class RoomService {
         // there is none so the presence payload stays identical to older
         // clients (an explicit `avatarUrl: undefined` would still serialize).
         const avatarUrl = sanitizeAvatarUrl(this.identity.avatarUrl);
+        const socialUserId = sanitizeSocialUserId(this.identity.socialUserId);
         const meta: PresenceMeta = {
           memberId: this.identity.id,
           displayName: this.identity.displayName,
           joinedAt: this.joinedAt,
           streakDays: achievementTracker.get().stats.streakDays,
           ...(avatarUrl !== null ? { avatarUrl } : {}),
+          ...(socialUserId !== null ? { socialUserId } : {}),
         };
         void this.handle?.track({ ...meta });
         break;

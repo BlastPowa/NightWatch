@@ -30,6 +30,26 @@ Connecting one feature never silently grants the other scope. The YouTube
 connection reads channel identity only and does not sign into, configure, or
 alter the official embedded player.
 
+### Error 403 while the OAuth app is in Testing
+
+Google limits an OAuth app in **Testing** to accounts explicitly listed by the
+project owner. If the browser shows **Error 403**, **Access blocked**, or says
+the app is available only to approved testers:
+
+1. Open [Google Auth Platform → Audience](https://console.cloud.google.com/auth/audience)
+   in the same Google Cloud project used by NightWatch.
+2. Confirm **Publishing status** is **Testing**.
+3. Under **Test users**, choose **Add users**.
+4. Add the exact Google email address that will connect Drive or YouTube, then
+   save the audience.
+5. Retry the connection from NightWatch. Using a different Google account
+   requires adding that account separately.
+
+For access beyond the testing list, complete Google's verification steps where
+required and publish the OAuth app to **Production**. Do not work around the
+block by changing NightWatch's scopes, sharing credentials, disabling PKCE, or
+embedding a refresh token in the application.
+
 ## Local development
 
 Create a gitignored `.env` beside `package.json` and fill the public

@@ -507,10 +507,21 @@ function YouTubeAccountCard({
             : 'Optionally connect with read-only YouTube access for account-owned discovery. This never signs into, customizes, or replaces the embedded player session.'}
         </p>
         {failure !== null && (
-          <span className="account-integration-error" role="alert">
-            {failure.message}
-            {failure.code === 'auth-timeout' && ' Check that your browser, firewall, or VPN allowed the local sign-in callback.'}
-          </span>
+          <div className="account-integration-error" role="alert">
+            <span>
+              {failure.message}
+              {failure.code === 'auth-timeout' && ' Check that your browser, firewall, or VPN allowed the local sign-in callback.'}
+            </span>
+            {(failure.code === 'auth-cancelled' || failure.code === 'auth-timeout') && (
+              <span className="account-oauth-testing-help">
+                If Google showed Error 403 or “Access blocked”, the OAuth app is probably still in Testing and this Google account is not approved. The app owner must add the exact account under Google Auth Platform → Audience → Test users, or complete verification and publish the app to Production.
+                {' '}
+                <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener noreferrer">
+                  Open Google Auth Audience
+                </a>
+              </span>
+            )}
+          </div>
         )}
       </div>
       {bridge === null || unavailable ? (

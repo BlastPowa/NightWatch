@@ -28,4 +28,15 @@ describe('FaqScreen', () => {
     expect(screen.getByRole('heading', { name: '5 answers' })).toBeTruthy();
     expect(screen.getByText('What access does Google Drive receive?')).toBeTruthy();
   });
+
+  it('documents the Google testing-audience 403 fix', async () => {
+    const user = userEvent.setup();
+    render(<FaqScreen />);
+
+    await user.click(screen.getByRole('button', { name: 'Troubleshooting' }));
+
+    expect(screen.getByText('Why does Google show Error 403 or Access blocked?')).toBeTruthy();
+    expect(screen.getByText(/Audience.*Test users/i)).toBeTruthy();
+    expect(screen.getByText(/verification.*Production/i)).toBeTruthy();
+  });
 });

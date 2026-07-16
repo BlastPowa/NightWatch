@@ -31,6 +31,7 @@ import {
   loadIdentity,
   updateDisplayName,
   withAvatarUrl,
+  withSocialUserId,
   type GuestIdentity,
 } from '@/lib/identity';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
@@ -58,6 +59,7 @@ export function App(): JSX.Element {
   const [browseSearching, setBrowseSearching] = useState(false);
   const [roomHasVideo, setRoomHasVideo] = useState(false);
   const connectionStatus = useConnectionStatus();
+  const authUser = useAuth();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
   const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
@@ -138,8 +140,6 @@ export function App(): JSX.Element {
       achievementTracker.record('room-joined');
     }
   }, [pendingJoinCode, identity]);
-  const authUser = useAuth();
-
   // Publish the Discord avatar to the profile row (0020). Without this nobody
   // else can see it: the avatar lives in the auth session, which is private to
   // this client. The server enforces a Discord-CDN allowlist, so a rejected URL
@@ -155,7 +155,12 @@ export function App(): JSX.Element {
   // validated inside withAvatarUrl, so signing out (authUser → null) clears it.
   useEffect(() => {
     setIdentity((current) =>
-      current === null ? current : withAvatarUrl(current, authUser?.avatarUrl ?? null),
+      current === null
+        ? current
+        : withSocialUserId(
+            withAvatarUrl(current, authUser?.avatarUrl ?? null),
+            authUser?.id ?? null,
+          ),
     );
   }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
@@ -400,7 +405,7 @@ export function App(): JSX.Element {
             <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />
           </>
         )}
-        {view === 'friends' && socialCapabilities.friends && <FriendsScreen onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
+        {view === 'friends' && socialCapabilities.friends && <FriendsScreen currentRoomMembers={session?.state.members ?? []} onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
         {view === 'messages' && socialCapabilities.messaging && authUser !== null && <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} />}
         {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
         {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (

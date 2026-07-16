@@ -1,5 +1,6 @@
 import { getCloudSyncState, whenSyncReady } from '@/lib/engagement/CloudSync';
 import { cacheDisplayName } from '@/lib/social/SocialRealtime';
+import { getSocialProfile } from '@/lib/social/SocialProfileService';
 import { ok, toFailure, type SocialResult } from '@/lib/social/types';
 import { supabase } from '@/lib/supabase';
 
@@ -82,6 +83,8 @@ export interface Relation {
   avatarUrl: string | null;
   /** Server-validated selected border (0020) — a forged selection returns null. */
   selectedBorderId: string | null;
+  /** Current room is an immediate shared context; history comes from SQL. */
+  context?: 'current-room';
 }
 
 export interface SocialGraph {
@@ -154,6 +157,58 @@ export async function getSocialGraph(): Promise<SocialResult<SocialGraph>> {
     }
   }
   return ok(graph);
+}
+
+export interface CurrentRoomSocialMember {
+  socialUserId?: string | null;
+  joinedAt: number;
+}
+
+/**
+ * Resolve live signed-in room members through the server profile RPC before
+ * displaying or acting on them. Presence supplies only a candidate UUID; the
+ * safe name/avatar and self/block checks always come from Supabase.
+ */
+export async function getCurrentRoomSuggestions(
+  members: readonly CurrentRoomSocialMember[],
+): Promise<Relation[]> {
+  const joinedAtByUser = new Map<string, number>();
+  for (const member of members) {
+    if (
+      typeof member.socialUserId === 'string' &&
+      !joinedAtByUser.has(member.socialUserId)
+    ) {
+      joinedAtByUser.set(member.socialUserId, member.joinedAt);
+    }
+  }
+
+  const profiles = await Promise.all(
+    [...joinedAtByUser.keys()].slice(0, 30).map(async (userId) => ({
+      userId,
+      result: await getSocialProfile(userId),
+    })),
+  );
+
+  const relations: Relation[] = [];
+  for (const { userId, result } of profiles) {
+    if (result.status !== 'ok' || result.data.isSelf || result.data.isFriend) {
+      continue;
+    }
+    const joinedAt = joinedAtByUser.get(userId) ?? Date.now();
+    const relation: Relation = {
+      kind: 'suggestion',
+      userId: result.data.userId,
+      displayName: result.data.displayName,
+      requestId: null,
+      createdAt: new Date(joinedAt).toISOString(),
+      avatarUrl: result.data.avatarUrl,
+      selectedBorderId: result.data.selectedBorderId,
+      context: 'current-room',
+    };
+    cacheDisplayName(relation.userId, relation.displayName);
+    relations.push(relation);
+  }
+  return relations;
 }
 
 async function transition(fn: string, args: Record<string, unknown>): Promise<SocialResult<void>> {

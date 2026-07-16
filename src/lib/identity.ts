@@ -5,7 +5,7 @@
  * on top of this interface.
  */
 
-import { sanitizeAvatarUrl } from '@shared/room';
+import { sanitizeAvatarUrl, sanitizeSocialUserId } from '@shared/room';
 
 export interface GuestIdentity {
   id: string;
@@ -17,6 +17,11 @@ export interface GuestIdentity {
    * a rotated or revoked avatar never lingers in localStorage.
    */
   avatarUrl?: string | null;
+  /**
+   * Supabase auth identity for social discovery. Like avatarUrl this is
+   * session-derived and never persisted in the guest identity record.
+   */
+  socialUserId?: string | null;
 }
 
 const STORAGE_KEY = 'nightwatch:identity';
@@ -75,4 +80,16 @@ export function withAvatarUrl(identity: GuestIdentity, avatarUrl: string | null)
     return identity;
   }
   return { ...identity, avatarUrl: next };
+}
+
+/** Attach the signed-in social identity without persisting it to localStorage. */
+export function withSocialUserId(
+  identity: GuestIdentity,
+  socialUserId: string | null,
+): GuestIdentity {
+  const next = sanitizeSocialUserId(socialUserId);
+  if ((identity.socialUserId ?? null) === next) {
+    return identity;
+  }
+  return { ...identity, socialUserId: next };
 }
