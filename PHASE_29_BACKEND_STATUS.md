@@ -1,10 +1,21 @@
-# Phase 29 backend status — `backend/phase-29-media-library`
+# Phase 29 backend status
 
 Last updated: 2026-07-16.
 
-This branch delivers steps 1, 2, and 5 of the Phase 29 delivery sequence and stops
-at the documented capability handoff gate. Nothing is enabled: every new capability
-defaults to off, and no UI is wired.
+Two branches, in the handoff's delivery order:
+
+- `backend/phase-29-media-library` — steps 1, 2, and 5: contracts, the Electron
+  local-media platform, and migration `0022`. Pushed; ready for Codex to rebase
+  the Phase 29 frontend onto the typed contracts.
+- `backend/phase-29-drive` — step 3, built on the branch above: system-browser
+  PKCE, safeStorage refresh tokens, the isolated Picker, Drive metadata
+  validation, and Drive range streaming.
+
+The owner has since run migration `0022` and `phase29_media_library_test.sql`
+successfully, so the Library deployment prerequisite is met; the
+`NIGHTWATCH_ENABLE_LIBRARY` flag is now the owner's call.
+
+Every capability still defaults to off, and no UI is wired.
 
 ## What is on the branch
 
@@ -45,26 +56,51 @@ defaults to off, and no UI is wired.
 - Two-client synchronization remains a later delivery step: only the typed
   `media:v1:*` contracts exist on this branch.
 
-## Deliberately deferred
+## Google Drive (step 3) — delivered on `backend/phase-29-drive`
 
-**Google Drive (delivery step 3) is not implemented.** The handoff is explicit:
-"Do not start Drive authorization or room synchronization before the contract and
-local-file security tests are green." Those tests are green as of this branch, so
-Drive is the next branch's work.
+| Area | File | State |
+| --- | --- | --- |
+| PKCE + loopback + token endpoints | `electron/media/driveAuth.ts` | Complete, 24 tests |
+| safeStorage token store | `electron/media/tokenStore.ts` | Complete, 9 tests |
+| Metadata validation + range streaming + session | `electron/media/driveClient.ts` | Complete, 22 tests |
+| Isolated Picker window | `electron/media/drivePicker.ts`, `public/picker.html`, `electron/media/pickerPreload.ts` | Complete |
+| Orchestration (connect/pick/disconnect/lease) | `electron/media/driveManager.ts` | Complete, 11 tests |
 
-What exists today: the full typed Drive surface (`connectDrive`, `pickDriveFile`,
-`disconnectDrive`, Drive descriptors, Drive error codes). Every call returns a typed
-`capability-disabled` failure, and `capabilities.reasons.googleDrive` is
-`security-review-required`. `resolveCapabilities()` pins Drive off behind an
-internal `driveImplemented = false` regardless of the environment flag — the flag
-exists so the surface is testable, not so Drive can be switched on early. There is a
-test asserting exactly this.
+Key properties, each with a test: only `drive.file` is requested; state is
+verified in constant time and a forged/replayed callback is rejected; the code
+never appears in the browser response; there is no plaintext token fallback;
+`invalid_grant` clears the credential and reports `auth-expired`; refreshes are
+serialized; Picker metadata is never trusted (main re-fetches with the user's own
+token); missing `sha256Checksum` is `fingerprint-unavailable`, never a
+substitute; `canDownload=false` and trashed files are refused; leases re-check
+permission with the participant's own token; the Authorization header cannot
+reach the renderer; disconnect always deletes local credentials, revocation
+being best-effort.
 
-**Room synchronization (delivery step 4) is contracts only.** The `media:v1:*` event
-map, validators, host-authority list, revision rules, and session gating all exist
-and are tested. Nothing is registered on a room channel: `MEDIA_V1_EVENTS` is
-deliberately absent from `ROOM_EVENTS`, and there is a test that fails if someone
-adds it. Wiring the SyncEngine is the follow-up.
+Drive turns on only when ALL of these hold: `NIGHTWATCH_ENABLE_DRIVE=1`,
+`NIGHTWATCH_GOOGLE_CLIENT_ID`, `NIGHTWATCH_GOOGLE_PICKER_API_KEY`, and
+`NIGHTWATCH_GOOGLE_APP_ID` are set. Any missing piece reports `not-configured`;
+no flag reports `disabled-by-owner`. Per the handoff, the owner enables it only
+after OAuth verification and the packaged revocation/range tests — not because
+TypeScript builds.
+
+**Room synchronization (delivery step 4) remains contracts only.** The
+`media:v1:*` event map, validators, host-authority list, revision rules, and
+session gating all exist and are tested. Nothing is registered on a room channel:
+`MEDIA_V1_EVENTS` is deliberately absent from `ROOM_EVENTS`, and there is a test
+that fails if someone adds it. Wiring the SyncEngine is the next lane.
+
+### Google Cloud setup (owner, before enabling Drive)
+
+1. Create a **Desktop app** OAuth client in Google Cloud Console; set
+   `NIGHTWATCH_GOOGLE_CLIENT_ID` (and `NIGHTWATCH_GOOGLE_CLIENT_SECRET` if the
+   client has one — it ships in the binary and is not treated as a secret).
+2. Configure the consent screen with only the `drive.file` scope.
+3. Enable the Google Picker API; create an API key restricted to it; set
+   `NIGHTWATCH_GOOGLE_PICKER_API_KEY` and `NIGHTWATCH_GOOGLE_APP_ID` (the
+   project number).
+4. No credentials are committed anywhere; all of these are environment
+   configuration at build/packaging time.
 
 ## Supabase deployment steps (owner)
 

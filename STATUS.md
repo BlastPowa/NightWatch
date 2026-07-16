@@ -8,19 +8,17 @@ Last updated: 2026-07-16.
   local-media platform, and migration `0022`. It stops at the capability handoff
   gate: every new capability defaults to off and no UI is wired. See
   `PHASE_29_BACKEND_STATUS.md`.
-- Green here: `npm run typecheck`, `npm test` (197 tests / 18 files),
-  `npm run build:activity`, and `npm run build -- --publish never`. The Activity
-  bundle contains no local/Drive surface, and the Windows installer + blockmap
-  package successfully.
-- The owner reports migration `0022` and `phase29_media_library_test.sql` both
-  applied successfully in the configured Supabase environment. Capability flags
-  remain off until the matching UI and packaged playback acceptance are complete.
-- Still outstanding: packaged local-file playback/range/app-restart acceptance
-  and the future two-client custom-media synchronization phase.
-- Google Drive is deliberately not implemented: its surface returns typed
-  `capability-disabled` and reports `security-review-required`, per the Phase 29
-  rule that Drive work does not start until the contract and local-file security
-  tests are green.
+- Green on the merged local-media baseline: strict typecheck, 197 tests,
+  Discord Activity build, and the full Windows installer/blockmap package.
+- Migration `0022` and its RLS tests were deployed and passed in the owner
+  environment on 2026-07-16.
+- `backend/phase-29-drive` adds system-browser PKCE with a loopback redirect and
+  `drive.file` only, `safeStorage`-encrypted refresh tokens with no plaintext
+  fallback, a sandboxed non-persistent Picker whose metadata is revalidated in
+  main, and per-participant Drive range streaming.
+- Drive still defaults off and requires the owner flag plus Google Cloud
+  configuration. Packaged Drive acceptance and two-client custom-media
+  synchronization remain outstanding.
 - Fixed on this branch: `main` could not typecheck or test at all, because Phase 28
   added component tests importing React Testing Library / user-event / jsdom without
   ever adding those dev dependencies to `package.json`.

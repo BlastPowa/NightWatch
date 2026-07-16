@@ -15,15 +15,19 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [x] Step 2 — `PlatformBridge.media`; Discord/web `null` and YouTube-only.
 - [x] Step 5 — migration `0022` (owner-private Library, forced RLS, typed RPCs) + `phase29_media_library_test.sql`.
 - [x] Repair `main`: add the React Testing Library / user-event / jsdom dev dependencies Phase 28 documented but never added, without which typecheck and tests both failed.
-- [x] Owner: run `phase29_media_library_test.sql` and deploy `0022`; both were
-  reported successful. Keep capability flags off until UI/package acceptance.
-- [x] Review the contracts and threat model before enabling Phase 29 UI.
-- [x] Run `npm run build -- --publish never`; installer and blockmap package successfully.
-- [x] Merge the reviewed Phase 29 backend/platform branch through PR #39.
-- [ ] Owner: packaged Windows acceptance for local playback, range seeking, and app restart.
-- [ ] In progress on `backend/phase-29-drive` — step 3: Google Drive system-browser
-  PKCE, `safeStorage` refresh tokens, sandboxed Picker, and Drive range streaming.
-- [ ] Next branch — step 4: register `media:v1:*` on the room channel and wire the SyncEngine through the adapter.
+- [x] Owner: ran `phase29_media_library_test.sql` and deployed `0022` successfully (2026-07-16).
+- [x] Review the local-media contracts and threat model before enabling Phase 29 UI.
+- [x] Run the local-media Windows build; installer and blockmap package successfully.
+- [x] Merge the reviewed local-media backend/platform branch through PR #39.
+- [x] Step 3 (`backend/phase-29-drive`): system-browser PKCE with loopback redirect,
+  `safeStorage` refresh tokens with no plaintext fallback, sandboxed non-persistent
+  Picker, main-process Drive metadata revalidation, and per-participant range streaming.
+- [ ] Owner: Google Cloud setup (desktop OAuth client, consent screen with
+  `drive.file` only, Picker API key, app id); nothing is committed.
+- [ ] Owner: packaged Windows acceptance for local playback, Drive
+  connect/pick/play/disconnect, range seeking, app restart, and revoked access.
+- [ ] Next lane — step 4: register `media:v1:*` on the room channel and wire the
+  SyncEngine through the adapter; then run packaged/two-client tests.
 - [ ] Enable local files first; enable Drive only after OAuth verification and revocation/range tests pass.
 
 ## Phase 24 backend lane (`backend/phase-24-ui-support`)
