@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.25 - 2026-07-16
+
 ### Google account platform contracts
 
 - Added a separately gated, Electron-only YouTube account bridge using the

@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-16 for the v0.1.24 release.
+Last updated: 2026-07-16 for the v0.1.25 release.
 
 ## Phase 30 account/platform lane
 
@@ -43,7 +43,8 @@ Last updated: 2026-07-16 for the v0.1.24 release.
   explicit release flag without changing the official player session.
 - [x] Pass strict typecheck, 292 tests across 28 files, Activity build, and
   Windows packaging with public-config isolation verification.
-- [ ] Merge the reviewed Phase 30 feature PR after Actions validation.
+- [x] Merge the reviewed Phase 30 feature PR after Actions validation.
+- [x] Publish `v0.1.25` with installer, blockmap, and updater manifest.
 - [ ] Owner: test Google system-browser sign-in, Picker, seek/range playback,
   disconnect, restart, revocation, and a custom background in the packaged build.
 
