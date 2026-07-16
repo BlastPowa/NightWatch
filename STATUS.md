@@ -4,7 +4,7 @@ Last updated: 2026-07-16.
 
 ## Phase 30 account/platform support
 
-- The merged Phase 30 backend adds a disabled-by-default Electron bridge
+- PR #45 merged the Phase 30 backend Electron bridge
   for an optional read-only YouTube account connection. It uses a separate
   `youtube.readonly` consent grant and a separate encrypted credential file;
   it never changes the official player session.
@@ -22,7 +22,7 @@ Last updated: 2026-07-16.
 
 ## Phase 30 guidance, Drive delivery, and profile presentation
 
-- `frontend/phase-30-onboarding-faq` adds a searchable, categorized FAQ and a
+- PR #46 merged the searchable, categorized FAQ and a
   restartable first-run tour with real control highlighting, screen navigation,
   keyboard progress, persistent skip/finish state, responsive positioning, and
   reduced-motion handling.
@@ -51,6 +51,8 @@ Last updated: 2026-07-16.
   build, and Windows Electron/NSIS packaging. The packaged main bundle contains
   all three public Google identifiers and the enabled YouTube-account gate; the
   Activity bundle contains none of the Google identifiers.
+- The Release workflow published `v0.1.25` with the installer, blockmap, and
+  `latest.yml`.
 
 ## Phase 29 authorized media (backend and initial frontend merged)
 
@@ -79,7 +81,7 @@ Last updated: 2026-07-16.
 
 ## Release baseline
 
-- Current public release: `v0.1.24`.
+- Current public release: `v0.1.25`.
 - Phase 24 frontend merged through PR #35, Phase 24 backend support merged through PR #34, and the complete Phase 25–28 frontend overhaul merged through PR #36.
 - Migration `0021`, privacy-safe media presence, canonical Discord avatars, deeper Browse paging, and `search-youtube` details mode are present on `main`; database/function deployment still requires the owner environment.
 - Releases remain intentional GitHub Actions runs after reviewed feature PRs; no direct push to `main`.

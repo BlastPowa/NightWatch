@@ -1,13 +1,13 @@
 # NightWatch frontend/backend handoff
 
-Last updated: 2026-07-16 from public baseline `v0.1.24`.
+Last updated: 2026-07-16 from public baseline `v0.1.25`.
 
 ## Current integration state
 
 - Phase 29 Drive and initial Library UI are merged through PRs #41 and #42.
-- Phase 30 backend account support is merged. The rebased
-  `frontend/phase-30-onboarding-faq` branch integrates it and awaits reviewed
-  PR delivery.
+- Phase 30 backend account support merged through PR #45; the complete frontend
+  guidance/profile/account integration merged through PR #46 and shipped in
+  `v0.1.25`.
 - Phase 24 frontend is merged through PR #35.
 - Phase 24 backend support is merged through PR #34.
 - Phases 25–28 are merged through automated PR #36. The final `frontend/phase-28-control-polish` branch is prepared for reviewed PR delivery; it must not be pushed directly to `main`.
@@ -51,6 +51,8 @@ Last updated: 2026-07-16 from public baseline `v0.1.24`.
   public-config isolation verification.
 - Owner deploy: run the Phase 24 SQL test in a disposable database, deploy `0021`, and redeploy `search-youtube`.
 - Owner acceptance: packaged two-client regression, real Discord Activity avatar mappings, and installed updater round-trip.
-- Release through the manual Actions workflow only after those checks. No direct push to `main`.
+- `v0.1.25` was published through the manual Release workflow with installer,
+  blockmap, and updater manifest. Future releases remain intentional; no direct
+  push to `main`.
 
 Phase 29 local/Drive playback remains separately gated from this UI completion branch. Claude should follow `C:\Users\Blast\source\repos\NightWatch-fable\PHASE_29_MEDIA_LIBRARY_HANDOFF.md` on `backend/phase-29-media-library`.
