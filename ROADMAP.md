@@ -2,7 +2,18 @@
 
 ## Current delivery state (2026-07-16)
 
-`v0.1.24` is the public baseline. Phase 29's source-neutral contracts, secure local-file platform, owner-private Library migration `0022`, and capability gates merged through PR #39; Google Drive PKCE, encrypted token storage, isolated Picker, and range streaming merged through PR #41; and the initial capability-gated Library frontend merged through PR #42. The owner reports the migration and RLS SQL passed. Local/Drive selection, fingerprint progress/cancellation, opaque lease playback, and a responsive native-video Library workspace now pass 268 tests. Capabilities remain off by default, and room playback remains hidden until `media:v1:*` synchronization is implemented. NightWatch does not download YouTube, extract protected services, bypass DRM, relay participant media, or host a shared catalog. `STATUS.md`, `TASKS.md`, `PHASE_29_BACKEND_STATUS.md`, and `CODEX_HANDOFF.md` remain authoritative for active work.
+`v0.1.24` is the public baseline. Phase 29's source-neutral contracts, secure local-file platform, owner-private Library migration `0022`, Google Drive PKCE/encrypted storage/Picker/range streaming, and the initial capability-gated Library frontend are merged. Phase 30 now prepares public Drive configuration delivery, searchable help, guided onboarding, a Steam-inspired profile showcase, device-local custom app/profile artwork, and denser Settings presentation. The active branch passes 274 tests plus Activity and Windows package builds. Room playback remains hidden until `media:v1:*` synchronization is implemented. NightWatch does not download YouTube, extract protected services, bypass DRM, relay participant media, or host a shared catalog. `STATUS.md`, `TASKS.md`, `PHASE_29_BACKEND_STATUS.md`, and `CODEX_HANDOFF.md` remain authoritative for active work.
+
+## Phase 30 — Product guidance and identity presentation
+
+Status: **Frontend implementation complete; reviewed PR delivery pending**
+
+- Searchable FAQ and restartable onboarding tour.
+- Safe public Drive configuration in local/Actions Electron builds.
+- Library Drive setup/status and privacy explanation.
+- Steam-inspired profile showcase with atmosphere or local custom artwork.
+- Device-local custom app background with sanitation and reset controls.
+- Denser Appearance workspace and reachable mobile navigation.
 
 ## Project Goal
 

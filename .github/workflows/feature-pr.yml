@@ -27,6 +27,13 @@ jobs:
       - run: npm test
       - run: npm run build:activity
       - run: npm run build -- --publish never
+        env:
+          NIGHTWATCH_ENABLE_LOCAL_FILES: ${{ vars.NIGHTWATCH_ENABLE_LOCAL_FILES }}
+          NIGHTWATCH_ENABLE_DRIVE: ${{ vars.NIGHTWATCH_ENABLE_DRIVE }}
+          NIGHTWATCH_ENABLE_LIBRARY: ${{ vars.NIGHTWATCH_ENABLE_LIBRARY }}
+          NIGHTWATCH_GOOGLE_CLIENT_ID: ${{ vars.NIGHTWATCH_GOOGLE_CLIENT_ID }}
+          NIGHTWATCH_GOOGLE_PICKER_API_KEY: ${{ vars.NIGHTWATCH_GOOGLE_PICKER_API_KEY }}
+          NIGHTWATCH_GOOGLE_APP_ID: ${{ vars.NIGHTWATCH_GOOGLE_APP_ID }}
       - name: Create or update pull request
         uses: actions/github-script@v9
         with:

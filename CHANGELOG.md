@@ -20,6 +20,30 @@
 - Added capability, encrypted-storage, cancellation, scope-isolation, and
   revocation coverage plus a credential-free Google Cloud setup runbook.
 
+### Phase 30 guidance, Drive configuration, and profile showcase
+
+- Added a searchable categorized FAQ and a guided first-run tour that highlights
+  real controls, moves through implemented screens, supports keyboard navigation,
+  persists Skip/Finish locally, and can be restarted from FAQ.
+- Added safe build-time delivery for the owner-controlled local/Drive flags,
+  desktop OAuth client ID, restricted Picker key, and Google app ID. Tokens and
+  the optional client secret remain outside the renderer and bundle.
+- Added a Drive setup/status surface explaining system-browser OAuth,
+  Picker-selected file access, encrypted local token storage, and independent
+  participant permissions.
+- Rebuilt Profile as a full-width Steam-inspired showcase with wide artwork,
+  achievement-based level/highlight, real activity stats, community status, and
+  responsive achievement cosmetics.
+- Added sanitized, resized, device-local custom backgrounds for the app and/or
+  Profile, with preview, independent toggles, removal, and appearance reset.
+- Fixed Appearance workspace width and card stretching, increased adaptive
+  theme/backdrop density, and kept all mobile navigation destinations reachable.
+- Added earlier compact/short-window breakpoints, a working Google Drive shortcut
+  from Account, a theme-driven official-player source mark, and a rotating/glowing
+  Settings gear with reduced-motion fallbacks.
+- Expanded the dependency-free NightWatch SVG icon set. Validation now passes
+  274 tests across 25 files, Activity build, and Windows NSIS packaging.
+
 ## 0.1.24 - 2026-07-16
 
 ### Phase 29 capability-gated Library UI

@@ -6,6 +6,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { TitleBar } from '@/components/TitleBar';
+import { OnboardingTour } from '@/components/OnboardingTour';
 
 export type AppView =
   | 'main'
@@ -15,6 +16,7 @@ export type AppView =
   | 'messages'
   | 'creator'
   | 'library'
+  | 'faq'
   | 'settings'
   | 'card'
   | 'about';
@@ -92,6 +94,7 @@ export function AppShell({
   const userItems: NavItem[] = [
     { view: 'card', label: 'Profile', icon: 'profile', visible: true },
     { view: 'settings', label: 'Settings', icon: 'settings', visible: true },
+    { view: 'faq', label: 'FAQ', icon: 'help', visible: true },
     { view: 'about', label: 'About', icon: 'info', visible: true },
   ];
 
@@ -145,7 +148,7 @@ export function AppShell({
             <span className="eyebrow">NightWatch</span>
             <strong>{viewLabel(view)}</strong>
           </div>
-          <form className="global-search" role="search" onSubmit={submitSearch}>
+          <form className="global-search" role="search" onSubmit={submitSearch} data-tour="search">
             <Icon name="search" size={18} />
             <input
               value={search.query}
@@ -157,12 +160,12 @@ export function AppShell({
             <button type="submit" className="global-search-submit" disabled={search.busy || search.query.trim() === ''}>{search.busy ? 'Searching…' : 'Search'}</button>
           </form>
           <div className="global-topbar-actions">
-            <button type="button" className="button button-primary topbar-room-action" onClick={() => onNavigate('main')} aria-label={room.active ? 'Open current room' : 'Create or join a room'} title={room.active ? 'Current room' : 'Create or join'}>
+            <button type="button" className="button button-primary topbar-room-action" data-tour="room" onClick={() => onNavigate('main')} aria-label={room.active ? 'Open current room' : 'Create or join a room'} title={room.active ? 'Current room' : 'Create or join'}>
               <Icon name="play" size={16} />
               <span>{room.active ? 'Open room' : 'Watch room'}</span>
             </button>
             {capabilities.notifications && <NotificationCenter />}
-            <button type="button" className="profile-chip" onClick={() => onNavigate('card')} aria-label="Open your profile">
+            <button type="button" className="profile-chip" data-tour="profile" onClick={() => onNavigate('card')} aria-label="Open your profile">
               <ProfileAvatar src={identity.avatarUrl} name={identity.name} />
               <span className="profile-chip-copy"><strong>{identity.name}</strong><small>{identity.connected ? 'Discord connected' : 'Local profile'}</small></span>
             </button>
@@ -170,6 +173,11 @@ export function AppShell({
         </header>
         {children}
       </main>
+      <OnboardingTour
+        includeLibrary={capabilities.library}
+        currentView={view}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }
@@ -177,7 +185,7 @@ export function AppShell({
 function NavSection({ label, items, active, onNavigate }: { label: string; items: readonly NavItem[]; active: AppView; onNavigate(view: AppView): void }): JSX.Element {
   return <>
     <span className="nav-section-label">{label}</span>
-    {items.filter((item) => item.visible).map((item) => <button key={item.view} type="button" className={`nav-item${active === item.view ? ' nav-item-active' : ''}`} onClick={() => onNavigate(item.view)} title={item.label}><span className="nav-icon"><Icon name={item.icon} /></span><span className="nav-label">{item.label}</span></button>)}
+    {items.filter((item) => item.visible).map((item) => <button key={item.view} type="button" data-tour={`nav-${item.view}`} className={`nav-item${active === item.view ? ' nav-item-active' : ''}`} onClick={() => onNavigate(item.view)} title={item.label}><span className="nav-icon"><Icon name={item.icon} /></span><span className="nav-label">{item.label}</span></button>)}
   </>;
 }
 
@@ -190,6 +198,7 @@ function viewLabel(view: AppView): string {
     case 'messages': return 'Messages';
     case 'creator': return 'Creator Club';
     case 'library': return 'Library';
+    case 'faq': return 'FAQ';
     case 'settings': return 'Settings';
     case 'card': return 'Profile';
     case 'about': return 'About';

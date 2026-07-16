@@ -186,7 +186,10 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
                   <strong>{Math.round((progress.bytesHashed / progress.totalBytes) * 100)}%</strong>
                 </div>
                 <progress value={progress.bytesHashed} max={progress.totalBytes} />
-                <button type="button" className="button" onClick={cancelFingerprint}>Cancel</button>
+                <button type="button" className="button" onClick={cancelFingerprint}>
+                  <Icon name="close" size={15} />
+                  Cancel
+                </button>
               </div>
             ) : (
               <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void chooseLocal()}>
@@ -197,26 +200,46 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
           </article>
         )}
 
-        {capabilities.googleDrive && (
-          <article className="library-source-card">
-            <div className="library-source-icon"><Icon name="library" size={24} /></div>
+        {capabilities.reasons.googleDrive !== 'unsupported-platform' && (
+          <article className={`library-source-card library-drive-card${capabilities.googleDrive ? '' : ' library-source-card-muted'}`}>
+            <div className="library-source-icon"><Icon name="cloud" size={24} /></div>
             <div>
               <span className="eyebrow">Private cloud</span>
               <h2>Google Drive</h2>
               <p>NightWatch requests access only to files you choose. Every participant uses their own Google authorization.</p>
             </div>
-            {drive?.connected ? (
+            <DrivePrivacyChecklist />
+            {!capabilities.googleDrive ? (
+              <div className="library-drive-status" role="status">
+                <Icon name={capabilities.reasons.googleDrive === 'not-configured' ? 'settings' : 'shield'} />
+                <div>
+                  <strong>
+                    {capabilities.reasons.googleDrive === 'not-configured'
+                      ? 'Google configuration incomplete'
+                      : 'Drive disabled in this build'}
+                  </strong>
+                  <span>
+                    {capabilities.reasons.googleDrive === 'not-configured'
+                      ? 'The desktop OAuth client, restricted Picker key, or app ID is missing from this packaged build.'
+                      : 'The owner-controlled Drive capability is off. Local playback remains private and available.'}
+                  </span>
+                </div>
+              </div>
+            ) : drive?.connected ? (
               <div className="library-drive-actions">
                 <span className="library-account"><Icon name="check" />{drive.accountEmail ?? 'Drive connected'}</span>
                 <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void chooseDrive()}>
                   <Icon name="plus" />
                   {busy === 'drive-pick' ? 'Opening…' : 'Choose Drive video'}
                 </button>
-                <button type="button" className="button button-quiet" onClick={() => void disconnectDrive()}>Disconnect</button>
+                <button type="button" className="button button-quiet" onClick={() => void disconnectDrive()}>
+                  <Icon name="close" size={15} />
+                  Disconnect
+                </button>
               </div>
             ) : (
               <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void connectDrive()}>
-                <Icon name="library" />
+                <Icon name="cloud" />
                 {busy === 'drive-connect' ? 'Connecting…' : 'Connect Google Drive'}
               </button>
             )}
@@ -254,6 +277,17 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
         )}
       </section>
     </section>
+  );
+}
+
+function DrivePrivacyChecklist(): JSX.Element {
+  return (
+    <ul className="library-drive-checklist" aria-label="Google Drive privacy safeguards">
+      <li><Icon name="compass" size={15} /><span>Google sign-in opens in your system browser.</span></li>
+      <li><Icon name="library" size={15} /><span>Picker grants access only to files you select.</span></li>
+      <li><Icon name="lock" size={15} /><span>Refresh tokens are encrypted with Electron safeStorage.</span></li>
+      <li><Icon name="users" size={15} /><span>Every viewer must have permission to the same file.</span></li>
+    </ul>
   );
 }
 

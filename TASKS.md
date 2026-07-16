@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-16 for the v0.1.24 release.
 
-## Phase 30 account/platform lane (`backend/phase-30-account-drive`)
+## Phase 30 account/platform lane
 
 - [x] Rebase Claude's unfinished backend work onto current `origin/main`.
 - [x] Add a separate Electron-only YouTube account bridge and typed IPC
@@ -16,10 +16,33 @@ Last updated: 2026-07-16 for the v0.1.24 release.
   `GOOGLE_MEDIA_SETUP.md`.
 - [x] Pass strict typecheck, 283 tests, the Activity build, and Windows
   Electron/NSIS packaging with `--publish never`.
-- [ ] Frontend: replace the planned YouTube account card only after this typed
-  bridge merges and the release build receives the explicit capability flag.
+- [x] Merge the typed account bridge and backend tests into `main`.
+- [ ] Frontend: replace the planned YouTube account card with the typed bridge
+  and deliver the explicit capability flag in release builds.
 - [ ] Owner: enable YouTube Data API v3 and add `youtube.readonly` to consent
   testing before interactive acceptance.
+
+## Phase 30 — onboarding, FAQ, public Drive config, and profile artwork
+
+- [x] Add a permanent FAQ destination with search, categories, privacy/security
+  boundaries, Drive guidance, captions, room behavior, and troubleshooting.
+- [x] Add a first-run guided tour with highlight targets, screen navigation,
+  Back/Next/Skip/Finish, keyboard controls, local completion state, and FAQ restart.
+- [x] Embed only public Drive build configuration in Electron and configure the
+  matching GitHub Actions repository variables.
+- [x] Show Drive readiness and its four privacy safeguards inside Library.
+- [x] Rebuild Profile as a full-width Steam-inspired artwork showcase using only
+  real local/server-authorized stats, achievements, avatars, and borders.
+- [x] Add sanitized, resized, device-local custom backgrounds for the app and
+  Profile without public upload or room propagation.
+- [x] Fix Appearance workspace width, card stretching, grid density, mobile
+  navigation reachability, and icon coverage.
+- [x] Add small-window/short-height Settings breakpoints, an Account-to-Library
+  Drive shortcut, a polished player source mark, and animated Settings gear.
+- [x] Pass strict typecheck, 274 tests, Activity build, and Windows packaging.
+- [ ] Merge the reviewed Phase 30 feature PR after Actions validation.
+- [ ] Owner: test Google system-browser sign-in, Picker, seek/range playback,
+  disconnect, restart, revocation, and a custom background in the packaged build.
 
 ## Phase 29 backend lane (`backend/phase-29-media-library`)
 
@@ -41,8 +64,8 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [x] Step 3 (`backend/phase-29-drive`): system-browser PKCE with loopback redirect,
   `safeStorage` refresh tokens with no plaintext fallback, sandboxed non-persistent
   Picker, main-process Drive metadata revalidation, and per-participant range streaming.
-- [ ] Owner: Google Cloud setup (desktop OAuth client, consent screen with
-  `drive.file` only, Picker API key, app id); nothing is committed.
+- [x] Owner: Google Cloud public configuration is present locally and in GitHub
+  Actions repository variables; no token or client secret is committed.
 - [ ] Owner: packaged Windows acceptance for local playback, Drive
   connect/pick/play/disconnect, range seeking, app restart, and revoked access.
 - [ ] Next lane — step 4: register `media:v1:*` on the room channel and wire the

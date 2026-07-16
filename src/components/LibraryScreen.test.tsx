@@ -64,6 +64,16 @@ function makeBridge(): MediaPlatformBridge {
 }
 
 describe('LibraryScreen', () => {
+  it('shows Drive setup status and privacy safeguards while the owner gate is off', () => {
+    render(<LibraryScreen bridge={makeBridge()} capabilities={capabilities} />);
+
+    expect(screen.getByRole('heading', { name: 'Google Drive' })).toBeTruthy();
+    expect(screen.getByText('Drive disabled in this build')).toBeTruthy();
+    expect(screen.getByText(/system browser/i)).toBeTruthy();
+    expect(screen.getByText(/safeStorage/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /connect google drive/i })).toBeNull();
+  });
+
   it('selects an authorized local file and creates an opaque playback lease', async () => {
     vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
     const bridge = makeBridge();

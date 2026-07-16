@@ -16,6 +16,7 @@ import {
   type MediaCapabilities,
   type MediaCapabilityReason,
 } from '@shared/media';
+import { publicMediaConfigValue } from './buildConfig';
 
 /**
  * Owner-controlled build flags. Absent means off.
@@ -25,7 +26,7 @@ import {
  * `NIGHTWATCH_ENABLE_LIBRARY`     — cloud Library metadata (requires migration).
  */
 function flag(name: string): boolean {
-  return process.env[name] === '1';
+  return publicMediaConfigValue(name as Parameters<typeof publicMediaConfigValue>[0]) === '1';
 }
 
 /**
@@ -42,7 +43,7 @@ export function isDriveConfigured(): boolean {
 }
 
 function hasValue(name: string): boolean {
-  const value = process.env[name];
+  const value = publicMediaConfigValue(name as Parameters<typeof publicMediaConfigValue>[0]);
   return typeof value === 'string' && value.length > 0;
 }
 
@@ -117,7 +118,7 @@ export function currentGate(): CapabilityGate {
 
 /** Packaged-app ceiling on a selectable file, overridable by the owner. */
 export function maxMediaSizeBytes(): number {
-  const raw = process.env['NIGHTWATCH_MAX_MEDIA_BYTES'];
+  const raw = publicMediaConfigValue('NIGHTWATCH_MAX_MEDIA_BYTES');
   // Digits only, checked before parsing: parseInt('1.5') is 1, so a typo'd
   // override would otherwise silently cap every file at one byte.
   if (typeof raw === 'string' && /^[0-9]+$/.test(raw)) {

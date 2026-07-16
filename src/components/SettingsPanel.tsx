@@ -28,6 +28,8 @@ import '@/styles/phase28-settings.css';
 
 interface SettingsPanelProps {
   user: AuthUser | null;
+  driveAvailable?: boolean;
+  onOpenLibrary?(): void;
 }
 
 type SettingsSection = 'appearance' | 'browsing' | 'playback' | 'social' | 'accessibility' | 'account' | 'data';
@@ -131,9 +133,10 @@ const CAPTION_SIZES: ReadonlyArray<{ value: CaptionFontSize; label: string }> = 
   { value: 3, label: 'Extra large' },
 ];
 
-export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
+export function SettingsPanel({ user, driveAvailable = false, onOpenLibrary }: SettingsPanelProps): JSX.Element {
   const settings = useSettings();
   const [section, setSection] = useState<SettingsSection>('appearance');
+  const [backgroundState, setBackgroundState] = useState<'idle' | 'processing' | 'error'>('idle');
   const customPaletteStatus = getCustomPaletteStatus(settings.customAtmosphere);
   const previewStyle = {
     '--p27-preview-accent': settings.accent,
@@ -142,6 +145,22 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
     '--p27-preview-panel': settings.theme === 'custom' ? settings.customAtmosphere.panel : '#0d1020',
     '--p27-preview-theme': THEME_PREVIEW[settings.theme],
   } as CSSProperties;
+
+  async function chooseCustomBackground(file: File | undefined): Promise<void> {
+    if (file === undefined) return;
+    setBackgroundState('processing');
+    try {
+      const customBackgroundImage = await resizeBackgroundImage(file);
+      settingsStore.update({
+        customBackgroundImage,
+        customBackgroundEnabled: true,
+        profileBackgroundEnabled: true,
+      });
+      setBackgroundState('idle');
+    } catch {
+      setBackgroundState('error');
+    }
+  }
 
   return (
     <div className="settings-workspace fade-up">
@@ -236,6 +255,65 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
                   {BACKDROPS.map((backdrop) => <button key={backdrop.id} type="button" className={`backdrop-option${settings.backgroundStyle === backdrop.id ? ' backdrop-option-active' : ''}`} aria-pressed={settings.backgroundStyle === backdrop.id} onClick={() => settingsStore.update({ backgroundStyle: backdrop.id })}><span className={`backdrop-preview backdrop-preview-${backdrop.id}`} aria-hidden="true"><i /><b /></span><span><strong>{backdrop.label}{settings.backgroundStyle === backdrop.id && <em>Selected</em>}</strong><small>{backdrop.description}</small></span></button>)}
                 </div>
               </div>
+              <div className="card settings-card settings-card-wide custom-background-card">
+                <div className="custom-background-copy">
+                  <span className="eyebrow">Personal artwork</span>
+                  <h2>Custom background</h2>
+                  <p>Choose a JPEG, PNG, or WebP image. NightWatch resizes it for the app, stores it only on this device, and never uploads it to a room or profile service.</p>
+                  {backgroundState === 'error' && <span className="custom-background-error" role="alert">That image could not be prepared. Try a smaller JPEG, PNG, or WebP file.</span>}
+                  <div className="custom-background-actions">
+                    <label className="button button-primary custom-background-upload">
+                      <Icon name="upload" size={16} />
+                      {backgroundState === 'processing' ? 'Preparing image…' : settings.customBackgroundImage === null ? 'Choose background' : 'Replace background'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        disabled={backgroundState === 'processing'}
+                        onChange={(event) => {
+                          void chooseCustomBackground(event.target.files?.[0]);
+                          event.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {settings.customBackgroundImage !== null && (
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        onClick={() => settingsStore.update({
+                          customBackgroundImage: null,
+                          customBackgroundEnabled: false,
+                          profileBackgroundEnabled: false,
+                        })}
+                      >
+                        <Icon name="close" size={15} />
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div
+                  className={`custom-background-preview${settings.customBackgroundImage === null ? ' custom-background-preview-empty' : ''}`}
+                  style={settings.customBackgroundImage === null ? undefined : { backgroundImage: `url(${settings.customBackgroundImage})` }}
+                >
+                  {settings.customBackgroundImage === null && <><Icon name="image" size={28} /><span>Your artwork preview</span></>}
+                </div>
+                <div className="custom-background-toggles">
+                  <ToggleLine
+                    title="Use across the app"
+                    description="Layer this image behind NightWatch screens."
+                    checked={settings.customBackgroundEnabled}
+                    disabled={settings.customBackgroundImage === null}
+                    onChange={(customBackgroundEnabled) => settingsStore.update({ customBackgroundEnabled })}
+                  />
+                  <ToggleLine
+                    title="Use on my profile"
+                    description="Turn the Profile page into a full artwork showcase."
+                    checked={settings.profileBackgroundEnabled}
+                    disabled={settings.customBackgroundImage === null}
+                    onChange={(profileBackgroundEnabled) => settingsStore.update({ profileBackgroundEnabled })}
+                  />
+                </div>
+              </div>
               <div className="card settings-card">
                 <h2>Card surfaces</h2>
                 <p>Change panel depth without changing layout or readability.</p>
@@ -322,11 +400,11 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'account' && (
-          <><SettingsHeader title="Account" description="Discord identity powers persistent rooms. YouTube account connection is intentionally not enabled without secure OAuth." /><section className="settings-grid"><div className="card settings-card account-card"><ProfileAvatar src={user?.avatarUrl ?? null} name={user?.name ?? 'Guest'} className="account-avatar" /><div><h2>{user?.name ?? 'Guest mode'}</h2><p>{user ? 'Connected with Discord' : 'Sign in to create and manage persistent rooms.'}</p></div><button type="button" className="button button-primary" onClick={() => void (user ? signOut() : signInWithDiscord())}>{user ? 'Sign out' : 'Connect Discord'}</button></div><div className="card settings-card settings-card-muted"><h2>YouTube account</h2><p>Planned separately after Google OAuth, secure token storage, consent, revocation, and scope review. NightWatch never signs into or alters the embedded player session.</p></div></section></>
+          <><SettingsHeader title="Account" description="Manage identity and authorized media connections without changing the embedded YouTube player session." /><section className="settings-grid"><div className="card settings-card account-card"><ProfileAvatar src={user?.avatarUrl ?? null} name={user?.name ?? 'Guest'} className="account-avatar" /><div><h2>{user?.name ?? 'Guest mode'}</h2><p>{user ? 'Connected with Discord' : 'Sign in to create and manage persistent rooms.'}</p></div><button type="button" className="button button-primary" onClick={() => void (user ? signOut() : signInWithDiscord())}>{user ? 'Sign out' : 'Connect Discord'}</button></div><div className="card settings-card account-integration-card"><span className="account-integration-icon"><Icon name="cloud" /></span><div><h2>Google Drive</h2><p>{driveAvailable ? 'Connect and choose authorized video files from the desktop Library. Every participant uses their own Google permission.' : 'Google Drive is available only in a configured Electron desktop build. It remains hidden in browser and Discord Activity.'}</p></div>{driveAvailable && onOpenLibrary !== undefined ? <button type="button" className="button button-primary" onClick={onOpenLibrary}><Icon name="library" size={16} />Open Library</button> : <span className="settings-sync-state">Desktop capability unavailable</span>}</div><div className="card settings-card settings-card-muted"><h2>YouTube account</h2><p>A separate read-only connection is being completed for subscriptions and account-owned discovery. It does not sign into, customize, or replace the embedded player session.</p></div></section></>
         )}
 
         {section === 'data' && (
-          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, font, glow, radius, density, card surface, custom atmosphere, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, uiFont: DEFAULT_SETTINGS.uiFont, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, cardStyle: DEFAULT_SETTINGS.cardStyle, customAtmosphere: DEFAULT_SETTINGS.customAtmosphere, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, browsing, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
+          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, font, glow, radius, density, card surface, background artwork, custom atmosphere, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, uiFont: DEFAULT_SETTINGS.uiFont, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, cardStyle: DEFAULT_SETTINGS.cardStyle, customAtmosphere: DEFAULT_SETTINGS.customAtmosphere, customBackgroundImage: DEFAULT_SETTINGS.customBackgroundImage, customBackgroundEnabled: DEFAULT_SETTINGS.customBackgroundEnabled, profileBackgroundEnabled: DEFAULT_SETTINGS.profileBackgroundEnabled, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, browsing, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
         )}
       </div>
     </div>
@@ -345,6 +423,53 @@ function ToggleCard({ title, description, checked, onChange }: { title: string; 
   const descriptionId = `${id}-description`;
   return <label className="card settings-card toggle-card" htmlFor={id}><span><strong>{title}</strong><small id={descriptionId}>{description}</small></span><input id={id} type="checkbox" checked={checked} aria-describedby={descriptionId} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>;
 }
+
+function ToggleLine({ title, description, checked, disabled, onChange }: { title: string; description: string; checked: boolean; disabled: boolean; onChange(value: boolean): void }): JSX.Element {
+  const id = useId();
+  return <label className={`custom-background-toggle${disabled ? ' custom-background-toggle-disabled' : ''}`} htmlFor={id}><span><strong>{title}</strong><small>{description}</small></span><input id={id} type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>;
+}
+
+async function resizeBackgroundImage(file: File): Promise<string> {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 20 * 1024 * 1024) {
+    throw new Error('unsupported-background');
+  }
+
+  const source = await readFileAsDataUrl(file);
+  const image = await loadBackgroundImage(source);
+  const scale = Math.min(1, 1920 / image.naturalWidth, 1080 / image.naturalHeight);
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d');
+  if (context === null) throw new Error('canvas-unavailable');
+  context.drawImage(image, 0, 0, width, height);
+  const result = canvas.toDataURL('image/webp', 0.82);
+  if (result.length > 3_000_000) throw new Error('background-too-large');
+  return result;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('background-read-failed'));
+    reader.onload = () => typeof reader.result === 'string'
+      ? resolve(reader.result)
+      : reject(new Error('background-read-failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadBackgroundImage(source: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onerror = () => reject(new Error('background-decode-failed'));
+    image.onload = () => resolve(image);
+    image.src = source;
+  });
+}
+
 function Segmented<T extends string>({ values, active, labels, ariaLabel = 'Options', onSelect }: { values: readonly T[]; active: T; labels?: Partial<Record<T, string>>; ariaLabel?: string; onSelect(value: T): void }): JSX.Element { return <div className="segmented" role="group" aria-label={ariaLabel}>{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{labels?.[value] ?? value}</button>)}</div>; }
 
 function ConfirmResetButton({ label, confirmLabel, danger = false, onConfirm }: { label: string; confirmLabel: string; danger?: boolean; onConfirm(): void }): JSX.Element {
