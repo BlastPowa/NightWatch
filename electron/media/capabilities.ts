@@ -28,10 +28,22 @@ function flag(name: string): boolean {
   return process.env[name] === '1';
 }
 
-/** Drive additionally needs a configured desktop OAuth client to work at all. */
-function isDriveConfigured(): boolean {
-  const clientId = process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'];
-  return typeof clientId === 'string' && clientId.length > 0;
+/**
+ * Drive additionally needs the full desktop OAuth + Picker configuration:
+ * client id (system-browser PKCE), Picker API key, and app id. Any missing
+ * piece means 'not-configured', never a partially-working surface.
+ */
+export function isDriveConfigured(): boolean {
+  return (
+    hasValue('NIGHTWATCH_GOOGLE_CLIENT_ID') &&
+    hasValue('NIGHTWATCH_GOOGLE_PICKER_API_KEY') &&
+    hasValue('NIGHTWATCH_GOOGLE_APP_ID')
+  );
+}
+
+function hasValue(name: string): boolean {
+  const value = process.env[name];
+  return typeof value === 'string' && value.length > 0;
 }
 
 export interface CapabilityGate {
@@ -43,25 +55,24 @@ export interface CapabilityGate {
 /**
  * Resolve what this build may actually do.
  *
- * Drive is pinned to `security-review-required` regardless of the flag until
- * the OAuth/Picker implementation lands and is reviewed. This is intentional:
- * the flag exists so the surface is testable, not so it can be turned on early.
+ * Drive is implemented (system-browser PKCE, safeStorage tokens, isolated
+ * Picker, range streaming) but still defaults OFF: it needs the owner flag AND
+ * the full OAuth/Picker configuration, and per the handoff it is only switched
+ * on after OAuth verification and the revocation/range tests pass — never
+ * merely because TypeScript builds.
  */
 export function resolveCapabilities(): MediaCapabilities {
   const localFiles = flag('NIGHTWATCH_ENABLE_LOCAL_FILES');
 
-  const driveImplemented = false;
-  const googleDrive = driveImplemented && flag('NIGHTWATCH_ENABLE_DRIVE') && isDriveConfigured();
+  const googleDrive = flag('NIGHTWATCH_ENABLE_DRIVE') && isDriveConfigured();
 
   const library = flag('NIGHTWATCH_ENABLE_LIBRARY');
 
-  const driveReason: MediaCapabilityReason = driveImplemented
-    ? !isDriveConfigured()
-      ? 'not-configured'
-      : flag('NIGHTWATCH_ENABLE_DRIVE')
-        ? 'available'
-        : 'disabled-by-owner'
-    : 'security-review-required';
+  const driveReason: MediaCapabilityReason = googleDrive
+    ? 'available'
+    : !flag('NIGHTWATCH_ENABLE_DRIVE')
+      ? 'disabled-by-owner'
+      : 'not-configured';
 
   // HTML media is the shared substrate: the <video> element, the private
   // scheme, the lease. It is on when anything that needs it is on.

@@ -39,7 +39,8 @@ import {
   type SelectedMedia,
 } from '@shared/mediaBridge';
 import { logger } from '../logger';
-import { maxMediaSizeBytes, resolveCapabilities } from './capabilities';
+import { isDriveConfigured, maxMediaSizeBytes, resolveCapabilities } from './capabilities';
+import type { DriveManager } from './driveManager';
 import { LeaseRegistry, parseByteRange } from './leases';
 import {
   MappingStore,
@@ -87,6 +88,10 @@ export class MediaService {
     private readonly isTrustedSender: (event: IpcMainInvokeEvent) => boolean,
     /** Injected so the streaming handler can be exercised without a window. */
     private readonly leases: LeaseRegistry = new LeaseRegistry(),
+    /** Null when Drive is unconfigured; every Drive call answers typed-off. */
+    private readonly drive: DriveManager | null = null,
+    /** How to reach public/picker.html for the isolated Picker window. */
+    private readonly pickerPageUrl: string = 'app://nightwatch/picker.html',
   ) {
     this.store = new MappingStore(userDataDir);
   }
@@ -97,13 +102,14 @@ export class MediaService {
     this.registerIpcHandlers();
   }
 
-  /** App exit / sign-out: every lease dies. */
+  /** App exit / sign-out: every lease dies, in-flight auth aborts. */
   shutdown(): void {
     this.leases.releaseAll();
     for (const operation of this.operations.values()) {
       operation.controller.abort();
     }
     this.operations.clear();
+    this.drive?.abortAuth();
   }
 
   /** A window going away takes its leases and its in-flight hashing with it. */
@@ -214,42 +220,80 @@ export class MediaService {
       ),
     );
 
-    // Drive: the contract surface exists so the renderer and the tests can
-    // depend on it, but the implementation is gated behind the security review
-    // in the Phase 29 handoff. Every call returns a typed, honest failure.
+    // Drive. Every handler re-checks the capability gate first: an owner who
+    // has not enabled Drive gets typed-off answers even if a manager exists.
+    const driveOff = <T>(): MediaResult<T> =>
+      mediaFail(
+        'capability-disabled',
+        'Google Drive is not enabled in this build.',
+      ) as MediaResult<T>;
+
+    const driveReady = (): DriveManager | null =>
+      resolveCapabilities().googleDrive ? this.drive : null;
+
     ipcMain.handle(
       IpcChannel.MediaGetDriveConnection,
       guard<[], DriveConnectionState>(
-        () => disconnectedDriveState('not-configured'),
+        async () => {
+          const drive = driveReady();
+          if (drive === null) {
+            return disconnectedDriveState(isDriveConfigured() ? null : 'not-configured');
+          }
+          return drive.getConnectionState();
+        },
         () => disconnectedDriveState('not-configured'),
       ),
     );
-
-    const driveUnavailable = <T>(): MediaResult<T> =>
-      mediaFail(
-        'capability-disabled',
-        'Google Drive is not available in this build yet.',
-      ) as MediaResult<T>;
 
     ipcMain.handle(
       IpcChannel.MediaConnectDrive,
       guard<[], MediaResult<DriveConnectionState>>(
-        () => driveUnavailable<DriveConnectionState>(),
-        () => driveUnavailable<DriveConnectionState>(),
+        async () => {
+          const drive = driveReady();
+          if (drive === null) {
+            return driveOff<DriveConnectionState>();
+          }
+          const result = await drive.connect();
+          if (result.ok) {
+            logger.write('info', 'media', 'Google Drive connected');
+          }
+          return result;
+        },
+        () => driveOff<DriveConnectionState>(),
       ),
     );
+
     ipcMain.handle(
       IpcChannel.MediaPickDriveFile,
       guard<[], MediaResult<SelectedMedia>>(
-        () => driveUnavailable<SelectedMedia>(),
-        () => driveUnavailable<SelectedMedia>(),
+        async (event) => {
+          const drive = driveReady();
+          if (drive === null) {
+            return driveOff<SelectedMedia>();
+          }
+          const parent = BrowserWindow.fromWebContents(event.sender);
+          return drive.pickFile({ pickerPageUrl: this.pickerPageUrl, parent });
+        },
+        () => driveOff<SelectedMedia>(),
       ),
     );
+
     ipcMain.handle(
       IpcChannel.MediaDisconnectDrive,
       guard<[], MediaResult<void>>(
-        () => driveUnavailable<void>(),
-        () => driveUnavailable<void>(),
+        async () => {
+          // Disconnect works even while the capability flag is off: the user
+          // must always be able to remove a stored credential.
+          if (this.drive === null) {
+            return mediaOk(undefined);
+          }
+          const result = await this.drive.disconnect();
+          // Drive leases die with the connection.
+          this.leases.releaseAll();
+          logger.write('info', 'media', 'Google Drive disconnected');
+          return result;
+        },
+        () => driveOff<void>(),
       ),
     );
   }
@@ -460,12 +504,18 @@ export class MediaService {
     }
 
     if (descriptor.kind === 'drive') {
-      if (!capabilities.googleDrive) {
-        return mediaFail('capability-disabled', 'Google Drive is not available in this build yet.');
+      if (!capabilities.googleDrive || this.drive === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not enabled in this build.');
       }
-      // Unreachable while googleDrive is gated off; kept so the branch is
-      // explicit rather than an accidental fallthrough into local handling.
-      return mediaFail('capability-disabled', 'Google Drive is not available in this build yet.');
+      // Re-check permission and canDownload with THIS participant's token
+      // before every lease. A fileId in a room event proves nothing.
+      const validated = await this.drive.validateForLease(descriptor);
+      if (!validated.ok) {
+        return validated;
+      }
+      const lease = this.leases.create(descriptor, window.id, { driveFileId: descriptor.fileId });
+      logger.write('info', 'media', 'Issued a Drive playback lease');
+      return mediaOk(lease);
     }
 
     const mapping = this.store.findByFingerprint(descriptor.fingerprint);
@@ -524,6 +574,39 @@ export class MediaService {
     if (record === null) {
       // Expired and unknown are the same answer: a probe learns nothing.
       return new Response(null, { status: 404 });
+    }
+
+    // Drive leases stream through the participant's own token; the requested
+    // single range is forwarded verbatim and the body passes through without
+    // ever being buffered in full. Auth problems collapse to 404 here — the
+    // typed detail belongs to the bridge result path, not to a probing page.
+    if (record.driveFileId !== null) {
+      if (this.drive === null) {
+        return new Response(null, { status: 404 });
+      }
+      const rangeHeader = request.headers.get('range');
+      // Validate the range shape before forwarding anything upstream.
+      if (rangeHeader !== null && parseByteRange(rangeHeader, record.descriptor.size).kind === 'unsatisfiable') {
+        return new Response(null, {
+          status: 416,
+          headers: {
+            'Content-Range': `bytes */${String(record.descriptor.size)}`,
+            'Accept-Ranges': 'bytes',
+          },
+        });
+      }
+      if (request.method === 'HEAD') {
+        return new Response(null, {
+          status: 200,
+          headers: {
+            'Content-Type': record.descriptor.mimeType,
+            'Content-Length': String(record.descriptor.size),
+            'Accept-Ranges': 'bytes',
+            'Cache-Control': 'no-store',
+          },
+        });
+      }
+      return this.drive.streamRange(record.driveFileId, rangeHeader, record.descriptor.mimeType);
     }
 
     if (record.localPath === null) {

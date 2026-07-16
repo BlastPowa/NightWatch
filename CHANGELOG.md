@@ -1,6 +1,62 @@
 # Changelog
 
 
+## Unreleased
+
+### Phase 29 Google Drive platform (branch `backend/phase-29-drive`)
+
+Delivery step 3 of the Phase 29 handoff, built on the merged contracts. Drive
+remains OFF by default: it requires the owner flag AND the full OAuth/Picker
+configuration, and per the handoff it is enabled only after OAuth verification
+and the revocation/range tests pass.
+
+- Added the installed-app OAuth flow (`electron/media/driveAuth.ts`): system
+  browser only, PKCE S256 with a fresh 86-character verifier, cryptographically
+  random state verified in constant time, a random `127.0.0.1` loopback port
+  that closes on success/denial/timeout/abort, an allowlist on everything handed
+  to `shell.openExternal`, and only the `drive.file` scope. Offline access is
+  requested once, when establishing the connection.
+- Added OS-backed refresh-token storage (`electron/media/tokenStore.ts`) using
+  Electron `safeStorage`: encrypted before writing under `userData`, atomic
+  write-then-rename rotation, and **no plaintext fallback** — if the OS cannot
+  encrypt, the answer is `token-store-unavailable`. Undecryptable credentials
+  (keychain reset) are deleted, not retried forever.
+- Added Drive metadata validation and streaming (`electron/media/driveClient.ts`):
+  `files.get` requests exactly the allowed fields; requires a binary video MIME,
+  positive size, not trashed, `capabilities.canDownload = true`, and a real
+  `sha256Checksum` — with `fingerprint-unavailable` when Drive has none, never a
+  substitute. Range requests forward the single validated `Range` header with the
+  participant's own token and pass the body through as a stream; only
+  Content-Length/Content-Range survive from upstream headers, and the
+  Authorization header can never reach the renderer.
+- Added the access-token session with serialized refresh: concurrent callers
+  share one in-flight refresh (Google rotates refresh tokens; parallel refreshes
+  can invalidate each other), `invalid_grant` clears the stored token and reports
+  `auth-expired`, transient failures keep it.
+- Added the isolated Picker (`electron/media/drivePicker.ts` + `public/picker.html`):
+  sandboxed, context-isolated, fresh non-persistent partition per invocation, all
+  permissions/navigation/window.open denied, a purpose-built preload exposing
+  exactly getConfig/report, destroyed on select/cancel/failure/timeout. It
+  receives one short-lived access token; only a shape-checked file id comes back,
+  and main re-fetches all metadata itself.
+- Wired Drive through the existing typed IPC surface: leases revalidate
+  permission and `canDownload` with the participant's own token before issuing;
+  disconnect revokes best-effort and always deletes local credentials and leases;
+  Drive streaming errors collapse to 404 at the protocol handler so a probing
+  page learns nothing.
+- Fixed two real bugs the new tests caught: an aborted sign-in (app exit while
+  the browser was open) left `connectDrive` hanging forever, and the Drive
+  manager's cleanup dereferenced a field the abort path had already cleared.
+- Excluded the desktop Picker host page from the Discord/web bundle; the
+  Activity remains YouTube-only with no Drive artifact, even inert.
+
+68 new tests: PKCE (including the RFC 7636 test vector), state forgery/replay,
+loopback timeout and code non-leakage, exchange/refresh/invalid_grant/offline
+mapping, encrypted storage round-trips and the no-plaintext rule, forged Picker
+payloads, trashed/`canDownload=false`/missing-checksum files, header hygiene,
+concurrent-attempt rejection, cancelled-attempt keeps the prior connection, and
+revocation cleanup.
+
 ## 0.1.23 - 2026-07-16
 
 ### Phase 29 authorized media backend contracts (branch `backend/phase-29-media-library`)
