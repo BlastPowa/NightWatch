@@ -154,7 +154,10 @@ export function AppShell({
             <button type="submit" className="global-search-submit" disabled={search.busy || search.query.trim() === ''}>{search.busy ? 'Searching…' : 'Search'}</button>
           </form>
           <div className="global-topbar-actions">
-            <button type="button" className="topbar-icon" onClick={() => onNavigate('main')} aria-label={room.active ? 'Open current room' : 'Create or join a room'} title={room.active ? 'Current room' : 'Create or join'}><Icon name="play" /></button>
+            <button type="button" className="button button-primary topbar-room-action" onClick={() => onNavigate('main')} aria-label={room.active ? 'Open current room' : 'Create or join a room'} title={room.active ? 'Current room' : 'Create or join'}>
+              <Icon name="play" size={16} />
+              <span>{room.active ? 'Open room' : 'Watch room'}</span>
+            </button>
             {capabilities.notifications && <NotificationCenter />}
             <button type="button" className="profile-chip" onClick={() => onNavigate('card')} aria-label="Open your profile">
               <ProfileAvatar src={identity.avatarUrl} name={identity.name} />

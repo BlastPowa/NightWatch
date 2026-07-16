@@ -1,0 +1,170 @@
+/* Phase 28 persistent player presentation.
+ *
+ * The room component and official iframe remain mounted. These classes only
+ * change the presentation so navigation cannot create a second sync engine.
+ */
+
+.room-view-hidden {
+  display: none;
+}
+
+.room-view-mini {
+  position: fixed;
+  right: clamp(0.85rem, 2vw, 1.5rem);
+  bottom: clamp(0.85rem, 2vw, 1.5rem);
+  z-index: 42;
+  display: block;
+  width: clamp(360px, 31vw, 480px);
+  max-width: calc(100vw - 2rem);
+  margin: 0;
+  padding: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 44%, var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 7px);
+  background:
+    radial-gradient(
+      circle at 82% 0,
+      color-mix(in srgb, var(--nw-accent) 13%, transparent),
+      transparent 38%
+    ),
+    color-mix(in srgb, var(--nw-bg-raised) 96%, black 4%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+    0 30px 80px color-mix(in srgb, black 58%, transparent),
+    0 0 calc(34px * var(--nw-glow-strength))
+      color-mix(in srgb, var(--nw-accent) 16%, transparent);
+  backdrop-filter: blur(24px) saturate(125%);
+}
+
+.room-view-mini .room-header,
+.room-view-mini .watch-stage-heading,
+.room-view-mini .room-aside {
+  display: none;
+}
+
+.room-view-mini .room-body {
+  display: block;
+}
+
+.room-view-mini .room-main {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.room-view-mini .player-panel {
+  gap: 0.45rem;
+}
+
+.room-view-mini .player-frame {
+  min-height: 200px;
+  border-radius: calc(var(--nw-radius-lg) + 2px);
+  box-shadow:
+    0 16px 38px color-mix(in srgb, black 48%, transparent),
+    0 0 calc(24px * var(--nw-glow-strength))
+      color-mix(in srgb, var(--nw-accent) 12%, transparent);
+}
+
+.mini-player-info {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0.2rem 0.05rem;
+}
+
+.mini-player-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.08rem;
+}
+
+.mini-player-copy strong,
+.mini-player-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-player-copy strong {
+  color: var(--nw-text);
+  font-size: 0.76rem;
+}
+
+.mini-player-copy small {
+  color: var(--nw-text-muted);
+  font-size: 0.61rem;
+}
+
+.mini-player-copy .eyebrow {
+  font-size: 0.5rem;
+}
+
+.mini-player-return {
+  min-height: 38px;
+  padding: 0.58rem 0.75rem;
+  font-size: 0.68rem;
+}
+
+.app-cinematic-shell:has(.room-view-mini) .content {
+  padding-bottom: clamp(19rem, 34vw, 25rem);
+}
+
+[data-reduce-transparency='true'] .room-view-mini {
+  background: var(--nw-bg-raised);
+  backdrop-filter: none;
+}
+
+@media (max-width: 900px) {
+  .room-view-mini {
+    width: clamp(340px, 44vw, 410px);
+  }
+}
+
+@media (max-width: 620px) {
+  .room-view-mini {
+    right: 0.5rem;
+    bottom: calc(68px + 0.5rem);
+    width: min(360px, calc(100vw - 1rem));
+    max-width: none;
+    padding: 0.36rem;
+    border-radius: calc(var(--nw-radius-lg) + 3px);
+  }
+
+  .room-view-mini .player-frame {
+    min-height: 200px;
+  }
+
+  .mini-player-info {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.42rem;
+  }
+
+  .mini-player-return {
+    min-width: 42px;
+    width: 42px;
+    padding: 0;
+  }
+
+  .mini-player-return span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .app-cinematic-shell:has(.room-view-mini) .content {
+    padding-bottom: 21rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-view-mini {
+    transition: none;
+  }
+}
+
+[data-reduce-motion='true'] .room-view-mini {
+  transition: none;
+}

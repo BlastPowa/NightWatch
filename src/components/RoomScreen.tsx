@@ -14,11 +14,14 @@ interface RoomScreenProps {
   room: RoomState;
   service: RoomService;
   selfId: string;
+  presentation: 'full' | 'mini' | 'hidden';
   /** Persistent-room metadata (name/schedule), null for ephemeral rooms. */
   meta: RoomMeta | null;
   /** A video picked on the Discover page, to play or queue on arrival. */
   pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue'; positionSeconds?: number } | null;
   onPendingHandled(): void;
+  onMediaStateChange(hasVideo: boolean): void;
+  onReturnToRoom(): void;
   onLeave(): void;
 }
 
@@ -42,9 +45,12 @@ export function RoomScreen({
   room,
   service,
   selfId,
+  presentation,
   meta,
   pendingVideo,
   onPendingHandled,
+  onMediaStateChange,
+  onReturnToRoom,
   onLeave,
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -143,7 +149,10 @@ export function RoomScreen({
   }
 
   return (
-    <section className="room-view fade-up">
+    <section
+      className={`room-view room-view-${presentation}${presentation === 'full' ? ' fade-up' : ''}`}
+      aria-hidden={presentation === 'hidden' ? true : undefined}
+    >
       <header className="room-header card">
         <div className="room-heading">
           <span className="eyebrow">Watch party</span>
@@ -210,7 +219,10 @@ export function RoomScreen({
             isHost={selfIsHost}
             roomCode={room.code}
             allowRoomMomentNotes={meta !== null}
+            presentation={presentation}
             takeNextFromQueue={queue.popNext}
+            onMediaStateChange={onMediaStateChange}
+            onReturnToRoom={onReturnToRoom}
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;
             }}

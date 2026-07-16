@@ -35,9 +35,12 @@ describe('RoomScreen companion dock', () => {
         room={ROOM}
         service={{} as RoomService}
         selfId="self"
+        presentation="full"
         meta={null}
         pendingVideo={null}
         onPendingHandled={vi.fn()}
+        onMediaStateChange={vi.fn()}
+        onReturnToRoom={vi.fn()}
         onLeave={vi.fn()}
       />,
     );
@@ -56,9 +59,12 @@ describe('RoomScreen companion dock', () => {
         room={ROOM}
         service={{} as RoomService}
         selfId="self"
+        presentation="full"
         meta={null}
         pendingVideo={null}
         onPendingHandled={vi.fn()}
+        onMediaStateChange={vi.fn()}
+        onReturnToRoom={vi.fn()}
         onLeave={vi.fn()}
       />,
     );
@@ -68,5 +74,26 @@ describe('RoomScreen companion dock', () => {
     await user.keyboard('{ArrowRight}');
     expect(screen.getByRole('tab', { name: 'Chat' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText('Chat content')).toBeTruthy();
+  });
+
+  it('changes to mini presentation without replacing the player stage', () => {
+    const props = {
+      room: ROOM,
+      service: {} as RoomService,
+      selfId: 'self',
+      meta: null,
+      pendingVideo: null,
+      onPendingHandled: vi.fn(),
+      onMediaStateChange: vi.fn(),
+      onReturnToRoom: vi.fn(),
+      onLeave: vi.fn(),
+    };
+    const { container, rerender } = render(<RoomScreen {...props} presentation="full" />);
+    const stage = screen.getByText('Official player stage');
+
+    rerender(<RoomScreen {...props} presentation="mini" />);
+
+    expect(screen.getByText('Official player stage')).toBe(stage);
+    expect(container.querySelector('.room-view-mini')).toBeTruthy();
   });
 });

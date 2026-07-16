@@ -3,6 +3,18 @@
 
 ## Unreleased
 
+### Phase 28 control, Browse, mini-player, and caption completion
+
+- Rebuilt the composite global search focus treatment so enhanced keyboard focus appears on the rounded search shell without drawing a second rectangle inside the text field.
+- Replaced the circular top-room icon with a labeled atmosphere-driven action, restyled Browse views as a segmented control, expanded official-content categories, and added complete hover/focus card surfaces.
+- Added delayed desktop YouTube previews through official muted `youtube-nocookie` iframes; previews cleanly unmount on pointer exit, remain disabled for touch/reduced-motion/compact layouts, and never place NightWatch controls over the iframe.
+- Added a responsive mini-player presentation that reuses the same mounted room, iframe, and sync engine across Browse, Friends, Messages, Profile, Settings, and other non-room screens.
+- Added official YouTube caption preferences for follow/prefer behavior, language, and supported caption font sizes; NightWatch does not scrape or generate subtitles.
+- Added a Browsing settings section, six atmosphere presets, seven animated/static backdrop styles, four card-surface treatments, seven local/system font profiles, rounded theme scrollbars, and styled progress/range controls.
+- Fixed Settings workspace scrolling so the category rail remains stationary while only the active content pane scrolls.
+- Hardened `git:finish` so it runs the test suite and always packages Electron with `--publish never`, preventing feature completion from attempting a GitHub release without a token.
+- Expanded interaction coverage to 62 passing tests across 12 files and revalidated Activity plus Electron/NSIS production builds with publishing disabled.
+
 ### Phases 25-28 cinematic UI completion
 
 - Rebuilt the watch room around a responsive Up Next, Chat, People, Moments, and Discover dock while preserving the untouched official YouTube iframe and every existing room/sync contract.

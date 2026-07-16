@@ -26,8 +26,11 @@ interface PlayerPanelProps {
   isHost: boolean;
   roomCode: string;
   allowRoomMomentNotes: boolean;
+  presentation: 'full' | 'mini' | 'hidden';
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
+  onMediaStateChange?(hasVideo: boolean): void;
+  onReturnToRoom?(): void;
   /** Hands the parent a loader so other panels (queue) can start videos. */
   exposeLoadVideo?: (loader: (videoId: string, startSeconds?: number) => void) => void;
 }
@@ -43,7 +46,10 @@ export function PlayerPanel({
   isHost,
   roomCode,
   allowRoomMomentNotes,
+  presentation,
   takeNextFromQueue,
+  onMediaStateChange,
+  onReturnToRoom,
   exposeLoadVideo,
 }: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -89,37 +95,44 @@ export function PlayerPanel({
     const mountPoint = document.createElement('div');
     container.appendChild(mountPoint);
 
-    const player = new YouTubePlayer({
-      onReady: () => player.setVolume(settingsStore.get().volumePercent),
-      onStateChange: (state) => {
-        engineRef.current?.handleLocalStateChange(state);
-        if (
-          pendingSeekRef.current !== null &&
-          isHostRef.current &&
-          (state === 'playing' || state === 'cued' || state === 'buffering')
-        ) {
-          const target = pendingSeekRef.current;
-          pendingSeekRef.current = null;
-          engineRef.current?.seekTo(target);
-        }
-        // Opt-in insights (Phase 17): the recorder no-ops unless enabled.
-        if (isHostRef.current && (state === 'playing' || state === 'paused')) {
-          sessionRecorder.playback(
-            state === 'playing' ? 'play' : 'pause',
-            player.getCurrentTime(),
-          );
-        }
-        // Auto-advance (ADR-013): when the video ends, the host plays the
-        // top-voted queue entry through the normal load/broadcast path.
-        if (state === 'ended' && isHostRef.current) {
-          const next = takeNextRef.current();
-          if (next !== null) {
-            engineRef.current?.loadVideo(next.videoId);
+    const player = new YouTubePlayer(
+      {
+        onReady: () => player.setVolume(settingsStore.get().volumePercent),
+        onStateChange: (state) => {
+          engineRef.current?.handleLocalStateChange(state);
+          if (
+            pendingSeekRef.current !== null &&
+            isHostRef.current &&
+            (state === 'playing' || state === 'cued' || state === 'buffering')
+          ) {
+            const target = pendingSeekRef.current;
+            pendingSeekRef.current = null;
+            engineRef.current?.seekTo(target);
           }
-        }
+          // Opt-in insights (Phase 17): the recorder no-ops unless enabled.
+          if (isHostRef.current && (state === 'playing' || state === 'paused')) {
+            sessionRecorder.playback(
+              state === 'playing' ? 'play' : 'pause',
+              player.getCurrentTime(),
+            );
+          }
+          // Auto-advance (ADR-013): when the video ends, the host plays the
+          // top-voted queue entry through the normal load/broadcast path.
+          if (state === 'ended' && isHostRef.current) {
+            const next = takeNextRef.current();
+            if (next !== null) {
+              engineRef.current?.loadVideo(next.videoId);
+            }
+          }
+        },
+        onError: (message) => setError(message),
       },
-      onError: (message) => setError(message),
-    });
+      {
+        captionMode: settingsStore.get().captionMode,
+        captionLanguage: settingsStore.get().captionLanguage,
+        captionFontSize: settingsStore.get().captionFontSize,
+      },
+    );
     playerRef.current = player;
 
     const engine = new SyncEngine(service, player, () => isHostRef.current, {
@@ -162,6 +175,12 @@ export function PlayerPanel({
   useEffect(() => {
     playerRef.current?.setVolume(settings.volumePercent);
   }, [settings.volumePercent]);
+
+  // Caption size is one of the few caption controls YouTube exposes after
+  // initialization. Mode/language remain player-start preferences.
+  useEffect(() => {
+    playerRef.current?.setCaptionFontSize(settings.captionFontSize);
+  }, [settings.captionFontSize]);
 
   // Attribute insight events to the video they happened in (Phase 21
   // highlights). A reaction position means nothing without knowing which video
@@ -265,8 +284,16 @@ export function PlayerPanel({
 
   const hasVideo = videoId !== null;
 
+  useEffect(() => {
+    onMediaStateChange?.(hasVideo);
+  }, [hasVideo, onMediaStateChange]);
+
+  useEffect(() => {
+    return () => onMediaStateChange?.(false);
+  }, [onMediaStateChange]);
+
   return (
-    <div className="player-panel">
+    <div className={`player-panel player-panel-${presentation}`}>
       <div
         className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
         style={{
@@ -277,7 +304,7 @@ export function PlayerPanel({
         }}
       >
         <div ref={containerRef} className="player-mount" />
-        <ReactionOverlay bursts={bursts} onDone={removeBurst} />
+        {presentation === 'full' && <ReactionOverlay bursts={bursts} onDone={removeBurst} />}
         {!hasVideo && (
           <span className="player-placeholder">
             {isHost ? 'No video loaded' : 'Waiting for the host to pick a video…'}
@@ -285,6 +312,20 @@ export function PlayerPanel({
         )}
       </div>
 
+      {presentation === 'mini' && (
+        <div className="mini-player-info">
+          <div className="mini-player-copy">
+            <span className="eyebrow">Now watching</span>
+            <strong>{mediaDetails?.title ?? videoTitle ?? 'Playing in your room'}</strong>
+            <small>{isHost ? 'Host controls' : 'Watching in sync'}{syncDelayMs === null ? '' : ` · ~${syncDelayMs}ms`}</small>
+          </div>
+          <button type="button" className="button button-primary mini-player-return" onClick={onReturnToRoom}>
+            <Icon name="maximize" size={16} /><span>Return to room</span>
+          </button>
+        </div>
+      )}
+
+      {presentation === 'full' && <>
       <div className="player-media-info">
         <div className="player-source-mark" aria-label="Played with the official YouTube player"><Icon name="play" size={18} /></div>
         <div className="player-media-copy">
@@ -375,6 +416,7 @@ export function PlayerPanel({
           </div>
         </details>
       )}
+      </>}
     </div>
   );
 }

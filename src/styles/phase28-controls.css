@@ -1,0 +1,673 @@
+/* Phase 28 control polish
+ *
+ * A dependency-free NightWatch control layer adapted from the depth, light
+ * sweep, and tactile switch ideas in the project's Uiverse references. Keep
+ * every control theme-driven and avoid decorative motion when reduced motion
+ * is requested.
+ */
+
+:root {
+  --nw-control-radius: max(10px, calc(var(--nw-radius) - 1px));
+  --nw-control-height: 40px;
+  --nw-control-border: color-mix(in srgb, var(--nw-text) 13%, var(--nw-border));
+  --nw-control-top: color-mix(in srgb, var(--nw-bg-raised) 88%, white 4%);
+  --nw-control-bottom: color-mix(in srgb, var(--nw-bg-raised) 94%, black 6%);
+  --nw-control-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 18%, transparent),
+    0 7px 18px color-mix(in srgb, black 24%, transparent);
+}
+
+:where(
+  .button,
+  .global-search-submit,
+  .media-play,
+  .media-queue,
+  .category-pill,
+  .category-scroll,
+  .shelf-controls button,
+  .topbar-icon,
+  .global-topbar .topbar-icon
+) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  font: inherit;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(
+  .button,
+  .global-search-submit,
+  .media-play,
+  .media-queue,
+  .category-pill,
+  .category-scroll,
+  .shelf-controls button,
+  .topbar-icon,
+  .global-topbar .topbar-icon
+)::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    linear-gradient(110deg, transparent 16%, color-mix(in srgb, white 10%, transparent) 46%, transparent 72%);
+  content: '';
+  opacity: 0;
+  transform: translateX(-55%);
+  transition:
+    opacity 180ms var(--nw-ease),
+    transform 360ms var(--nw-ease);
+  pointer-events: none;
+}
+
+:where(
+  .button,
+  .global-search-submit,
+  .media-play,
+  .media-queue,
+  .category-pill,
+  .category-scroll,
+  .shelf-controls button,
+  .topbar-icon,
+  .global-topbar .topbar-icon
+):hover:not(:disabled)::before {
+  opacity: 1;
+  transform: translateX(55%);
+}
+
+.button {
+  min-height: var(--nw-control-height);
+  padding: 0.68rem 1rem;
+  border-color: var(--nw-control-border);
+  border-radius: var(--nw-control-radius);
+  background: linear-gradient(180deg, var(--nw-control-top), var(--nw-control-bottom));
+  color: var(--nw-text);
+  font-size: 0.82rem;
+  font-weight: 760;
+  letter-spacing: -0.01em;
+  box-shadow: var(--nw-control-shadow);
+}
+
+.button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--nw-accent) 52%, var(--nw-control-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-bg-raised) 82%, var(--nw-accent) 9%),
+      color-mix(in srgb, var(--nw-bg-raised) 93%, black 7%)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 20%, transparent),
+    0 10px 24px color-mix(in srgb, black 30%, transparent),
+    0 0 calc(18px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 15%, transparent);
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  box-shadow:
+    inset 0 2px 5px color-mix(in srgb, black 30%, transparent),
+    0 3px 9px color-mix(in srgb, black 22%, transparent);
+  transform: translateY(1px) scale(0.985);
+}
+
+.button:disabled,
+.global-search-submit:disabled,
+.media-play:disabled,
+.media-queue:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.55);
+  opacity: 0.48;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 4%, transparent);
+  transform: none;
+}
+
+.button-primary,
+.global-search-submit,
+.media-play {
+  border-color: color-mix(in srgb, var(--nw-accent) 72%, white 9%);
+  background:
+    radial-gradient(circle at 20% 0%, color-mix(in srgb, white 22%, transparent), transparent 36%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-accent) 90%, white 10%),
+      color-mix(in srgb, var(--nw-accent) 84%, black 16%)
+    );
+  color: var(--nw-accent-contrast);
+  text-shadow: 0 1px color-mix(in srgb, black 26%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 24%, transparent),
+    0 8px 20px color-mix(in srgb, var(--nw-accent) 28%, transparent);
+}
+
+.button-primary:hover:not(:disabled),
+.global-search-submit:hover:not(:disabled),
+.media-play:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--nw-accent) 74%, white 20%);
+  background:
+    radial-gradient(circle at 24% 0%, color-mix(in srgb, white 28%, transparent), transparent 40%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-accent) 84%, white 16%),
+      color-mix(in srgb, var(--nw-accent) 88%, black 12%)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 32%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 24%, transparent),
+    0 11px 28px color-mix(in srgb, var(--nw-accent) 38%, transparent),
+    0 0 calc(22px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 24%, transparent);
+}
+
+.button-glow {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(180deg, var(--nw-control-top), var(--nw-control-bottom)) padding-box,
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--nw-accent) 84%, white 16%),
+      color-mix(in srgb, var(--nw-accent) 26%, transparent),
+      color-mix(in srgb, var(--nw-accent) 84%, white 16%)
+    ) border-box;
+  background-size: 100% 100%, 220% 100%;
+  color: color-mix(in srgb, var(--nw-accent) 76%, white);
+  animation: nw-control-border-flow 4.5s linear infinite;
+}
+
+.button-danger {
+  border-color: color-mix(in srgb, var(--nw-danger) 52%, var(--nw-control-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-bg-raised) 86%, var(--nw-danger) 8%),
+      color-mix(in srgb, var(--nw-bg-raised) 92%, black 8%)
+    );
+  color: color-mix(in srgb, var(--nw-danger) 78%, white);
+}
+
+.button-danger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--nw-danger) 75%, white 8%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 9%, transparent),
+    0 10px 25px color-mix(in srgb, var(--nw-danger) 24%, transparent);
+}
+
+.global-search-submit {
+  min-height: 36px;
+  padding-inline: 1.15rem;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 70%, white 8%);
+  border-radius: max(9px, calc(var(--nw-control-radius) - 2px));
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.topbar-room-action {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.48rem;
+  padding-inline: 1rem;
+  border-radius: 13px;
+  white-space: nowrap;
+}
+
+.topbar-room-action > svg {
+  filter: drop-shadow(
+    0 0 calc(7px * var(--nw-glow-strength))
+      color-mix(in srgb, currentColor 66%, transparent)
+  );
+}
+
+/* The enhanced-focus preference intentionally owns the outer search shell.
+ * Exempt the inner input so it cannot draw a second rectangular outline. */
+.global-search {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--nw-bg-sunken) 91%, black 9%),
+        color-mix(in srgb, var(--nw-bg-sunken) 82%, var(--nw-accent) 4%)
+      )
+      padding-box,
+    linear-gradient(
+        112deg,
+        color-mix(in srgb, var(--nw-accent) 68%, white 12%),
+        color-mix(in srgb, var(--nw-border) 82%, transparent) 42%,
+        color-mix(in srgb, var(--nw-accent) 52%, transparent)
+      )
+      border-box;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 7%, transparent),
+    inset 0 -10px 24px color-mix(in srgb, black 15%, transparent),
+    0 10px 30px color-mix(in srgb, black 26%, transparent);
+}
+
+.global-search:focus-within {
+  border-color: transparent;
+  background:
+    radial-gradient(
+        circle at 12% 0,
+        color-mix(in srgb, var(--nw-accent) 12%, transparent),
+        transparent 38%
+      )
+      padding-box,
+    linear-gradient(
+        105deg,
+        color-mix(in srgb, var(--nw-accent) 88%, white 12%),
+        color-mix(in srgb, var(--nw-accent) 28%, var(--nw-border)) 48%,
+        color-mix(in srgb, var(--nw-accent) 74%, white 8%)
+      )
+      border-box;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--nw-accent) 12%, transparent),
+    0 14px 34px color-mix(in srgb, black 30%, transparent),
+    0 0 calc(24px * var(--nw-glow-strength))
+      color-mix(in srgb, var(--nw-accent) 16%, transparent);
+}
+
+[data-enhanced-focus='true'] .global-search:focus-within {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--nw-accent) 18%, transparent),
+    0 14px 34px color-mix(in srgb, black 30%, transparent),
+    0 0 calc(30px * var(--nw-glow-strength))
+      color-mix(in srgb, var(--nw-accent) 20%, transparent);
+}
+
+.global-search input,
+.global-search input:focus,
+.global-search input:focus-visible,
+[data-enhanced-focus='true'] .global-search input:focus,
+[data-enhanced-focus='true'] .global-search input:focus-visible {
+  appearance: none;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.browse-view-tabs {
+  width: fit-content;
+  max-width: 100%;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--nw-text) 8%, var(--nw-border));
+  border-radius: calc(var(--nw-control-radius) + 2px);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-bg-sunken) 94%, black),
+      var(--nw-bg-sunken)
+    );
+  box-shadow:
+    inset 0 2px 8px color-mix(in srgb, black 34%, transparent),
+    0 1px 0 color-mix(in srgb, white 4%, transparent);
+  scrollbar-width: none;
+}
+
+.browse-view-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.browse-view-tabs button {
+  min-height: 38px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: max(8px, calc(var(--nw-control-radius) - 2px));
+  font-size: 0.76rem;
+  font-weight: 740;
+  white-space: nowrap;
+}
+
+.browse-view-tabs button:hover {
+  color: var(--nw-text);
+  background: color-mix(in srgb, var(--nw-text) 5%, transparent);
+}
+
+.browse-view-tabs .browse-view-active {
+  border-color: color-mix(in srgb, var(--nw-accent) 42%, var(--nw-control-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-bg-raised) 76%, var(--nw-accent) 17%),
+      color-mix(in srgb, var(--nw-bg-raised) 94%, black 6%)
+    );
+  color: var(--nw-text);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 9%, transparent),
+    0 5px 14px color-mix(in srgb, black 24%, transparent),
+    0 0 calc(15px * var(--nw-glow-strength))
+      color-mix(in srgb, var(--nw-accent) 14%, transparent);
+}
+
+.browse-view-tabs .browse-view-active::after {
+  display: none;
+}
+
+.media-grid .media-card {
+  margin: -0.5rem;
+  padding: 0.5rem;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: calc(var(--nw-radius-lg) + 7px);
+  transition:
+    border-color 190ms var(--nw-ease),
+    background 190ms var(--nw-ease),
+    box-shadow 190ms var(--nw-ease),
+    transform 190ms var(--nw-ease);
+}
+
+.media-grid .media-card:hover,
+.media-grid .media-card:focus-within {
+  border-color: color-mix(in srgb, var(--nw-accent) 38%, var(--nw-border));
+  background:
+    radial-gradient(
+      circle at 18% 0,
+      color-mix(in srgb, var(--nw-accent) 9%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      155deg,
+      color-mix(in srgb, var(--nw-bg-raised) 88%, white 2%),
+      color-mix(in srgb, var(--nw-bg-sunken) 84%, transparent)
+    );
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+    0 20px 46px color-mix(in srgb, black 34%, transparent),
+    0 0 calc(24px * var(--nw-glow-strength))
+      color-mix(in srgb, var(--nw-accent) 11%, transparent);
+}
+
+.media-grid .media-card-copy {
+  padding-right: 0.15rem;
+  padding-left: 0.15rem;
+}
+
+.media-thumb {
+  isolation: isolate;
+}
+
+.media-hover-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+
+.media-card-previewing .duration-badge,
+.media-card-previewing .friend-watch-chip,
+.media-card-previewing .media-card-actions,
+.media-card-previewing .media-thumb::after {
+  display: none;
+}
+
+.media-card-copy-previewing {
+  display: block;
+}
+
+.media-preview-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.media-preview-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.media-preview-actions .media-play,
+.media-preview-actions .media-queue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+:where(.topbar-icon, .global-topbar .topbar-icon, .category-scroll, .shelf-controls button) {
+  border-color: var(--nw-control-border);
+  background:
+    radial-gradient(circle at 32% 18%, color-mix(in srgb, white 8%, transparent), transparent 42%),
+    linear-gradient(180deg, var(--nw-control-top), var(--nw-control-bottom));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    0 6px 16px color-mix(in srgb, black 22%, transparent);
+}
+
+:where(.topbar-icon, .global-topbar .topbar-icon, .category-scroll, .shelf-controls button):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--nw-accent) 58%, var(--nw-control-border));
+  color: var(--nw-accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 8px 19px color-mix(in srgb, black 26%, transparent),
+    0 0 calc(18px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 20%, transparent);
+  transform: translateY(-1px);
+}
+
+.category-pill {
+  min-height: 38px;
+  border-color: var(--nw-control-border);
+  border-radius: var(--nw-control-radius);
+  background: linear-gradient(180deg, var(--nw-control-top), var(--nw-control-bottom));
+  color: var(--nw-text-muted);
+  font-size: 0.76rem;
+  font-weight: 720;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent),
+    0 5px 14px color-mix(in srgb, black 16%, transparent);
+}
+
+.category-pill:hover,
+.category-pill-active {
+  border-color: color-mix(in srgb, var(--nw-accent) 62%, var(--nw-control-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-bg-raised) 76%, var(--nw-accent) 16%),
+      color-mix(in srgb, var(--nw-bg-raised) 91%, var(--nw-accent) 7%)
+    );
+  color: var(--nw-text);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
+    0 7px 18px color-mix(in srgb, black 22%, transparent),
+    0 0 calc(16px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 14%, transparent);
+}
+
+.media-play,
+.media-queue {
+  min-height: 36px;
+  border-radius: max(9px, calc(var(--nw-control-radius) - 2px));
+  font-size: 0.72rem;
+  letter-spacing: -0.01em;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 13%, transparent),
+    0 7px 18px color-mix(in srgb, black 28%, transparent);
+}
+
+.media-queue {
+  border-color: color-mix(in srgb, white 16%, var(--nw-border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #111625 88%, white 5%), color-mix(in srgb, #090c16 94%, black));
+}
+
+.media-queue:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--nw-accent) 54%, white 8%);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, #111625 80%, var(--nw-accent) 12%), #090c16);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
+    0 9px 22px color-mix(in srgb, black 32%, transparent),
+    0 0 calc(18px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 17%, transparent);
+  transform: translateY(-1px);
+}
+
+.segmented {
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--nw-text) 8%, var(--nw-border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nw-bg-sunken) 92%, black), var(--nw-bg-sunken));
+  box-shadow:
+    inset 0 2px 7px color-mix(in srgb, black 32%, transparent),
+    0 1px 0 color-mix(in srgb, white 4%, transparent);
+}
+
+.segmented button {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: max(8px, calc(var(--nw-control-radius) - 3px));
+  font-size: 0.78rem;
+  font-weight: 720;
+  transition:
+    color 160ms var(--nw-ease),
+    border-color 160ms var(--nw-ease),
+    background 160ms var(--nw-ease),
+    box-shadow 160ms var(--nw-ease);
+}
+
+.segmented button:hover:not(.segmented-active) {
+  color: var(--nw-text);
+  background: color-mix(in srgb, var(--nw-text) 5%, transparent);
+}
+
+.segmented button.segmented-active {
+  border-color: color-mix(in srgb, var(--nw-accent) 42%, var(--nw-control-border));
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-bg-raised) 78%, var(--nw-accent) 15%),
+      color-mix(in srgb, var(--nw-bg-raised) 94%, black 6%)
+    );
+  color: var(--nw-text);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 9%, transparent),
+    0 5px 13px color-mix(in srgb, black 25%, transparent),
+    0 0 calc(13px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 12%, transparent);
+}
+
+.toggle-switch {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--nw-text) 13%, var(--nw-border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--nw-bg-sunken) 88%, black 12%), var(--nw-bg-sunken));
+  box-shadow:
+    inset 0 3px 8px color-mix(in srgb, black 44%, transparent),
+    0 1px 0 color-mix(in srgb, white 5%, transparent);
+}
+
+.toggle-switch::before {
+  position: absolute;
+  inset: 4px auto 4px 6px;
+  width: 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nw-text-muted) 42%, transparent);
+  content: '';
+  opacity: 0.7;
+  filter: blur(3px);
+  transition:
+    transform 180ms var(--nw-ease),
+    background 180ms var(--nw-ease);
+}
+
+.toggle-switch::after {
+  background:
+    radial-gradient(circle at 35% 25%, white, color-mix(in srgb, var(--nw-text-muted) 78%, white) 42%, var(--nw-text-muted));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
+    0 4px 9px color-mix(in srgb, black 46%, transparent);
+}
+
+.toggle-card input:checked + .toggle-switch {
+  border-color: color-mix(in srgb, var(--nw-accent) 72%, white 8%);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--nw-accent) 72%, white 6%),
+      color-mix(in srgb, var(--nw-accent) 76%, black 18%)
+    );
+  box-shadow:
+    inset 0 2px 7px color-mix(in srgb, black 28%, transparent),
+    0 0 calc(15px * var(--nw-glow-strength)) color-mix(in srgb, var(--nw-accent) 22%, transparent);
+}
+
+.toggle-card input:checked + .toggle-switch::before {
+  background: color-mix(in srgb, white 72%, var(--nw-accent));
+  transform: translateX(25px);
+}
+
+.toggle-card input:checked + .toggle-switch::after {
+  background: radial-gradient(circle at 34% 24%, white, #f0f3ff 56%, #cfd6ea);
+}
+
+@keyframes nw-control-border-flow {
+  to {
+    background-position: 0 0, 220% 0;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .button,
+  .media-play,
+  .media-queue {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar-room-action {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-glow {
+    animation: none;
+  }
+
+  :where(
+    .button,
+    .global-search-submit,
+    .media-play,
+    .media-queue,
+    .category-pill,
+    .category-scroll,
+    .shelf-controls button,
+    .topbar-icon,
+    .global-topbar .topbar-icon
+  )::before {
+    display: none;
+  }
+}
+
+[data-reduce-motion='true'] .button-glow {
+  animation: none;
+}
+
+[data-reduce-motion='true'] .media-card,
+[data-reduce-motion='true'] .media-grid .media-card {
+  transition: none;
+}
+
+[data-reduce-motion='true']
+  :where(
+    .button,
+    .global-search-submit,
+    .media-play,
+    .media-queue,
+    .category-pill,
+    .category-scroll,
+    .shelf-controls button,
+    .topbar-icon,
+    .global-topbar .topbar-icon
+  )::before {
+  display: none;
+}

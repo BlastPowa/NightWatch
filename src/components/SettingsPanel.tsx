@@ -8,6 +8,11 @@ import {
   THEMES,
   settingsStore,
   type BackgroundStyle,
+  type CardStyle,
+  type CaptionFontSize,
+  type CaptionLanguage,
+  type CaptionMode,
+  type UiFont,
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -19,15 +24,17 @@ import {
 } from '@/lib/social/PresenceService';
 import './SettingsPanel.css';
 import '@/styles/phase27-secondary.css';
+import '@/styles/phase28-settings.css';
 
 interface SettingsPanelProps {
   user: AuthUser | null;
 }
 
-type SettingsSection = 'appearance' | 'playback' | 'social' | 'accessibility' | 'account' | 'data';
+type SettingsSection = 'appearance' | 'browsing' | 'playback' | 'social' | 'accessibility' | 'account' | 'data';
 
 const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string; icon: IconName }> = [
   { id: 'appearance', label: 'Appearance', icon: 'sparkle' },
+  { id: 'browsing', label: 'Browsing', icon: 'search' },
   { id: 'playback', label: 'Playback', icon: 'play' },
   { id: 'social', label: 'Social', icon: 'friends' },
   { id: 'accessibility', label: 'Accessibility', icon: 'settings' },
@@ -48,6 +55,12 @@ const THEME_PREVIEW: Record<string, string> = {
   'brand-new-day': 'linear-gradient(135deg,#07101f 42%,#163c73 42% 68%,#b8172b 68%)',
   'alien-x': 'linear-gradient(135deg,#020507 44%,#e7f5ef 44% 56%,#0ba86b 56%)',
   obsidian: 'linear-gradient(135deg,#000 50%,#111217 50%)',
+  'obsidian-red': 'linear-gradient(135deg,#010103 48%,#210509 48% 72%,#8f1422 72%)',
+  'obsidian-blue': 'linear-gradient(135deg,#010207 48%,#07152e 48% 72%,#2463d4 72%)',
+  'ember-noir': 'linear-gradient(135deg,#090403 44%,#341009 44% 70%,#ef6b24 70%)',
+  'arctic-light': 'linear-gradient(135deg,#edf8ff 44%,#b9dff5 44% 68%,#2c84ad 68%)',
+  'solar-flare': 'linear-gradient(135deg,#120704 42%,#65210a 42% 70%,#ffb21d 70%)',
+  'neon-night': 'linear-gradient(135deg,#060416 42%,#2b0c55 42% 68%,#d91bcf 68%)',
   custom: 'conic-gradient(from 225deg,#050507,#512640,#164b68,#1d4a3b,#050507)',
 };
 
@@ -64,13 +77,58 @@ const THEME_DESCRIPTION: Record<string, string> = {
   'brand-new-day': 'Suit-red energy over midnight blue and cool web-silver.',
   'alien-x': 'Starfield black, cosmic white, and transformed green light.',
   obsidian: 'True black canvas with crisp graphite surfaces.',
+  'obsidian-red': 'Black glass cut with a controlled ruby signal.',
+  'obsidian-blue': 'Ink-black depth with electric cobalt edges.',
+  'ember-noir': 'Smoke-dark surfaces lit by warm ember orange.',
+  'arctic-light': 'A bright frost palette with legible deep-blue type.',
+  'solar-flare': 'Solar gold and orange burning through theatre black.',
+  'neon-night': 'Midnight violet with vivid magenta and cyan energy.',
   custom: 'Build a personal canvas, surface, and panel palette.',
 };
 
 const BACKDROPS: ReadonlyArray<{ id: BackgroundStyle; label: string; description: string }> = [
-  { id: 'midnight', label: 'Midnight', description: 'Focused darkness with a restrained accent horizon.' },
-  { id: 'aurora', label: 'Aurora', description: 'Layered colour bloom for a more atmospheric room.' },
+  { id: 'midnight', label: 'Midnight', description: 'Moving moon-blue and accent horizons over deep black.' },
+  { id: 'aurora', label: 'Aurora', description: 'Wide animated ribbons of accent and secondary colour.' },
   { id: 'studio', label: 'Studio', description: 'A flat, distraction-free background for maximum clarity.' },
+  { id: 'nebula', label: 'Nebula', description: 'Violet and blue clouds drifting behind the workspace.' },
+  { id: 'ember', label: 'Ember', description: 'Slow red-orange warmth rising through theatre black.' },
+  { id: 'frost', label: 'Frost', description: 'Cool pale-blue light with a crisp glass horizon.' },
+  { id: 'cinema', label: 'Cinema', description: 'Subtle projector vignette with a warm centre stage.' },
+];
+
+const CARD_STYLES: ReadonlyArray<{ id: CardStyle; label: string; description: string }> = [
+  { id: 'glass', label: 'Glass', description: 'Layered translucent depth with restrained blur.' },
+  { id: 'solid', label: 'Solid', description: 'Opaque panels with crisp, dependable contrast.' },
+  { id: 'soft', label: 'Soft', description: 'Border-light cards with deeper cinematic shadows.' },
+  { id: 'outline', label: 'Outline', description: 'Minimal surfaces with accent-traced edges.' },
+];
+
+const FONT_OPTIONS: ReadonlyArray<{ id: UiFont; label: string; description: string }> = [
+  { id: 'system', label: 'System', description: 'The clearest native interface font.' },
+  { id: 'cinematic', label: 'Cinematic', description: 'Wide, confident titles for a theatre feel.' },
+  { id: 'editorial', label: 'Editorial', description: 'Refined serif headings with readable body copy.' },
+  { id: 'modern', label: 'Modern', description: 'Clean geometric styling with compact rhythm.' },
+  { id: 'classic', label: 'Classic', description: 'Familiar humanist forms for long sessions.' },
+  { id: 'comic', label: 'Comic', description: 'A playful local display choice.' },
+  { id: 'mono', label: 'Monospace', description: 'Technical, evenly spaced interface text.' },
+];
+
+const CAPTION_LANGUAGES: ReadonlyArray<{ value: CaptionLanguage; label: string }> = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'ko', label: 'Korean' },
+];
+
+const CAPTION_SIZES: ReadonlyArray<{ value: CaptionFontSize; label: string }> = [
+  { value: -1, label: 'Small' },
+  { value: 0, label: 'Default' },
+  { value: 1, label: 'Large' },
+  { value: 3, label: 'Extra large' },
 ];
 
 export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
@@ -154,10 +212,62 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
                 <h2>Layout density</h2>
                 <Segmented values={['compact','comfortable','spacious']} active={settings.density} onSelect={(density) => settingsStore.update({ density })} />
               </div>
+              <div className="card settings-card settings-card-wide">
+                <h2>Interface type</h2>
+                <p>Choose a local or system font profile. NightWatch does not bundle proprietary streaming-brand typefaces.</p>
+                <div className="font-option-grid" role="group" aria-label="Interface font">
+                  {FONT_OPTIONS.map((font) => (
+                    <button
+                      key={font.id}
+                      type="button"
+                      className={`font-option font-option-${font.id}${settings.uiFont === font.id ? ' font-option-active' : ''}`}
+                      aria-pressed={settings.uiFont === font.id}
+                      onClick={() => settingsStore.update({ uiFont: font.id })}
+                    >
+                      <strong>{font.label}</strong>
+                      <small>{font.description}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="card settings-card">
                 <h2>Backdrop</h2>
                 <div className="backdrop-grid">
                   {BACKDROPS.map((backdrop) => <button key={backdrop.id} type="button" className={`backdrop-option${settings.backgroundStyle === backdrop.id ? ' backdrop-option-active' : ''}`} aria-pressed={settings.backgroundStyle === backdrop.id} onClick={() => settingsStore.update({ backgroundStyle: backdrop.id })}><span className={`backdrop-preview backdrop-preview-${backdrop.id}`} aria-hidden="true"><i /><b /></span><span><strong>{backdrop.label}{settings.backgroundStyle === backdrop.id && <em>Selected</em>}</strong><small>{backdrop.description}</small></span></button>)}
+                </div>
+              </div>
+              <div className="card settings-card">
+                <h2>Card surfaces</h2>
+                <p>Change panel depth without changing layout or readability.</p>
+                <div className="card-style-grid" role="group" aria-label="Card surface style">
+                  {CARD_STYLES.map((cardStyle) => <button key={cardStyle.id} type="button" className={`card-style-option card-style-${cardStyle.id}${settings.cardStyle === cardStyle.id ? ' card-style-option-active' : ''}`} aria-pressed={settings.cardStyle === cardStyle.id} onClick={() => settingsStore.update({ cardStyle: cardStyle.id })}><span aria-hidden="true"><i /><i /></span><strong>{cardStyle.label}</strong><small>{cardStyle.description}</small></button>)}
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {section === 'browsing' && (
+          <>
+            <SettingsHeader title="Browsing" description="Control discovery previews and keep the room close while you explore." />
+            <section className="settings-grid settings-grid-two">
+              <ToggleCard
+                title="Hover video previews"
+                description="After a short desktop hover, load a muted preview through the official YouTube player. Disabled automatically for touch and reduced motion."
+                checked={settings.hoverPreviewEnabled}
+                onChange={(hoverPreviewEnabled) => settingsStore.update({ hoverPreviewEnabled })}
+              />
+              <ToggleCard
+                title="Show mini-player while browsing"
+                description="Keep the same synchronized room player visible when you visit Browse, Friends, Messages, Profile, or Settings."
+                checked={settings.miniPlayerEnabled}
+                onChange={(miniPlayerEnabled) => settingsStore.update({ miniPlayerEnabled })}
+              />
+              <div className="card settings-card settings-card-wide settings-boundary-note">
+                <Icon name="info" />
+                <div>
+                  <h2>Official playback boundary</h2>
+                  <p>Previews begin muted and use YouTube controls. The mini-player reuses the active room player so playback is not duplicated or proxied.</p>
                 </div>
               </div>
             </section>
@@ -169,6 +279,37 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
             <div className="card settings-card"><h2>Sound</h2><p>Sets your local player volume without changing anyone else’s.</p><RangeSetting label="Player volume" value={settings.volumePercent} min={0} max={100} unit="%" onChange={(volumePercent) => settingsStore.update({ volumePercent })} /><div className="quick-actions" aria-label="Volume presets"><button type="button" className="button" aria-pressed={settings.volumePercent === 0} onClick={() => settingsStore.update({ volumePercent: 0 })}>Mute</button><button type="button" className="button" aria-pressed={settings.volumePercent === 50} onClick={() => settingsStore.update({ volumePercent: 50 })}>50%</button><button type="button" className="button" aria-pressed={settings.volumePercent === 100} onClick={() => settingsStore.update({ volumePercent: 100 })}>Full</button></div></div>
             <div className="card settings-card"><h2>Picture preset</h2><p>Safe local filters around the official YouTube player.</p><div className="preset-actions"><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Neutral</button><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: { brightness: 92, contrast: 112, saturation: 105 } })}>Cinema</button><button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: { brightness: 105, contrast: 108, saturation: 120 } })}>Vivid</button></div></div>
             <div className="card settings-card settings-card-wide"><h2>Fine-tune video image</h2>{(['brightness','contrast','saturation'] as const).map((key) => <RangeSetting key={key} label={key} value={settings.videoFilters[key]} min={50} max={150} unit="%" onChange={(value) => settingsStore.update({ videoFilters: { [key]: value } })} />)}<button type="button" className="button" onClick={() => settingsStore.update({ videoFilters: NEUTRAL_FILTERS })}>Reset video image</button></div>
+            <div className="card settings-card settings-card-wide caption-preferences">
+              <div>
+                <h2>Automatic captions</h2>
+                <p>Prefer caption tracks supplied by YouTube. Language and behavior changes apply when the official player initializes again.</p>
+              </div>
+              <div className="settings-field-grid">
+                <fieldset className="settings-fieldset">
+                  <legend>Caption behavior</legend>
+                  <Segmented
+                    values={['youtube-default', 'always-on'] as const}
+                    labels={{ 'youtube-default': 'Follow YouTube', 'always-on': 'Prefer captions' }}
+                    active={settings.captionMode}
+                    onSelect={(captionMode: CaptionMode) => settingsStore.update({ captionMode })}
+                    ariaLabel="Caption behavior"
+                  />
+                </fieldset>
+                <label className="settings-select">
+                  <span>Preferred language</span>
+                  <select value={settings.captionLanguage} onChange={(event) => settingsStore.update({ captionLanguage: event.target.value as CaptionLanguage })}>
+                    {CAPTION_LANGUAGES.map((language) => <option key={language.value} value={language.value}>{language.label}</option>)}
+                  </select>
+                </label>
+                <fieldset className="settings-fieldset settings-fieldset-wide">
+                  <legend>Caption size</legend>
+                  <div className="caption-size-grid">
+                    {CAPTION_SIZES.map((size) => <button key={size.value} type="button" className={settings.captionFontSize === size.value ? 'caption-size-active' : ''} aria-pressed={settings.captionFontSize === size.value} onClick={() => settingsStore.update({ captionFontSize: size.value })}>{size.label}</button>)}
+                  </div>
+                </fieldset>
+              </div>
+              <p className="settings-caption-note"><Icon name="info" /> Availability depends on caption tracks provided by YouTube; NightWatch does not scrape or generate subtitles.</p>
+            </div>
           </section></>
         )}
 
@@ -185,7 +326,7 @@ export function SettingsPanel({ user }: SettingsPanelProps): JSX.Element {
         )}
 
         {section === 'data' && (
-          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, glow, radius, density, custom atmosphere, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, customAtmosphere: DEFAULT_SETTINGS.customAtmosphere, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
+          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, font, glow, radius, density, card surface, custom atmosphere, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, uiFont: DEFAULT_SETTINGS.uiFont, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, cardStyle: DEFAULT_SETTINGS.cardStyle, customAtmosphere: DEFAULT_SETTINGS.customAtmosphere, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, browsing, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
         )}
       </div>
     </div>
@@ -196,14 +337,15 @@ function SettingsHeader({ title, description }: { title: string; description: st
 function RangeSetting({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange(value: number): void }): JSX.Element {
   const id = useId();
   const outputId = `${id}-output`;
-  return <label className="range-setting" htmlFor={id}><span><span className="range-label">{label}</span><output id={outputId} htmlFor={id} aria-live="polite">{value}{unit}</output></span><input id={id} type="range" min={min} max={max} value={value} aria-describedby={outputId} onChange={(event) => onChange(Number(event.target.value))} /></label>;
+  const progress = max === min ? 0 : ((value - min) / (max - min)) * 100;
+  return <label className="range-setting" htmlFor={id}><span><span className="range-label">{label}</span><output id={outputId} htmlFor={id} aria-live="polite">{value}{unit}</output></span><input id={id} type="range" min={min} max={max} value={value} style={{ '--settings-range-progress': `${progress}%` } as CSSProperties} aria-describedby={outputId} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }
 function ToggleCard({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange(value: boolean): void }): JSX.Element {
   const id = useId();
   const descriptionId = `${id}-description`;
   return <label className="card settings-card toggle-card" htmlFor={id}><span><strong>{title}</strong><small id={descriptionId}>{description}</small></span><input id={id} type="checkbox" checked={checked} aria-describedby={descriptionId} onChange={(event) => onChange(event.target.checked)} /><span className="toggle-switch" aria-hidden="true" /></label>;
 }
-function Segmented<T extends string>({ values, active, onSelect }: { values: readonly T[]; active: T; onSelect(value: T): void }): JSX.Element { return <div className="segmented" role="group" aria-label="Layout density">{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{value}</button>)}</div>; }
+function Segmented<T extends string>({ values, active, labels, ariaLabel = 'Options', onSelect }: { values: readonly T[]; active: T; labels?: Partial<Record<T, string>>; ariaLabel?: string; onSelect(value: T): void }): JSX.Element { return <div className="segmented" role="group" aria-label={ariaLabel}>{values.map((value) => <button key={value} type="button" className={active === value ? 'segmented-active' : ''} onClick={() => onSelect(value)} aria-pressed={active === value}>{labels?.[value] ?? value}</button>)}</div>; }
 
 function ConfirmResetButton({ label, confirmLabel, danger = false, onConfirm }: { label: string; confirmLabel: string; danger?: boolean; onConfirm(): void }): JSX.Element {
   const [confirming, setConfirming] = useState(false);

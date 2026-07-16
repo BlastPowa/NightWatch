@@ -4,6 +4,8 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { createDiscordBridge } from '@/platform/discordBridge';
 import { setPlatformBridge } from '@/platform/PlatformBridge';
 import '@/index.css';
+import '@/styles/phase28-controls.css';
+import '@/styles/phase28-player.css';
 
 const rootElement = document.getElementById('root');
 
