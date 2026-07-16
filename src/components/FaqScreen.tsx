@@ -64,6 +64,11 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     category: 'Library & Drive',
+    question: 'What does connecting a YouTube account do?',
+    answer: 'The optional desktop connection requests read-only YouTube access for account-owned discovery. It uses separate consent and encrypted local credentials from Drive, and it never signs into, customizes, or replaces the official embedded player.',
+  },
+  {
+    category: 'Library & Drive',
     question: 'Can NightWatch download from YouTube or streaming services?',
     answer: 'No. NightWatch does not download YouTube, Netflix, Amazon Prime, Crunchyroll, or DRM-protected content, bypass copy protection, or provide a shared pirated catalog. Use files you are authorized to access.',
   },

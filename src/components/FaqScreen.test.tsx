@@ -25,7 +25,7 @@ describe('FaqScreen', () => {
 
     await user.click(screen.getByRole('button', { name: 'Library & Drive' }));
 
-    expect(screen.getByRole('heading', { name: '4 answers' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '5 answers' })).toBeTruthy();
     expect(screen.getByText('What access does Google Drive receive?')).toBeTruthy();
   });
 });

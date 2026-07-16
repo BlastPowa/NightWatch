@@ -11,9 +11,12 @@ Last updated: 2026-07-16.
 - The shared Google PKCE flow now accepts only the two explicitly supported
   scopes (`drive.file` and `youtube.readonly`) and revokes a new grant if
   secure token persistence fails.
-- Backend validation passes strict typecheck, all 283 tests across 25 files, the
+- Backend validation passed strict typecheck, all 283 tests across 25 files, the
   Discord Activity production build, and Windows Electron/NSIS packaging with
   publishing disabled.
+- The frontend now uses this bridge in Settings with real Connect/Disconnect,
+  connected-channel, capability-disabled, secure-storage, and retryable
+  loopback-timeout presentation. It remains separate from the iframe session.
 - Google Cloud and release-variable setup is documented in
   `GOOGLE_MEDIA_SETUP.md`. No credential values are committed.
 
@@ -24,7 +27,7 @@ Last updated: 2026-07-16.
   keyboard progress, persistent skip/finish state, responsive positioning, and
   reduced-motion handling.
 - Google Drive's safe public desktop configuration is now injected into the
-  Electron main bundle for local and Actions builds. Six repository variables
+  Electron main bundle for local and Actions builds. Seven repository variables
   are configured; tokens and the optional client secret are not embedded.
 - The Library now explains system-browser OAuth, Picker-only file grants,
   `safeStorage`, per-participant authorization, and actionable disabled versus
@@ -44,9 +47,10 @@ Last updated: 2026-07-16.
 - The official-player source mark now uses an atmosphere-driven glowing action
   treatment, and the Settings gear animates on hover/focus with reduced-motion
   fallbacks.
-- Green locally: strict typecheck, 274 tests across 25 files, Discord Activity
+- Green locally: strict typecheck, 292 tests across 28 files, Discord Activity
   build, and Windows Electron/NSIS packaging. The packaged main bundle contains
-  all three public Google identifiers; the Activity bundle contains none.
+  all three public Google identifiers and the enabled YouTube-account gate; the
+  Activity bundle contains none of the Google identifiers.
 
 ## Phase 29 authorized media (backend and initial frontend merged)
 

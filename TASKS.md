@@ -17,7 +17,7 @@ Last updated: 2026-07-16 for the v0.1.24 release.
 - [x] Pass strict typecheck, 283 tests, the Activity build, and Windows
   Electron/NSIS packaging with `--publish never`.
 - [x] Merge the typed account bridge and backend tests into `main`.
-- [ ] Frontend: replace the planned YouTube account card with the typed bridge
+- [x] Frontend: replace the planned YouTube account card with the typed bridge
   and deliver the explicit capability flag in release builds.
 - [ ] Owner: enable YouTube Data API v3 and add `youtube.readonly` to consent
   testing before interactive acceptance.
@@ -39,7 +39,10 @@ Last updated: 2026-07-16 for the v0.1.24 release.
   navigation reachability, and icon coverage.
 - [x] Add small-window/short-height Settings breakpoints, an Account-to-Library
   Drive shortcut, a polished player source mark, and animated Settings gear.
-- [x] Pass strict typecheck, 274 tests, Activity build, and Windows packaging.
+- [x] Integrate the read-only YouTube account bridge, timeout guidance, and
+  explicit release flag without changing the official player session.
+- [x] Pass strict typecheck, 292 tests across 28 files, Activity build, and
+  Windows packaging with public-config isolation verification.
 - [ ] Merge the reviewed Phase 30 feature PR after Actions validation.
 - [ ] Owner: test Google system-browser sign-in, Picker, seek/range playback,
   disconnect, restart, revocation, and a custom background in the packaged build.

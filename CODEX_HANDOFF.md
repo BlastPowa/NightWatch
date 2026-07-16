@@ -5,8 +5,9 @@ Last updated: 2026-07-16 from public baseline `v0.1.24`.
 ## Current integration state
 
 - Phase 29 Drive and initial Library UI are merged through PRs #41 and #42.
-- Phase 30 frontend is implemented on `frontend/phase-30-onboarding-faq` and is
-  awaiting reviewed PR delivery.
+- Phase 30 backend account support is merged. The rebased
+  `frontend/phase-30-onboarding-faq` branch integrates it and awaits reviewed
+  PR delivery.
 - Phase 24 frontend is merged through PR #35.
 - Phase 24 backend support is merged through PR #34.
 - Phases 25–28 are merged through automated PR #36. The final `frontend/phase-28-control-polish` branch is prepared for reviewed PR delivery; it must not be pushed directly to `main`.
@@ -28,6 +29,9 @@ Last updated: 2026-07-16 from public baseline `v0.1.24`.
 - Public Drive identifiers are available to packaged Electron builds through
   build defines and Actions variables; tokens and the optional client secret are
   never embedded.
+- Settings uses the typed read-only YouTube account bridge with real
+  Connect/Disconnect and timeout states. It has separate consent and encrypted
+  storage from Drive and never changes the official iframe session.
 - Profile uses a Steam-inspired artwork showcase. Custom background images are
   resized/sanitized and remain device-local.
 
@@ -42,7 +46,7 @@ Last updated: 2026-07-16 from public baseline `v0.1.24`.
 
 ## Validation and remaining owner gate
 
-- Green on the active Phase 30 branch: strict TypeScript, 274 tests across 25
+- Green on the active Phase 30 branch: strict TypeScript, 292 tests across 28
   files, Activity build, Electron/NSIS build, installer/blockmap, and Drive
   public-config isolation verification.
 - Owner deploy: run the Phase 24 SQL test in a disposable database, deploy `0021`, and redeploy `search-youtube`.

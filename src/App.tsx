@@ -390,6 +390,7 @@ export function App(): JSX.Element {
           <SettingsPanel
             user={authUser}
             driveAvailable={mediaCapabilities?.googleDrive === true}
+            youtubeAccount={platformBridge.youtubeAccount}
             onOpenLibrary={() => setView('library')}
           />
         )}

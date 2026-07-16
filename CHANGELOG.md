@@ -19,6 +19,10 @@
   them.
 - Added capability, encrypted-storage, cancellation, scope-isolation, and
   revocation coverage plus a credential-free Google Cloud setup runbook.
+- Connected the typed bridge to a working Settings card with loading,
+  connected, disconnecting, capability-disabled, and loopback-timeout states.
+  Its separate public build flag reaches local, feature-PR, and release
+  packages without exposing OAuth tokens or secrets.
 
 ### Phase 30 guidance, Drive configuration, and profile showcase
 
@@ -41,8 +45,8 @@
 - Added earlier compact/short-window breakpoints, a working Google Drive shortcut
   from Account, a theme-driven official-player source mark, and a rotating/glowing
   Settings gear with reduced-motion fallbacks.
-- Expanded the dependency-free NightWatch SVG icon set. Validation now passes
-  274 tests across 25 files, Activity build, and Windows NSIS packaging.
+- Expanded the dependency-free NightWatch SVG icon set. Combined validation now
+  passes 292 tests across 28 files, Activity build, and Windows NSIS packaging.
 
 ## 0.1.24 - 2026-07-16
 

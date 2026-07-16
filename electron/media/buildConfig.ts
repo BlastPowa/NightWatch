@@ -11,6 +11,7 @@
 declare const __NIGHTWATCH_ENABLE_LOCAL_FILES__: string | undefined;
 declare const __NIGHTWATCH_ENABLE_DRIVE__: string | undefined;
 declare const __NIGHTWATCH_ENABLE_LIBRARY__: string | undefined;
+declare const __NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT__: string | undefined;
 declare const __NIGHTWATCH_GOOGLE_CLIENT_ID__: string | undefined;
 declare const __NIGHTWATCH_GOOGLE_PICKER_API_KEY__: string | undefined;
 declare const __NIGHTWATCH_GOOGLE_APP_ID__: string | undefined;
@@ -20,6 +21,7 @@ type PublicMediaConfigName =
   | 'NIGHTWATCH_ENABLE_LOCAL_FILES'
   | 'NIGHTWATCH_ENABLE_DRIVE'
   | 'NIGHTWATCH_ENABLE_LIBRARY'
+  | 'NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT'
   | 'NIGHTWATCH_GOOGLE_CLIENT_ID'
   | 'NIGHTWATCH_GOOGLE_PICKER_API_KEY'
   | 'NIGHTWATCH_GOOGLE_APP_ID'
@@ -38,6 +40,10 @@ const EMBEDDED: Record<PublicMediaConfigName, string | undefined> = {
     typeof __NIGHTWATCH_ENABLE_LIBRARY__ === 'undefined'
       ? undefined
       : __NIGHTWATCH_ENABLE_LIBRARY__,
+  NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT:
+    typeof __NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT__ === 'undefined'
+      ? undefined
+      : __NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT__,
   NIGHTWATCH_GOOGLE_CLIENT_ID:
     typeof __NIGHTWATCH_GOOGLE_CLIENT_ID__ === 'undefined'
       ? undefined

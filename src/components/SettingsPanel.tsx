@@ -1,4 +1,9 @@
 import { useEffect, useId, useState, type CSSProperties } from 'react';
+import type { MediaFailure } from '@shared/media';
+import type {
+  YouTubeAccountBridge,
+  YouTubeAccountState,
+} from '@shared/mediaBridge';
 import type { AuthUser } from '@/lib/auth';
 import { signInWithDiscord, signOut } from '@/lib/auth';
 import {
@@ -29,6 +34,7 @@ import '@/styles/phase28-settings.css';
 interface SettingsPanelProps {
   user: AuthUser | null;
   driveAvailable?: boolean;
+  youtubeAccount?: YouTubeAccountBridge | null;
   onOpenLibrary?(): void;
 }
 
@@ -133,7 +139,12 @@ const CAPTION_SIZES: ReadonlyArray<{ value: CaptionFontSize; label: string }> = 
   { value: 3, label: 'Extra large' },
 ];
 
-export function SettingsPanel({ user, driveAvailable = false, onOpenLibrary }: SettingsPanelProps): JSX.Element {
+export function SettingsPanel({
+  user,
+  driveAvailable = false,
+  youtubeAccount = null,
+  onOpenLibrary,
+}: SettingsPanelProps): JSX.Element {
   const settings = useSettings();
   const [section, setSection] = useState<SettingsSection>('appearance');
   const [backgroundState, setBackgroundState] = useState<'idle' | 'processing' | 'error'>('idle');
@@ -400,7 +411,7 @@ export function SettingsPanel({ user, driveAvailable = false, onOpenLibrary }: S
         )}
 
         {section === 'account' && (
-          <><SettingsHeader title="Account" description="Manage identity and authorized media connections without changing the embedded YouTube player session." /><section className="settings-grid"><div className="card settings-card account-card"><ProfileAvatar src={user?.avatarUrl ?? null} name={user?.name ?? 'Guest'} className="account-avatar" /><div><h2>{user?.name ?? 'Guest mode'}</h2><p>{user ? 'Connected with Discord' : 'Sign in to create and manage persistent rooms.'}</p></div><button type="button" className="button button-primary" onClick={() => void (user ? signOut() : signInWithDiscord())}>{user ? 'Sign out' : 'Connect Discord'}</button></div><div className="card settings-card account-integration-card"><span className="account-integration-icon"><Icon name="cloud" /></span><div><h2>Google Drive</h2><p>{driveAvailable ? 'Connect and choose authorized video files from the desktop Library. Every participant uses their own Google permission.' : 'Google Drive is available only in a configured Electron desktop build. It remains hidden in browser and Discord Activity.'}</p></div>{driveAvailable && onOpenLibrary !== undefined ? <button type="button" className="button button-primary" onClick={onOpenLibrary}><Icon name="library" size={16} />Open Library</button> : <span className="settings-sync-state">Desktop capability unavailable</span>}</div><div className="card settings-card settings-card-muted"><h2>YouTube account</h2><p>A separate read-only connection is being completed for subscriptions and account-owned discovery. It does not sign into, customize, or replace the embedded player session.</p></div></section></>
+          <><SettingsHeader title="Account" description="Manage identity and authorized media connections without changing the embedded YouTube player session." /><section className="settings-grid"><div className="card settings-card account-card"><ProfileAvatar src={user?.avatarUrl ?? null} name={user?.name ?? 'Guest'} className="account-avatar" /><div><h2>{user?.name ?? 'Guest mode'}</h2><p>{user ? 'Connected with Discord' : 'Sign in to create and manage persistent rooms.'}</p></div><button type="button" className="button button-primary" onClick={() => void (user ? signOut() : signInWithDiscord())}>{user ? 'Sign out' : 'Connect Discord'}</button></div><div className="card settings-card account-integration-card"><span className="account-integration-icon"><Icon name="cloud" /></span><div><h2>Google Drive</h2><p>{driveAvailable ? 'Connect and choose authorized video files from the desktop Library. Every participant uses their own Google permission.' : 'Google Drive is available only in a configured Electron desktop build. It remains hidden in browser and Discord Activity.'}</p></div>{driveAvailable && onOpenLibrary !== undefined ? <button type="button" className="button button-primary" onClick={onOpenLibrary}><Icon name="library" size={16} />Open Library</button> : <span className="settings-sync-state">Desktop capability unavailable</span>}</div><YouTubeAccountCard bridge={youtubeAccount} /></section></>
         )}
 
         {section === 'data' && (
@@ -412,6 +423,113 @@ export function SettingsPanel({ user, driveAvailable = false, onOpenLibrary }: S
 }
 
 function SettingsHeader({ title, description }: { title: string; description: string }): JSX.Element { return <header className="settings-section-header"><span className="eyebrow">NightWatch preferences</span><h2>{title}</h2><p>{description}</p></header>; }
+
+function YouTubeAccountCard({
+  bridge,
+}: {
+  bridge: YouTubeAccountBridge | null;
+}): JSX.Element {
+  const [account, setAccount] = useState<YouTubeAccountState | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'connecting' | 'disconnecting' | 'error'>(
+    bridge === null ? 'ready' : 'loading',
+  );
+  const [failure, setFailure] = useState<MediaFailure | null>(null);
+
+  useEffect(() => {
+    if (bridge === null) {
+      setAccount(null);
+      setFailure(null);
+      setStatus('ready');
+      return;
+    }
+    let active = true;
+    setStatus('loading');
+    void bridge.getState().then((state) => {
+      if (!active) return;
+      setAccount(state);
+      setStatus('ready');
+    }).catch(() => {
+      if (!active) return;
+      setFailure({
+        code: 'internal',
+        message: 'The YouTube account status could not be loaded.',
+        retryable: true,
+      });
+      setStatus('error');
+    });
+    return () => {
+      active = false;
+    };
+  }, [bridge]);
+
+  async function connect(): Promise<void> {
+    if (bridge === null || status === 'connecting') return;
+    setFailure(null);
+    setStatus('connecting');
+    const result = await bridge.connect();
+    if (result.ok) {
+      setAccount(result.value);
+      setStatus('ready');
+      return;
+    }
+    setFailure(result.error);
+    setStatus('error');
+  }
+
+  async function disconnect(): Promise<void> {
+    if (bridge === null || status === 'disconnecting') return;
+    setFailure(null);
+    setStatus('disconnecting');
+    const result = await bridge.disconnect();
+    if (result.ok) {
+      setAccount({ connected: false, channelTitle: null, reason: null });
+      setStatus('ready');
+      return;
+    }
+    setFailure(result.error);
+    setStatus('error');
+  }
+
+  const busy = status === 'loading' || status === 'connecting' || status === 'disconnecting';
+  const connected = account?.connected === true;
+  const unavailable =
+    account?.reason === 'not-configured' ||
+    account?.reason === 'token-store-unavailable';
+
+  return (
+    <div className="card settings-card account-integration-card youtube-account-card">
+      <span className="account-integration-icon"><Icon name="play-solid" /></span>
+      <div>
+        <h2>YouTube account</h2>
+        <p>
+          {connected
+            ? `Connected${account.channelTitle === null ? '' : ` as ${account.channelTitle}`}. Read-only account discovery stays separate from the official player.`
+            : 'Optionally connect with read-only YouTube access for account-owned discovery. This never signs into, customizes, or replaces the embedded player session.'}
+        </p>
+        {failure !== null && (
+          <span className="account-integration-error" role="alert">
+            {failure.message}
+            {failure.code === 'auth-timeout' && ' Check that your browser, firewall, or VPN allowed the local sign-in callback.'}
+          </span>
+        )}
+      </div>
+      {bridge === null || unavailable ? (
+        <span className="settings-sync-state">Desktop capability unavailable</span>
+      ) : connected ? (
+        <button type="button" className="button" disabled={busy} onClick={() => void disconnect()}>
+          {status === 'disconnecting' && <span className="settings-mini-loader" aria-hidden="true" />}
+          Disconnect
+        </button>
+      ) : (
+        <button type="button" className="button button-primary" disabled={busy} onClick={() => void connect()}>
+          {(status === 'loading' || status === 'connecting') && <span className="settings-mini-loader" aria-hidden="true" />}
+          {status === 'connecting' ? 'Waiting for browser' : 'Connect YouTube'}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function RangeSetting({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange(value: number): void }): JSX.Element {
   const id = useId();
   const outputId = `${id}-output`;
