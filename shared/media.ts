@@ -144,6 +144,7 @@ export type MediaErrorCode =
   | 'fingerprint-unavailable'
   | 'fingerprint-failed'
   | 'auth-cancelled'
+  | 'auth-timeout'
   | 'auth-required'
   | 'auth-expired'
   | 'token-store-unavailable'
@@ -183,6 +184,7 @@ const RETRYABLE_CODES: ReadonlySet<MediaErrorCode> = new Set<MediaErrorCode>([
   'rate-limited',
   'quota-exceeded',
   'lease-expired',
+  'auth-timeout',
   'auth-expired',
   'drive-file-unavailable',
   'internal',

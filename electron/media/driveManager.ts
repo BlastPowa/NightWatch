@@ -16,14 +16,10 @@ import {
 } from '@shared/media';
 import { disconnectedDriveState, type DriveConnectionState, type SelectedMedia } from '@shared/mediaBridge';
 import {
+  DRIVE_FILE_SCOPE,
   LoopbackAuthListener,
-  buildAuthUrl,
-  exchangeCodeForTokens,
-  generatePkceVerifier,
-  generateState,
-  isAllowedAuthUrl,
-  pkceChallengeFor,
   revokeToken,
+  runInteractiveGoogleAuth,
   type FetchLike,
   type OAuthClientConfig,
 } from './driveAuth';
@@ -96,75 +92,38 @@ export class DriveManager {
       return mediaFail('invalid-request', 'A Google sign-in is already in progress.');
     }
 
-    const listener = new LoopbackAuthListener();
-    this.activeAuth = listener;
     try {
-      const redirectUri = await listener.listen();
-
-      const verifier = generatePkceVerifier();
-      const state = generateState();
-      const authUrl = buildAuthUrl({
-        clientId: this.deps.config.clientId,
-        redirectUri,
-        challenge: pkceChallengeFor(verifier),
-        state,
-        // Offline access is requested here, when establishing the stored
-        // connection, and nowhere else.
-        offline: true,
+      const grant = await runInteractiveGoogleAuth({
+        fetchFn: this.deps.fetchFn,
+        config: this.deps.config,
+        scope: DRIVE_FILE_SCOPE,
+        openExternal: this.deps.openExternal ?? ((url: string) => shell.openExternal(url)),
+        onListener: (listener) => {
+          this.activeAuth = listener;
+        },
       });
-
-      // Belt and braces: the URL was just built against the Google origin,
-      // and it is still checked before anything reaches the system browser.
-      if (!isAllowedAuthUrl(authUrl)) {
-        return mediaFail('internal', 'The sign-in address failed validation.');
-      }
-      const openExternal = this.deps.openExternal ?? ((url: string) => shell.openExternal(url));
-      await openExternal(authUrl);
-
-      const callback = await listener.waitForCallback(state);
-      if (!callback.ok) {
-        return callback;
+      if (!grant.ok) {
+        return grant;
       }
 
-      const exchanged = await exchangeCodeForTokens(
-        this.deps.fetchFn,
-        this.deps.config,
-        callback.value.code,
-        verifier,
-        redirectUri,
-      );
-      if (exchanged.status !== 'ok') {
-        return exchanged.status === 'offline'
-          ? mediaFail('offline', 'Google could not be reached to finish signing in.')
-          : mediaFail('auth-cancelled', 'Google sign-in could not be completed.');
-      }
-      if (exchanged.tokens.refreshToken === null) {
-        return mediaFail('auth-cancelled', 'Google did not grant offline access. Try connecting again.');
-      }
-
-      const email = await this.lookupAccountEmail(exchanged.tokens.accessToken);
-      const written = await this.deps.tokenStore.write(exchanged.tokens.refreshToken, email);
+      const email = await this.lookupAccountEmail(grant.value.accessToken);
+      const written = await this.deps.tokenStore.write(grant.value.refreshToken, email);
       if (written === 'unavailable') {
+        await revokeToken(this.deps.fetchFn, grant.value.refreshToken);
         return mediaFail(
           'token-store-unavailable',
           'This device cannot store the Drive sign-in securely, so Drive stays disconnected.',
         );
       }
       if (written === 'failed') {
+        await revokeToken(this.deps.fetchFn, grant.value.refreshToken);
         return mediaFail('internal', 'The Drive sign-in could not be saved.');
       }
 
-      this.session.adopt(exchanged.tokens.accessToken, exchanged.tokens.expiresInSeconds);
+      this.session.adopt(grant.value.accessToken, grant.value.expiresInSeconds);
       return mediaOk({ connected: true, accountEmail: email, reason: null });
-    } catch {
-      return mediaFail('internal', 'Google sign-in could not be started.');
     } finally {
-      // Via the local, not this.activeAuth: abortAuth() may have nulled the
-      // field while this attempt was still unwinding.
-      listener.abort();
-      if (this.activeAuth === listener) {
-        this.activeAuth = null;
-      }
+      this.activeAuth = null;
     }
   }
 

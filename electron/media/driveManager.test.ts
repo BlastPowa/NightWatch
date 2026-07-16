@@ -47,8 +47,18 @@ interface Managed {
  * `completeAuth` simulates the user finishing sign-in in the browser by
  * hitting the loopback redirect the manager opened.
  */
-function makeManager(options: { pickOutcome?: 'picked' | 'cancelled' } = {}): Managed {
-  const store = new DriveTokenStore(workDir, cipher);
+function makeManager(
+  options: {
+    pickOutcome?: 'picked' | 'cancelled';
+    secureStorage?: boolean;
+  } = {},
+): Managed {
+  const store = new DriveTokenStore(
+    workDir,
+    options.secureStorage === false
+      ? { ...cipher, isEncryptionAvailable: () => false }
+      : cipher,
+  );
   const fetchCalls: string[] = [];
 
   const fetchFn: FetchLike = async (url) => {
@@ -175,6 +185,18 @@ describe('connect', () => {
     if (stored.status === 'ok') {
       expect(stored.refreshToken).toBe('rt-x');
     }
+  });
+
+  it('revokes a newly granted token when secure storage cannot persist it', async () => {
+    const { manager, store, fetchCalls } = makeManager({ secureStorage: false });
+    const result = await manager.connect();
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('token-store-unavailable');
+    }
+    expect(fetchCalls.some((url) => url.includes('revoke'))).toBe(true);
+    expect((await store.read()).status).toBe('unavailable');
   });
 });
 

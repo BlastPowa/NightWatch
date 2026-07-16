@@ -23,7 +23,10 @@ export interface SecretCipher {
   decryptString(encrypted: Buffer): string;
 }
 
-const TOKEN_FILE_NAME = 'drive-credentials.bin';
+const DEFAULT_TOKEN_FILE_NAME = 'drive-credentials.bin';
+export type CredentialFileName =
+  | typeof DEFAULT_TOKEN_FILE_NAME
+  | 'youtube-credentials.bin';
 
 export type TokenStoreReadOutcome =
   | { status: 'ok'; refreshToken: string; accountEmail: string | null }
@@ -43,10 +46,12 @@ export class DriveTokenStore {
   constructor(
     private readonly userDataDir: string,
     private readonly cipher: SecretCipher,
+    /** Each connection (Drive, YouTube account) gets its own file. */
+    private readonly fileName: CredentialFileName = DEFAULT_TOKEN_FILE_NAME,
   ) {}
 
   private get filePath(): string {
-    return path.join(this.userDataDir, TOKEN_FILE_NAME);
+    return path.join(this.userDataDir, this.fileName);
   }
 
   async read(): Promise<TokenStoreReadOutcome> {

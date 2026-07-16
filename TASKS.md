@@ -2,6 +2,25 @@
 
 Last updated: 2026-07-16 for the v0.1.24 release.
 
+## Phase 30 account/platform lane (`backend/phase-30-account-drive`)
+
+- [x] Rebase Claude's unfinished backend work onto current `origin/main`.
+- [x] Add a separate Electron-only YouTube account bridge and typed IPC
+  channels; keep web and Discord Activity explicit `null`.
+- [x] Request exactly `youtube.readonly` in its own consent flow and preserve
+  Drive's exact `drive.file` grant.
+- [x] Store the optional account refresh token in its own
+  `safeStorage`-encrypted file; never expose it to renderer state.
+- [x] Revoke a newly issued grant when encrypted persistence is unavailable.
+- [x] Document Google Cloud, local, GitHub Actions, and packaged acceptance in
+  `GOOGLE_MEDIA_SETUP.md`.
+- [x] Pass strict typecheck, 283 tests, the Activity build, and Windows
+  Electron/NSIS packaging with `--publish never`.
+- [ ] Frontend: replace the planned YouTube account card only after this typed
+  bridge merges and the release build receives the explicit capability flag.
+- [ ] Owner: enable YouTube Data API v3 and add `youtube.readonly` to consent
+  testing before interactive acceptance.
+
 ## Phase 29 backend lane (`backend/phase-29-media-library`)
 
 Delivery order is fixed by `PHASE_29_MEDIA_LIBRARY_HANDOFF.md`. Steps 1, 2, and 5

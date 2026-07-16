@@ -24,6 +24,11 @@ const media: MediaPlatformBridge = {
 export const electronBridge: PlatformBridge = {
   kind: 'electron',
   media,
+  youtubeAccount: {
+    getState: () => window.nightwatch.youtubeAccount.getState(),
+    connect: () => window.nightwatch.youtubeAccount.connect(),
+    disconnect: () => window.nightwatch.youtubeAccount.disconnect(),
+  },
   getAppInfo: async () => {
     try {
       return await window.nightwatch.getAppInfo();

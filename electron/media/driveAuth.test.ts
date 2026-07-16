@@ -79,6 +79,7 @@ describe('authorization url', () => {
       redirectUri: 'http://127.0.0.1:54321/callback',
       challenge: 'challenge-value',
       state: 'state-value',
+      scope: DRIVE_FILE_SCOPE,
       offline: true,
     }),
   );
@@ -105,6 +106,7 @@ describe('authorization url', () => {
         redirectUri: 'http://127.0.0.1:54321/callback',
         challenge: 'c',
         state: 's',
+        scope: DRIVE_FILE_SCOPE,
         offline: false,
       }),
     );
@@ -205,7 +207,8 @@ describe('loopback listener', () => {
     const result = await listener.waitForCallback(state, 30);
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error.code).toBe('auth-cancelled');
+      expect(result.error.code).toBe('auth-timeout');
+      expect(result.error.retryable).toBe(true);
     }
   });
 

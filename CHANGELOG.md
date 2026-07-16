@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Google account platform contracts
+
+- Added a separately gated, Electron-only YouTube account bridge using the
+  existing system-browser PKCE flow with the exact `youtube.readonly` scope.
+  It stores its refresh token in a separate `safeStorage`-encrypted credential
+  file and never signs into or alters the official embedded player.
+- Generalized the installed-app Google authorization flow without broadening
+  Drive's existing `drive.file` grant; OAuth scopes are compile-time
+  allowlisted and each connection keeps its own consent and credential.
+- Revoke newly issued Google grants when secure token persistence fails, so an
+  unsuccessful connection does not leave an orphan authorization behind.
+- Distinguish the five-minute loopback callback timeout from an intentional
+  cancellation with a retryable `auth-timeout` result, allowing the UI to
+  explain browser/firewall callback failures instead of silently dismissing
+  them.
+- Added capability, encrypted-storage, cancellation, scope-isolation, and
+  revocation coverage plus a credential-free Google Cloud setup runbook.
 
 ## 0.1.24 - 2026-07-16
 

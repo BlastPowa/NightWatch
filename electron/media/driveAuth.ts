@@ -30,6 +30,11 @@ export const GOOGLE_AUTH_URL = `${GOOGLE_AUTH_ORIGIN}/o/oauth2/v2/auth`;
 export const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 export const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+/** Read-only YouTube account data (Settings → Account connection). */
+export const YOUTUBE_READONLY_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+export type GoogleOAuthScope =
+  | typeof DRIVE_FILE_SCOPE
+  | typeof YOUTUBE_READONLY_SCOPE;
 
 /**
  * The only URL host this module will ever hand to the system browser. An
@@ -79,6 +84,12 @@ export interface AuthUrlParams {
   challenge: string;
   state: string;
   /**
+   * Exactly one scope per connection. Each feature (Drive playback, YouTube
+   * account) asks for its own narrow scope in its own consent flow — no
+   * connection ever piggybacks a second permission onto another's grant.
+   */
+  scope: GoogleOAuthScope;
+  /**
    * Request a refresh token. Only set when establishing the stored
    * connection — repeatedly forcing the consent prompt on every sign-in is
    * hostile UX and Google flags it.
@@ -91,7 +102,7 @@ export function buildAuthUrl(params: AuthUrlParams): string {
   url.searchParams.set('client_id', params.clientId);
   url.searchParams.set('redirect_uri', params.redirectUri);
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', DRIVE_FILE_SCOPE);
+  url.searchParams.set('scope', params.scope);
   url.searchParams.set('code_challenge', params.challenge);
   url.searchParams.set('code_challenge_method', 'S256');
   url.searchParams.set('state', params.state);
@@ -189,7 +200,12 @@ export class LoopbackAuthListener {
       };
 
       const timer = setTimeout(() => {
-        finish(mediaFail('auth-cancelled', 'Signing in took too long and was cancelled.'));
+        finish(
+          mediaFail(
+            'auth-timeout',
+            'Google sign-in timed out. Check that the browser can return to NightWatch, then try again.',
+          ),
+        );
       }, timeoutMs);
 
       server.on('request', (request, response) => {
@@ -365,6 +381,92 @@ export async function refreshAccessToken(
     body.set('client_secret', config.clientSecret);
   }
   return postTokenEndpoint(fetchFn, body);
+}
+
+// ---------------------------------------------------------------------------
+// The complete interactive flow, shared by every Google connection
+// ---------------------------------------------------------------------------
+
+export interface InteractiveAuthDeps {
+  fetchFn: FetchLike;
+  config: OAuthClientConfig;
+  scope: GoogleOAuthScope;
+  openExternal: (url: string) => Promise<void>;
+  /** Surfaced so the owner (a manager) can abort on app exit. */
+  onListener?: (listener: LoopbackAuthListener) => void;
+}
+
+export interface InteractiveAuthGrant {
+  accessToken: string;
+  expiresInSeconds: number;
+  refreshToken: string;
+}
+
+/**
+ * One full installed-app authorization: loopback listener, system browser,
+ * state-checked callback, code exchange. Returns only a grant that includes a
+ * refresh token — a connection that cannot survive a restart is not a
+ * connection, so the caller is never left holding half of one.
+ */
+export async function runInteractiveGoogleAuth(
+  deps: InteractiveAuthDeps,
+): Promise<MediaResult<InteractiveAuthGrant>> {
+  const listener = new LoopbackAuthListener();
+  deps.onListener?.(listener);
+  try {
+    const redirectUri = await listener.listen();
+
+    const verifier = generatePkceVerifier();
+    const state = generateState();
+    const authUrl = buildAuthUrl({
+      clientId: deps.config.clientId,
+      redirectUri,
+      challenge: pkceChallengeFor(verifier),
+      state,
+      scope: deps.scope,
+      // Offline access is requested here, when establishing the stored
+      // connection, and nowhere else.
+      offline: true,
+    });
+
+    // Belt and braces: built against the Google origin one line up, and
+    // still checked before anything reaches the system browser.
+    if (!isAllowedAuthUrl(authUrl)) {
+      return mediaFail('internal', 'The sign-in address failed validation.');
+    }
+    await deps.openExternal(authUrl);
+
+    const callback = await listener.waitForCallback(state);
+    if (!callback.ok) {
+      return callback;
+    }
+
+    const exchanged = await exchangeCodeForTokens(
+      deps.fetchFn,
+      deps.config,
+      callback.value.code,
+      verifier,
+      redirectUri,
+    );
+    if (exchanged.status !== 'ok') {
+      return exchanged.status === 'offline'
+        ? mediaFail('offline', 'Google could not be reached to finish signing in.')
+        : mediaFail('auth-cancelled', 'Google sign-in could not be completed.');
+    }
+    if (exchanged.tokens.refreshToken === null) {
+      return mediaFail('auth-cancelled', 'Google did not grant offline access. Try connecting again.');
+    }
+
+    return mediaOk({
+      accessToken: exchanged.tokens.accessToken,
+      expiresInSeconds: exchanged.tokens.expiresInSeconds,
+      refreshToken: exchanged.tokens.refreshToken,
+    });
+  } catch {
+    return mediaFail('internal', 'Google sign-in could not be started.');
+  } finally {
+    listener.abort();
+  }
 }
 
 /** Best-effort revocation. Local credential deletion never depends on it. */

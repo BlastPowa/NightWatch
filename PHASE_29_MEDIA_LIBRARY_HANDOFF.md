@@ -130,6 +130,7 @@ export type MediaErrorCode =
   | 'fingerprint-unavailable'
   | 'fingerprint-failed'
   | 'auth-cancelled'
+  | 'auth-timeout'
   | 'auth-required'
   | 'auth-expired'
   | 'token-store-unavailable'

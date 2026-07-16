@@ -46,6 +46,15 @@ function hasValue(name: string): boolean {
   return typeof value === 'string' && value.length > 0;
 }
 
+/**
+ * YouTube account connection (Settings → Account). Same OAuth client as
+ * Drive, its own flag and its own consent: enabling Drive does not silently
+ * enable this, or vice versa.
+ */
+export function isYouTubeAccountEnabled(): boolean {
+  return flag('NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT') && hasValue('NIGHTWATCH_GOOGLE_CLIENT_ID');
+}
+
 export interface CapabilityGate {
   localFiles: boolean;
   googleDrive: boolean;

@@ -15,6 +15,7 @@ import type {
   FingerprintProgress,
   PlaybackLease,
   SelectedMedia,
+  YouTubeAccountState,
 } from './mediaBridge';
 
 export const IpcChannel = {
@@ -51,6 +52,12 @@ export const IpcChannel = {
   MediaDisconnectDrive: 'media:disconnect-drive',
   MediaCreateLease: 'media:create-lease',
   MediaReleaseLease: 'media:release-lease',
+
+  // YouTube account connection (Settings → Account). Same one-named-channel
+  // rule as media; read-only scope; tokens never cross this boundary.
+  YouTubeAccountGetState: 'youtube-account:get-state',
+  YouTubeAccountConnect: 'youtube-account:connect',
+  YouTubeAccountDisconnect: 'youtube-account:disconnect',
 
   // Picker-window-only channels (Phase 29). These are answered ONLY for the
   // dedicated sandboxed Picker window's webContents — the app renderer never
@@ -192,6 +199,18 @@ export interface IpcInvokeContract {
     args: [string];
     result: void;
   };
+  [IpcChannel.YouTubeAccountGetState]: {
+    args: [];
+    result: YouTubeAccountState;
+  };
+  [IpcChannel.YouTubeAccountConnect]: {
+    args: [];
+    result: MediaResult<YouTubeAccountState>;
+  };
+  [IpcChannel.YouTubeAccountDisconnect]: {
+    args: [];
+    result: MediaResult<void>;
+  };
 }
 
 /** A desktop notification raised by the renderer (Phase 19). */
@@ -230,6 +249,12 @@ export interface NightWatchBridge {
   onWindowState(callback: (state: WindowState) => void): () => void;
   /** Phase 29 authorized-media surface. */
   media: NightWatchMediaBridge;
+  /** YouTube account connection (read-only scope; Settings → Account). */
+  youtubeAccount: {
+    getState(): Promise<YouTubeAccountState>;
+    connect(): Promise<MediaResult<YouTubeAccountState>>;
+    disconnect(): Promise<MediaResult<void>>;
+  };
 }
 
 /**
