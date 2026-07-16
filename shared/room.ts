@@ -78,8 +78,6 @@ export function isValidRoomCode(code: string): boolean {
  */
 const AVATAR_ALLOWED_HOST = 'cdn.discordapp.com';
 const AVATAR_MAX_LENGTH = 256;
-const AUTH_USER_ID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * Reduce an untrusted avatar value to a canonical, safe-to-render URL or null.
@@ -116,15 +114,6 @@ export function sanitizeAvatarUrl(raw: unknown): string | null {
   return canonical.length > AVATAR_MAX_LENGTH ? null : canonical;
 }
 
-/**
- * Supabase auth user IDs are UUIDs. This value is optional room-presence
- * metadata used only to resolve a signed-in co-watcher through server-guarded
- * social RPCs. Guest member IDs must never be treated as social identities.
- */
-export function sanitizeSocialUserId(raw: unknown): string | null {
-  return typeof raw === 'string' && AUTH_USER_ID_PATTERN.test(raw) ? raw.toLowerCase() : null;
-}
-
 /** Metadata each member tracks into the room's Presence state. */
 export interface PresenceMeta {
   memberId: string;
@@ -138,12 +127,6 @@ export interface PresenceMeta {
    * Always validate with sanitizeAvatarUrl when consuming — never render raw.
    */
   avatarUrl?: string;
-  /**
-   * Signed-in Supabase user ID used for current-room friend discovery.
-   * Optional for guests and older clients; consumers must validate it before
-   * calling a social RPC and must use the server-returned profile identity.
-   */
-  socialUserId?: string;
 }
 
 /** A member of a room as derived from Presence state. */
@@ -155,6 +138,4 @@ export interface RoomMember {
   streakDays: number;
   /** Validated Discord CDN avatar URL, or null to render the initial. */
   avatarUrl: string | null;
-  /** Validated signed-in social identity; absent for guests/older clients. */
-  socialUserId?: string | null;
 }

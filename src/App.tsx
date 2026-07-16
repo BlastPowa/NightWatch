@@ -19,6 +19,10 @@ import { SettingsPanel } from '@/components/SettingsPanel';
 import { UserCard } from '@/components/UserCard';
 import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
 import { recordParticipation } from '@/lib/social/FriendService';
+import {
+  heartbeatLiveRoomSocial,
+  leaveLiveRoomSocial,
+} from '@/lib/social/LiveRoomSocialService';
 import { useConnectionStatus } from '@/hooks/useConnectionStatus';
 import { useSettings } from '@/hooks/useSettings';
 import { useRoom } from '@/hooks/useRoom';
@@ -31,7 +35,6 @@ import {
   loadIdentity,
   updateDisplayName,
   withAvatarUrl,
-  withSocialUserId,
   type GuestIdentity,
 } from '@/lib/identity';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
@@ -155,12 +158,7 @@ export function App(): JSX.Element {
   // validated inside withAvatarUrl, so signing out (authUser → null) clears it.
   useEffect(() => {
     setIdentity((current) =>
-      current === null
-        ? current
-        : withSocialUserId(
-            withAvatarUrl(current, authUser?.avatarUrl ?? null),
-            authUser?.id ?? null,
-          ),
+      current === null ? current : withAvatarUrl(current, authUser?.avatarUrl ?? null),
     );
   }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
@@ -219,6 +217,24 @@ export function App(): JSX.Element {
       void recordParticipation(roomCode);
     }
   }, [roomCode, authUser]);
+
+  // Phase 31 live-room social discovery. The backend stores only a keyed hash
+  // of the room code and returns suggestions only while this authenticated
+  // caller has a fresh heartbeat in the same room.
+  useEffect(() => {
+    if (roomCode === null || authUser === null || identity === null) {
+      return;
+    }
+    const publish = (): void => {
+      void heartbeatLiveRoomSocial(roomCode, identity.id);
+    };
+    publish();
+    const timer = window.setInterval(publish, 60_000);
+    return () => {
+      window.clearInterval(timer);
+      void leaveLiveRoomSocial(roomCode);
+    };
+  }, [authUser, identity, roomCode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -405,7 +421,7 @@ export function App(): JSX.Element {
             <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />
           </>
         )}
-        {view === 'friends' && socialCapabilities.friends && <FriendsScreen currentRoomMembers={session?.state.members ?? []} onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
+        {view === 'friends' && socialCapabilities.friends && <FriendsScreen currentRoomCode={roomCode} onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
         {view === 'messages' && socialCapabilities.messaging && authUser !== null && <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} />}
         {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
         {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (

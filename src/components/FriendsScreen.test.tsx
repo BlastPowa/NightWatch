@@ -4,20 +4,22 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getSocialGraph, getCurrentRoomSuggestions, sendFriendRequest } = vi.hoisted(() => ({
+const { getSocialGraph, listLiveRoomCoWatchers, sendFriendRequest } = vi.hoisted(() => ({
   getSocialGraph: vi.fn(),
-  getCurrentRoomSuggestions: vi.fn(),
+  listLiveRoomCoWatchers: vi.fn(),
   sendFriendRequest: vi.fn(),
 }));
 
 vi.mock('@/lib/social/FriendService', () => ({
   getSocialGraph,
-  getCurrentRoomSuggestions,
   sendFriendRequest,
   acceptFriendRequest: vi.fn(),
   cancelFriendRequest: vi.fn(),
   declineFriendRequest: vi.fn(),
   removeFriend: vi.fn(),
+}));
+vi.mock('@/lib/social/LiveRoomSocialService', () => ({
+  listLiveRoomCoWatchers,
 }));
 vi.mock('@/lib/social/SocialRealtime', () => ({
   subscribeToFriendRequests: () => () => {},
@@ -42,16 +44,15 @@ beforeEach(() => {
     status: 'ok',
     data: { friends: [], incoming: [], outgoing: [], suggestions: [] },
   });
-  getCurrentRoomSuggestions.mockResolvedValue([{
-    kind: 'suggestion',
-    userId: '71ac88dd-ecab-46e7-909a-c3bd8f228115',
-    displayName: 'Boogie',
-    requestId: null,
-    createdAt: '2026-07-16T10:00:00.000Z',
-    avatarUrl: null,
-    selectedBorderId: null,
-    context: 'current-room',
-  }]);
+  listLiveRoomCoWatchers.mockResolvedValue({
+    status: 'ok',
+    data: [{
+      userId: '71ac88dd-ecab-46e7-909a-c3bd8f228115',
+      displayName: 'Boogie',
+      avatarUrl: null,
+      selectedBorderId: null,
+    }],
+  });
   sendFriendRequest.mockResolvedValue({ status: 'ok', data: undefined });
 });
 
@@ -60,15 +61,7 @@ describe('FriendsScreen current-room discovery', () => {
     const user = userEvent.setup();
     render(
       <FriendsScreen
-        currentRoomMembers={[{
-          id: 'guest-presence-id',
-          displayName: 'Untrusted peer label',
-          joinedAt: 100,
-          isHost: false,
-          streakDays: 0,
-          avatarUrl: null,
-          socialUserId: '71ac88dd-ecab-46e7-909a-c3bd8f228115',
-        }]}
+        currentRoomCode="ABC234"
         onMessage={vi.fn()}
       />,
     );
@@ -88,15 +81,7 @@ describe('FriendsScreen current-room discovery', () => {
     const user = userEvent.setup();
     render(
       <FriendsScreen
-        currentRoomMembers={[{
-          id: 'guest-presence-id',
-          displayName: 'Peer',
-          joinedAt: 100,
-          isHost: false,
-          streakDays: 0,
-          avatarUrl: null,
-          socialUserId: '71ac88dd-ecab-46e7-909a-c3bd8f228115',
-        }]}
+        currentRoomCode="ABC234"
         onMessage={vi.fn()}
       />,
     );

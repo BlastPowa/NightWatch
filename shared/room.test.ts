@@ -9,7 +9,6 @@ import {
   normalizeRoomCode,
   parseJoinLink,
   sanitizeAvatarUrl,
-  sanitizeSocialUserId,
 } from './room';
 
 describe('room codes', () => {
@@ -127,18 +126,5 @@ describe('sanitizeAvatarUrl', () => {
     expect(sanitizeAvatarUrl(null)).toBeNull();
     expect(sanitizeAvatarUrl(42)).toBeNull();
     expect(sanitizeAvatarUrl(`https://cdn.discordapp.com/${'a'.repeat(300)}.png`)).toBeNull();
-  });
-});
-
-describe('sanitizeSocialUserId', () => {
-  it('accepts canonical auth UUIDs and normalizes their casing', () => {
-    expect(sanitizeSocialUserId('A3E13BB6-5A07-4ECF-9B9A-830DE90B17E1'))
-      .toBe('a3e13bb6-5a07-4ecf-9b9a-830de90b17e1');
-  });
-
-  it('rejects guest labels, malformed UUIDs, and non-string values', () => {
-    expect(sanitizeSocialUserId('Boogie')).toBeNull();
-    expect(sanitizeSocialUserId('a3e13bb6-5a07-4ecf-9b9a')).toBeNull();
-    expect(sanitizeSocialUserId(null)).toBeNull();
   });
 });

@@ -3,14 +3,13 @@ import {
   acceptFriendRequest,
   cancelFriendRequest,
   declineFriendRequest,
-  getCurrentRoomSuggestions,
   getSocialGraph,
   removeFriend,
   sendFriendRequest,
   type Relation,
   type SocialGraph,
 } from '@/lib/social/FriendService';
-import type { RoomMember } from '@shared/room';
+import { listLiveRoomCoWatchers } from '@/lib/social/LiveRoomSocialService';
 import { BlockedUsersPanel } from '@/components/BlockedUsersPanel';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -46,10 +45,10 @@ function presenceCopy(person: Relation, activity: FriendPresence | undefined): s
 
 export function FriendsScreen({
   onMessage,
-  currentRoomMembers = [],
+  currentRoomCode = null,
 }: {
   onMessage(userId: string): void;
-  currentRoomMembers?: readonly RoomMember[];
+  currentRoomCode?: string | null;
 }): JSX.Element {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [graph, setGraph] = useState<SocialGraph>(EMPTY);
@@ -83,16 +82,36 @@ export function FriendsScreen({
     return () => { active = false; window.clearInterval(timer); };
   }, []);
 
-  const currentRoomSocialKey = currentRoomMembers
-    .map((member) => `${member.socialUserId ?? ''}:${member.joinedAt}`)
-    .join('|');
   useEffect(() => {
+    if (currentRoomCode === null) {
+      setRoomSuggestions([]);
+      return;
+    }
     let active = true;
-    void getCurrentRoomSuggestions(currentRoomMembers).then((relations) => {
-      if (active) setRoomSuggestions(relations);
-    });
-    return () => { active = false; };
-  }, [currentRoomSocialKey]);
+    const refreshRoom = (): void => {
+      void listLiveRoomCoWatchers(currentRoomCode).then((result) => {
+        if (!active || result.status !== 'ok') return;
+        setRoomSuggestions(
+          result.data.map((person) => ({
+            kind: 'suggestion',
+            userId: person.userId,
+            displayName: person.displayName,
+            requestId: null,
+            createdAt: new Date().toISOString(),
+            avatarUrl: person.avatarUrl,
+            selectedBorderId: person.selectedBorderId,
+            context: 'current-room',
+          })),
+        );
+      });
+    };
+    refreshRoom();
+    const timer = window.setInterval(refreshRoom, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [currentRoomCode]);
 
   const combinedSuggestions = useMemo(() => {
     const existing = new Set(
@@ -125,6 +144,7 @@ export function FriendsScreen({
     setBusyId(null);
     if (result.status === 'ok') {
       setMessage(success);
+      setRoomSuggestions((current) => current.filter((person) => person.userId !== userId));
       await refresh();
     } else {
       setMessage(result.status === 'rate-limited' ? 'That action is being attempted too quickly.' : 'The friend action could not be completed.');
