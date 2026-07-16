@@ -97,5 +97,5 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [x] Write `PHASE_29_MEDIA_LIBRARY_HANDOFF.md` for Claude on `backend/phase-29-media-library`.
 - [x] Add source-neutral playback descriptors/adapters without changing YouTube behavior.
 - [x] Add owner-private Library metadata and device-local file mappings.
-- [ ] Add Electron-only Google Drive Picker/PKCE/safeStorage/range playback after security review.
-- [ ] Never download YouTube, bypass DRM, scrape catalogs, or relay participant media bytes.
+- [x] Add Electron-only Google Drive Picker/PKCE/safeStorage/range playback after security review.
+- [x] Never download YouTube, bypass DRM, scrape catalogs, or relay participant media bytes.

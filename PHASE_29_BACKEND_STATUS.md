@@ -26,10 +26,10 @@ Every capability still defaults to off, and no UI is wired.
 | Bridge/lease/handle types | `shared/mediaBridge.ts` | Complete |
 | Typed IPC channels | `shared/ipc.ts` | Complete |
 | Preload media surface | `electron/preload.ts` | Complete |
-| Capability gate | `electron/media/capabilities.ts` | Complete, 11 tests |
+| Capability gate | `electron/media/capabilities.ts` | Complete, 13 tests |
 | Local pick / streaming SHA-256 / mapping store | `electron/media/mappingStore.ts` | Complete, 22 tests |
 | Leases + byte-range parsing | `electron/media/leases.ts` | Complete, 24 tests |
-| IPC handlers + `nightwatch-media://` streaming | `electron/media/service.ts` | Complete, 21 tests |
+| IPC handlers + `nightwatch-media://` streaming | `electron/media/service.ts` | Complete, 22 tests |
 | Platform bridges | `src/platform/*` | Electron delegates; Discord/web `media: null` |
 | Library metadata | `supabase/migrations/0022_media_library.sql` | Owner reports applied successfully |
 | Library RLS tests | `supabase/tests/phase29_media_library_test.sql` | Owner reports all checks passed |
@@ -37,15 +37,15 @@ Every capability still defaults to off, and no UI is wired.
 ## Verification actually performed
 
 - `npm run typecheck` — passes.
-- `npm test` — 197 tests across 18 files, all passing (79 of them new, in
-  `electron/media/`; 56 new in `shared/`).
+- `npm test` — 265 tests across 22 files, all passing.
 - `npm run build:activity` — succeeds. Verified by grep that the Activity bundle
   contains no `nightwatch-media`, `pickLocalFile`, or `pickDriveFile` symbol: with
   `media: null` the whole surface tree-shakes out.
 - Electron renderer build — verified the production CSP emits
   `media-src 'self' nightwatch-media: blob:;`.
 - `npm run build -- --publish never` — succeeds and creates the Windows NSIS
-  installer plus blockmap.
+  installer plus blockmap. The app preload and isolated Picker preload are built
+  as separate single-entry bundles so neither preload is code-split.
 - Owner database run — migration `0022` applied and
   `phase29_media_library_test.sql` reported all checks passing.
 
@@ -131,14 +131,16 @@ All optional; all default to off/safe.
 | Key | Default | Effect |
 | --- | --- | --- |
 | `NIGHTWATCH_ENABLE_LOCAL_FILES` | unset (off) | `1` enables local selection + playback. |
-| `NIGHTWATCH_ENABLE_DRIVE` | unset (off) | Reserved. Has no effect while Drive is gated. |
-| `NIGHTWATCH_GOOGLE_CLIENT_ID` | unset | Reserved for the desktop OAuth client. |
+| `NIGHTWATCH_ENABLE_DRIVE` | unset (off) | `1` enables Drive only when every required Google value is configured. |
+| `NIGHTWATCH_GOOGLE_CLIENT_ID` | unset | Desktop OAuth client id. |
+| `NIGHTWATCH_GOOGLE_CLIENT_SECRET` | unset | Optional desktop client secret; never treated as confidential in the binary. |
+| `NIGHTWATCH_GOOGLE_PICKER_API_KEY` | unset | Google Picker API key restricted to the Picker API. |
+| `NIGHTWATCH_GOOGLE_APP_ID` | unset | Google Cloud project number used by Picker. |
 | `NIGHTWATCH_ENABLE_LIBRARY` | unset (off) | `1` enables cloud Library metadata. |
 | `NIGHTWATCH_MAX_MEDIA_BYTES` | 32 GiB | Packaged-app size ceiling. |
 
-No credentials are committed. Google Cloud setup (desktop OAuth client, consent
-screen, Picker API key/application ID) is not yet required, because Drive is not
-implemented.
+No credentials are committed. Drive remains disabled until the owner completes
+the Google Cloud setup and packaged OAuth/revocation/range acceptance.
 
 ## Boundaries held
 
@@ -161,5 +163,5 @@ The typed contracts are stable and safe to build against:
 Read `platform.media === null` as "this platform is YouTube-only — render no
 Library or file controls at all", and use `capabilities.reasons.*` to explain a
 disabled capability rather than showing a control that fails when pressed. Local
-files return real data once `NIGHTWATCH_ENABLE_LOCAL_FILES=1`; Drive returns
-`capability-disabled` until the next branch.
+files return real data once `NIGHTWATCH_ENABLE_LOCAL_FILES=1`; Drive becomes
+available only when its owner flag and full Google configuration are present.

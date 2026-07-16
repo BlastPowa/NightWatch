@@ -19,6 +19,8 @@ Last updated: 2026-07-16.
 - Drive still defaults off and requires the owner flag plus Google Cloud
   configuration. Packaged Drive acceptance and two-client custom-media
   synchronization remain outstanding.
+- Drive validation now passes strict typecheck, all 265 tests across 22 files,
+  the Discord Activity build, and Windows Electron/NSIS packaging.
 - Fixed on this branch: `main` could not typecheck or test at all, because Phase 28
   added component tests importing React Testing Library / user-event / jsdom without
   ever adding those dev dependencies to `package.json`.

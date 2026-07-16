@@ -2,6 +2,7 @@ import path from 'node:path';
 import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron/simple';
+import electronBuild from 'vite-plugin-electron';
 
 /**
  * Injects the production Content-Security-Policy at build time only.
@@ -56,12 +57,7 @@ export default defineConfig({
         },
       },
       preload: {
-        // Two preloads: the app renderer bridge, and the minimal Picker-window
-        // preload (Phase 29). Output names follow the entry keys.
-        input: {
-          preload: path.join(__dirname, 'electron/preload.ts'),
-          pickerPreload: path.join(__dirname, 'electron/media/pickerPreload.ts'),
-        },
+        input: path.join(__dirname, 'electron/preload.ts'),
         vite: {
           resolve: {
             alias: { '@shared': path.resolve(__dirname, 'shared') },
@@ -70,6 +66,32 @@ export default defineConfig({
             outDir: 'dist-electron',
             sourcemap: true,
             rollupOptions: { output: { format: 'cjs', entryFileNames: '[name].js' } },
+          },
+        },
+      },
+    }),
+    // The simple plugin deliberately inlines a preload into one chunk, which
+    // means Rollup cannot accept two preload inputs in the same build. Build
+    // the isolated Picker preload as its own single-entry Electron bundle.
+    electronBuild({
+      entry: 'electron/media/pickerPreload.ts',
+      onstart({ reload }) {
+        reload();
+      },
+      vite: {
+        resolve: {
+          alias: { '@shared': path.resolve(__dirname, 'shared') },
+        },
+        build: {
+          outDir: 'dist-electron',
+          sourcemap: true,
+          emptyOutDir: false,
+          rollupOptions: {
+            output: {
+              format: 'cjs',
+              entryFileNames: 'pickerPreload.js',
+              inlineDynamicImports: true,
+            },
           },
         },
       },

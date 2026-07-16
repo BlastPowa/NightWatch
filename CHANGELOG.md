@@ -1,7 +1,7 @@
 # Changelog
 
 
-## 0.1.23 - 2026-07-16
+## Unreleased
 
 ### Phase 29 Google Drive platform (branch `backend/phase-29-drive`)
 
@@ -56,6 +56,8 @@ mapping, encrypted storage round-trips and the no-plaintext rule, forged Picker
 payloads, trashed/`canDownload=false`/missing-checksum files, header hygiene,
 concurrent-attempt rejection, cancelled-attempt keeps the prior connection, and
 revocation cleanup.
+
+## 0.1.23 - 2026-07-16
 
 ### Phase 29 authorized media backend contracts (branch `backend/phase-29-media-library`)
 
