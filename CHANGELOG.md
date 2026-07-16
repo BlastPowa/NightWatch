@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## 0.1.23 - 2026-07-16
 
 ### Phase 29 authorized media backend contracts (branch `backend/phase-29-media-library`)
 
