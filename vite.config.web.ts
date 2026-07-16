@@ -13,6 +13,13 @@ function renameEntryHtml(): PluginOption {
       if (fs.existsSync(from)) {
         fs.renameSync(from, to);
       }
+      // The Activity/web deploy stays YouTube-only (Phase 29). The desktop
+      // Picker host page rides along from public/ and must not ship here,
+      // even inert.
+      const picker = path.resolve(__dirname, 'dist-web', 'picker.html');
+      if (fs.existsSync(picker)) {
+        fs.rmSync(picker);
+      }
     },
   };
 }

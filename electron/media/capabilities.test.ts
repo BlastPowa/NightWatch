@@ -6,6 +6,8 @@ const FLAGS = [
   'NIGHTWATCH_ENABLE_DRIVE',
   'NIGHTWATCH_ENABLE_LIBRARY',
   'NIGHTWATCH_GOOGLE_CLIENT_ID',
+  'NIGHTWATCH_GOOGLE_PICKER_API_KEY',
+  'NIGHTWATCH_GOOGLE_APP_ID',
   'NIGHTWATCH_MAX_MEDIA_BYTES',
 ];
 
@@ -69,21 +71,41 @@ describe('local files', () => {
   });
 });
 
-describe('drive stays gated', () => {
-  it('reports security-review-required even with the flag and a client id set', () => {
-    // Drive is not enabled merely because TypeScript builds. The flag exists so
-    // the surface is testable, not so it can be switched on early.
+describe('drive gating', () => {
+  it('stays off by default and reports disabled-by-owner', () => {
+    const capabilities = resolveCapabilities();
+    expect(capabilities.googleDrive).toBe(false);
+    expect(capabilities.reasons.googleDrive).toBe('disabled-by-owner');
+  });
+
+  it('reports not-configured when flagged on without the full OAuth config', () => {
     process.env['NIGHTWATCH_ENABLE_DRIVE'] = '1';
+    // Client id alone is not enough: the Picker needs its key and app id too.
     process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] = 'test-client-id.apps.googleusercontent.com';
     const capabilities = resolveCapabilities();
     expect(capabilities.googleDrive).toBe(false);
-    expect(capabilities.reasons.googleDrive).toBe('security-review-required');
+    expect(capabilities.reasons.googleDrive).toBe('not-configured');
   });
 
-  it('does not turn on html media by itself', () => {
+  it('turns on only with the flag AND client id AND picker key AND app id', () => {
     process.env['NIGHTWATCH_ENABLE_DRIVE'] = '1';
-    process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] = 'test-client-id';
-    expect(resolveCapabilities().htmlMedia).toBe(false);
+    process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] = 'test-client-id.apps.googleusercontent.com';
+    process.env['NIGHTWATCH_GOOGLE_PICKER_API_KEY'] = 'test-picker-key';
+    process.env['NIGHTWATCH_GOOGLE_APP_ID'] = '123456789';
+    const capabilities = resolveCapabilities();
+    expect(capabilities.googleDrive).toBe(true);
+    expect(capabilities.reasons.googleDrive).toBe('available');
+    expect(capabilities.htmlMedia).toBe(true);
+  });
+
+  it('full config without the owner flag stays off', () => {
+    // Configuration is not consent. Only the flag is.
+    process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] = 'test-client-id.apps.googleusercontent.com';
+    process.env['NIGHTWATCH_GOOGLE_PICKER_API_KEY'] = 'test-picker-key';
+    process.env['NIGHTWATCH_GOOGLE_APP_ID'] = '123456789';
+    const capabilities = resolveCapabilities();
+    expect(capabilities.googleDrive).toBe(false);
+    expect(capabilities.reasons.googleDrive).toBe('disabled-by-owner');
   });
 });
 

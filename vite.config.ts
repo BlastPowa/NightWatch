@@ -56,7 +56,12 @@ export default defineConfig({
         },
       },
       preload: {
-        input: path.join(__dirname, 'electron/preload.ts'),
+        // Two preloads: the app renderer bridge, and the minimal Picker-window
+        // preload (Phase 29). Output names follow the entry keys.
+        input: {
+          preload: path.join(__dirname, 'electron/preload.ts'),
+          pickerPreload: path.join(__dirname, 'electron/media/pickerPreload.ts'),
+        },
         vite: {
           resolve: {
             alias: { '@shared': path.resolve(__dirname, 'shared') },

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <!--
+      Phase 29 Google Picker host page.
+
+      Loaded ONLY inside the dedicated sandboxed, non-persistent Picker window
+      (electron/media/drivePicker.ts). This CSP is the page's whole world:
+      Google's required script/frame hosts and nothing else — no connect-src,
+      no media, no images from anywhere but Google's picker assets.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.gstatic.com; frame-src https://docs.google.com https://drive.google.com; style-src 'unsafe-inline' https://www.gstatic.com; img-src https://*.gstatic.com https://*.googleusercontent.com data:; connect-src https://www.googleapis.com https://content.googleapis.com"
+    />
+    <title>Choose a Drive file</title>
+    <style>
+      body {
+        margin: 0;
+        height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0b0e14;
+        color: #e6e8ee;
+        font-family: system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <p id="status">Loading Google Picker…</p>
+    <script>
+      // The preload exposes exactly two calls: getConfig() and report().
+      const bridge = window.nightwatchPicker;
+
+      function fail() {
+        if (bridge) bridge.report({ outcome: 'failed' });
+      }
+
+      async function start() {
+        if (!bridge) return; // Loaded outside the picker window: do nothing.
+        const config = await bridge.getConfig();
+        if (!config) return fail();
+
+        gapi.load('picker', () => {
+          try {
+            // Videos view, no upload surface, no multiselect.
+            const view = new google.picker.DocsView(google.picker.ViewId.DOCS_VIDEOS)
+              .setMode(google.picker.DocsViewMode.LIST);
+            const picker = new google.picker.PickerBuilder()
+              .setOAuthToken(config.accessToken)
+              .setDeveloperKey(config.pickerApiKey)
+              .setAppId(config.appId)
+              .addView(view)
+              .setCallback((data) => {
+                if (data.action === google.picker.Action.PICKED) {
+                  const doc = data.docs && data.docs[0];
+                  // Only the id is reported. The main process re-fetches and
+                  // validates all metadata itself; nothing else from the
+                  // Picker payload is trusted or forwarded.
+                  if (doc && typeof doc.id === 'string') {
+                    bridge.report({ outcome: 'picked', fileId: doc.id });
+                  } else {
+                    fail();
+                  }
+                } else if (data.action === google.picker.Action.CANCEL) {
+                  bridge.report({ outcome: 'cancelled' });
+                }
+              })
+              .build();
+            picker.setVisible(true);
+            document.getElementById('status').textContent = '';
+          } catch (error) {
+            fail();
+          }
+        });
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = start;
+      script.onerror = fail;
+      document.head.appendChild(script);
+    </script>
+  </body>
+</html>

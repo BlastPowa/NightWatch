@@ -8,6 +8,7 @@ import {
   net,
   Notification,
   protocol,
+  safeStorage,
   session,
   shell,
 } from 'electron';
@@ -21,7 +22,10 @@ import {
 } from '@shared/ipc';
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
+import { maxMediaSizeBytes } from './media/capabilities';
+import { DriveManager } from './media/driveManager';
 import { MediaService, makeSenderValidator, registerMediaScheme } from './media/service';
+import { DriveTokenStore } from './media/tokenStore';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
 
@@ -422,9 +426,32 @@ if (!hasSingleInstanceLock) {
 
     registerIpcHandlers();
 
+    // Drive manager only when the desktop OAuth client is configured; without
+    // it every Drive call answers typed 'not-configured'. Tokens are encrypted
+    // by safeStorage; if the OS cannot encrypt, Drive stays disconnected —
+    // there is no plaintext fallback.
+    const driveClientId = process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] ?? '';
+    const driveManager =
+      driveClientId.length > 0
+        ? new DriveManager({
+            fetchFn: (url, init) => net.fetch(url, init),
+            config: {
+              clientId: driveClientId,
+              clientSecret: process.env['NIGHTWATCH_GOOGLE_CLIENT_SECRET'] ?? null,
+            },
+            pickerApiKey: process.env['NIGHTWATCH_GOOGLE_PICKER_API_KEY'] ?? '',
+            appId: process.env['NIGHTWATCH_GOOGLE_APP_ID'] ?? '',
+            tokenStore: new DriveTokenStore(app.getPath('userData'), safeStorage),
+            maxSizeBytes: maxMediaSizeBytes,
+          })
+        : null;
+
     mediaService = new MediaService(
       app.getPath('userData'),
       makeSenderValidator((webContentsId) => knownWindowIds.has(webContentsId)),
+      undefined,
+      driveManager,
+      DEV_SERVER_URL ? `${DEV_SERVER_URL}picker.html` : 'app://nightwatch/picker.html',
     );
     // Register the private protocol and every media IPC handler before the
     // renderer can issue its first capability request.

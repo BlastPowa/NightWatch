@@ -51,6 +51,12 @@ export const IpcChannel = {
   MediaDisconnectDrive: 'media:disconnect-drive',
   MediaCreateLease: 'media:create-lease',
   MediaReleaseLease: 'media:release-lease',
+
+  // Picker-window-only channels (Phase 29). These are answered ONLY for the
+  // dedicated sandboxed Picker window's webContents — the app renderer never
+  // sees them, and the picker preload exposes nothing else.
+  PickerInit: 'picker:init',
+  PickerResult: 'picker:result',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
