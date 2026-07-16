@@ -5,6 +5,28 @@ import {
   type PlayerEvents,
   type PlayerState,
 } from '@/lib/player/types';
+import type {
+  CaptionFontSize,
+  CaptionLanguage,
+  CaptionMode,
+} from '@/lib/settings';
+
+export interface YouTubePlayerPreferences {
+  captionMode: CaptionMode;
+  captionLanguage: CaptionLanguage;
+  captionFontSize: CaptionFontSize;
+}
+
+const DEFAULT_PREFERENCES: YouTubePlayerPreferences = {
+  captionMode: 'youtube-default',
+  captionLanguage: 'auto',
+  captionFontSize: 0,
+};
+
+type CaptionCapablePlayer = YT.Player & {
+  getOptions?(module?: string): string[];
+  setOption?(module: string, option: string, value: unknown): void;
+};
 
 /**
  * Abstraction over the official YouTube IFrame player. All feature code
@@ -17,8 +39,14 @@ export class YouTubePlayer {
   private isReady = false;
   private destroyed = false;
   private pendingVideoId: string | null = null;
+  private captionFontSize: CaptionFontSize;
 
-  public constructor(private readonly events: PlayerEvents = {}) {}
+  public constructor(
+    private readonly events: PlayerEvents = {},
+    private readonly preferences: YouTubePlayerPreferences = DEFAULT_PREFERENCES,
+  ) {
+    this.captionFontSize = preferences.captionFontSize;
+  }
 
   /** Create the underlying iframe player inside the given container. */
   public async mount(container: HTMLElement): Promise<void> {
@@ -33,6 +61,14 @@ export class YouTubePlayer {
       playerVars: {
         playsinline: 1,
         rel: 0,
+        cc_load_policy:
+          this.preferences.captionMode === 'always-on'
+            ? (1 as YT.ClosedCaptionsLoadPolicy)
+            : undefined,
+        cc_lang_pref:
+          this.preferences.captionLanguage === 'auto'
+            ? undefined
+            : this.preferences.captionLanguage,
         origin: window.location.origin !== 'null' ? window.location.origin : undefined,
       },
       events: {
@@ -43,7 +79,11 @@ export class YouTubePlayer {
             this.pendingVideoId = null;
             this.player?.loadVideoById(videoId);
           }
+          this.applyCaptionFontSize();
           this.events.onReady?.();
+        },
+        onApiChange: () => {
+          this.applyCaptionFontSize();
         },
         onStateChange: (event) => {
           this.events.onStateChange?.(toPlayerState(event.data));
@@ -83,6 +123,12 @@ export class YouTubePlayer {
     }
   }
 
+  /** Apply a local caption size through YouTube's supported captions module. */
+  public setCaptionFontSize(size: CaptionFontSize): void {
+    this.captionFontSize = size;
+    this.applyCaptionFontSize();
+  }
+
   public getCurrentTime(): number {
     return this.player?.getCurrentTime() ?? 0;
   }
@@ -117,5 +163,16 @@ export class YouTubePlayer {
     this.pendingVideoId = null;
     this.player?.destroy();
     this.player = null;
+  }
+
+  private applyCaptionFontSize(): void {
+    if (!this.isReady || this.player === null) {
+      return;
+    }
+    const player = this.player as CaptionCapablePlayer;
+    const modules = player.getOptions?.() ?? [];
+    if (modules.includes('captions')) {
+      player.setOption?.('captions', 'fontSize', this.captionFontSize);
+    }
   }
 }

@@ -6,7 +6,7 @@ export type IconName =
   | 'music' | 'gaming' | 'live' | 'film' | 'entertainment' | 'comedy'
   | 'sports' | 'news' | 'education' | 'technology' | 'travel' | 'tools'
   | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right'
-  | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users';
+  | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users' | 'maximize';
 
 interface IconProps {
   name: IconName;
@@ -63,5 +63,6 @@ function glyph(name: IconName): JSX.Element {
     case 'send': return <><path d="m3 3 18 9-18 9 3-9-3-9Z" /><path d="M6 12h15" /></>;
     case 'clock': return <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>;
     case 'lock': return <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>;
+    case 'maximize': return <><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /><path d="m3 8 5-5M21 8l-5-5M3 16l5 5M21 16l-5 5" /></>;
   }
 }

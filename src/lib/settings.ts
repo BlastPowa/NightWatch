@@ -3,7 +3,26 @@
  * localStorage only — never synced to other members or any backend.
  */
 
-export type ThemeId = 'electric-teal' | 'shiny-gold' | 'legacy' | 'moonlit-violet' | 'crimson-theatre' | 'oceanic' | 'evergreen' | 'rose-noir' | 'doomsday' | 'brand-new-day' | 'alien-x' | 'obsidian' | 'custom';
+export type ThemeId =
+  | 'electric-teal'
+  | 'shiny-gold'
+  | 'legacy'
+  | 'moonlit-violet'
+  | 'crimson-theatre'
+  | 'oceanic'
+  | 'evergreen'
+  | 'rose-noir'
+  | 'doomsday'
+  | 'brand-new-day'
+  | 'alien-x'
+  | 'obsidian'
+  | 'obsidian-red'
+  | 'obsidian-blue'
+  | 'ember-noir'
+  | 'arctic-light'
+  | 'solar-flare'
+  | 'neon-night'
+  | 'custom';
 
 export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'electric-teal', label: 'Electric Teal' },
@@ -18,6 +37,12 @@ export const THEMES: ReadonlyArray<{ id: ThemeId; label: string }> = [
   { id: 'brand-new-day', label: 'Spider-Man: Brand New Day' },
   { id: 'alien-x', label: 'Alien X' },
   { id: 'obsidian', label: 'Obsidian Black' },
+  { id: 'obsidian-red', label: 'Obsidian Red' },
+  { id: 'obsidian-blue', label: 'Obsidian Blue' },
+  { id: 'ember-noir', label: 'Ember Noir' },
+  { id: 'arctic-light', label: 'Arctic Light' },
+  { id: 'solar-flare', label: 'Solar Flare' },
+  { id: 'neon-night', label: 'Neon Night' },
   { id: 'custom', label: 'Custom Atmosphere' },
 ];
 
@@ -42,7 +67,19 @@ export const ACCENT_COLORS = [
 
 export type AccentColor = string;
 export type UiDensity = 'compact' | 'comfortable' | 'spacious';
-export type BackgroundStyle = 'midnight' | 'aurora' | 'studio';
+export type BackgroundStyle =
+  | 'midnight'
+  | 'aurora'
+  | 'studio'
+  | 'nebula'
+  | 'ember'
+  | 'frost'
+  | 'cinema';
+export type CardStyle = 'glass' | 'solid' | 'soft' | 'outline';
+export type CaptionMode = 'youtube-default' | 'always-on';
+export type CaptionLanguage = 'auto' | 'en' | 'es' | 'fr' | 'de' | 'pt' | 'ja' | 'ko';
+export type CaptionFontSize = -1 | 0 | 1 | 2 | 3;
+export type UiFont = 'system' | 'cinematic' | 'editorial' | 'modern' | 'classic' | 'comic' | 'mono';
 export interface CustomAtmosphere { canvas: string; surface: string; panel: string; }
 
 export interface Settings {
@@ -58,12 +95,22 @@ export interface Settings {
   cornerRadiusPx: number;
   density: UiDensity;
   backgroundStyle: BackgroundStyle;
+  cardStyle: CardStyle;
   customAtmosphere: CustomAtmosphere;
   reduceMotion: boolean;
   highContrast: boolean;
   textScalePercent: number;
   reduceTransparency: boolean;
   enhancedFocus: boolean;
+  /** Enable muted official YouTube previews after a short desktop hover. */
+  hoverPreviewEnabled: boolean;
+  /** Keep the synchronized room player visible while visiting other screens. */
+  miniPlayerEnabled: boolean;
+  /** Request captions supplied by YouTube when the player initializes. */
+  captionMode: CaptionMode;
+  captionLanguage: CaptionLanguage;
+  captionFontSize: CaptionFontSize;
+  uiFont: UiFont;
 }
 
 export const NEUTRAL_FILTERS: VideoFilters = { brightness: 100, contrast: 100, saturation: 100 };
@@ -79,12 +126,19 @@ export const DEFAULT_SETTINGS: Settings = {
   cornerRadiusPx: 16,
   density: 'comfortable',
   backgroundStyle: 'midnight',
+  cardStyle: 'glass',
   customAtmosphere: { canvas: '#050507', surface: '#111217', panel: '#090a0e' },
   reduceMotion: false,
   highContrast: false,
   textScalePercent: 100,
   reduceTransparency: false,
   enhancedFocus: true,
+  hoverPreviewEnabled: true,
+  miniPlayerEnabled: true,
+  captionMode: 'youtube-default',
+  captionLanguage: 'auto',
+  captionFontSize: 0,
+  uiFont: 'system',
 };
 
 const STORAGE_KEY = 'nightwatch:settings';
@@ -115,11 +169,35 @@ function sanitize(raw: unknown): Settings {
   )
     ? (partial.density as UiDensity)
     : DEFAULT_SETTINGS.density;
-  const backgroundStyle: BackgroundStyle = ['midnight', 'aurora', 'studio'].includes(
+  const backgroundStyle: BackgroundStyle = ['midnight', 'aurora', 'studio', 'nebula', 'ember', 'frost', 'cinema'].includes(
     partial.backgroundStyle as string,
   )
     ? (partial.backgroundStyle as BackgroundStyle)
     : DEFAULT_SETTINGS.backgroundStyle;
+  const cardStyle: CardStyle = ['glass', 'solid', 'soft', 'outline'].includes(
+    partial.cardStyle as string,
+  )
+    ? (partial.cardStyle as CardStyle)
+    : DEFAULT_SETTINGS.cardStyle;
+  const captionMode: CaptionMode = ['youtube-default', 'always-on'].includes(
+    partial.captionMode as string,
+  )
+    ? (partial.captionMode as CaptionMode)
+    : DEFAULT_SETTINGS.captionMode;
+  const captionLanguage: CaptionLanguage = ['auto', 'en', 'es', 'fr', 'de', 'pt', 'ja', 'ko'].includes(
+    partial.captionLanguage as string,
+  )
+    ? (partial.captionLanguage as CaptionLanguage)
+    : DEFAULT_SETTINGS.captionLanguage;
+  const captionSize = Number(partial.captionFontSize);
+  const captionFontSize: CaptionFontSize = [-1, 0, 1, 2, 3].includes(captionSize)
+    ? (captionSize as CaptionFontSize)
+    : DEFAULT_SETTINGS.captionFontSize;
+  const uiFont: UiFont = ['system', 'cinematic', 'editorial', 'modern', 'classic', 'comic', 'mono'].includes(
+    partial.uiFont as string,
+  )
+    ? (partial.uiFont as UiFont)
+    : DEFAULT_SETTINGS.uiFont;
   return {
     theme,
     accent,
@@ -127,6 +205,7 @@ function sanitize(raw: unknown): Settings {
     cornerRadiusPx: clamp(Number(partial.cornerRadiusPx ?? 16) || 0, 4, 28),
     density,
     backgroundStyle,
+    cardStyle,
     customAtmosphere: {
       canvas: safeColor(customAtmosphere.canvas, DEFAULT_SETTINGS.customAtmosphere.canvas),
       surface: safeColor(customAtmosphere.surface, DEFAULT_SETTINGS.customAtmosphere.surface),
@@ -138,6 +217,14 @@ function sanitize(raw: unknown): Settings {
     reduceTransparency:
       typeof partial.reduceTransparency === 'boolean' ? partial.reduceTransparency : false,
     enhancedFocus: typeof partial.enhancedFocus === 'boolean' ? partial.enhancedFocus : true,
+    hoverPreviewEnabled:
+      typeof partial.hoverPreviewEnabled === 'boolean' ? partial.hoverPreviewEnabled : true,
+    miniPlayerEnabled:
+      typeof partial.miniPlayerEnabled === 'boolean' ? partial.miniPlayerEnabled : true,
+    captionMode,
+    captionLanguage,
+    captionFontSize,
+    uiFont,
     chatFilterEnabled:
       typeof partial.chatFilterEnabled === 'boolean' ? partial.chatFilterEnabled : true,
     richPresenceEnabled:

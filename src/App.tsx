@@ -53,6 +53,7 @@ export function App(): JSX.Element {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [browseSearchRequest, setBrowseSearchRequest] = useState<{ query: string; nonce: number } | null>(null);
   const [browseSearching, setBrowseSearching] = useState(false);
+  const [roomHasVideo, setRoomHasVideo] = useState(false);
   const connectionStatus = useConnectionStatus();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
@@ -70,6 +71,8 @@ export function App(): JSX.Element {
     document.documentElement.dataset['theme'] = settings.theme;
     document.documentElement.dataset['density'] = settings.density;
     document.documentElement.dataset['background'] = settings.backgroundStyle;
+    document.documentElement.dataset['cardStyle'] = settings.cardStyle;
+    document.documentElement.dataset['uiFont'] = settings.uiFont;
     document.documentElement.dataset['reduceMotion'] = String(settings.reduceMotion);
     document.documentElement.dataset['highContrast'] = String(settings.highContrast);
     document.documentElement.dataset['reduceTransparency'] = String(settings.reduceTransparency);
@@ -229,6 +232,7 @@ export function App(): JSX.Element {
   );
 
   const handleLeaveRoom = useCallback((): void => {
+    setRoomHasVideo(false);
     setRoomCode(null);
   }, []);
 
@@ -351,28 +355,37 @@ export function App(): JSX.Element {
         {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
         {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
         {view === 'about' && <AboutScreen />}
-        {/* The room stays mounted while other views are open so the player,
-            sync engine, and chat survive navigation (host state has no
-            server-side source to restore from). */}
-        <div style={{ display: view === 'main' ? 'contents' : 'none' }}>
-          {inRoom ? (
-            <RoomScreen
-              room={session.state}
-              service={session.service}
-              selfId={identity.id}
-              meta={roomMeta}
-              pendingVideo={pendingVideo}
-              onPendingHandled={() => setPendingVideo(null)}
-              onLeave={handleLeaveRoom}
-            />
-          ) : (
+        {/* A joined room always remains mounted. Navigating away changes the
+            presentation of the SAME official iframe instead of creating a
+            second player, so sync, chat, and host state survive navigation. */}
+        {inRoom ? (
+          <RoomScreen
+            room={session.state}
+            service={session.service}
+            selfId={identity.id}
+            meta={roomMeta}
+            presentation={
+              view === 'main'
+                ? 'full'
+                : settings.miniPlayerEnabled && roomHasVideo
+                  ? 'mini'
+                  : 'hidden'
+            }
+            pendingVideo={pendingVideo}
+            onPendingHandled={() => setPendingVideo(null)}
+            onMediaStateChange={setRoomHasVideo}
+            onReturnToRoom={() => setView('main')}
+            onLeave={handleLeaveRoom}
+          />
+        ) : (
+          view === 'main' && (
             <HomeScreen
               initialName={identity?.displayName ?? ''}
               lockedRoom={fixedRoomCode !== null}
               onEnterRoom={handleEnterRoom}
             />
-          )}
-        </div>
+          )
+        )}
 
         {unlockToast !== null && (
           <div className="unlock-toast">

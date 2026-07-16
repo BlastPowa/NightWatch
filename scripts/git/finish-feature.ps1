@@ -10,7 +10,11 @@ if ((git status --porcelain).Count -eq 0) { throw 'There are no changes to finis
 $commitArgs = @('commit','-m',$Message)
 if ($AutoMerge) { $commitArgs += @('-m','Automerge: reviewed') }
 Run git @('add','-A'); Run git $commitArgs; Run git @('fetch','origin','--tags','--prune'); Run git @('rebase','origin/main')
-Run npm @('ci'); Run npm @('run','typecheck'); Run npm @('run','build:activity'); Run npm @('run','build')
+Run npm @('ci')
+Run npm @('run','typecheck')
+Run npm @('test')
+Run npm @('run','build:activity')
+Run npm @('run','build','--','--publish','never')
 $remote = git ls-remote --heads origin "refs/heads/$branch"
 if ($remote) { Run git @('push','--force-with-lease','-u','origin',$branch) } else { Run git @('push','-u','origin',$branch) }
 Write-Host "PR: https://github.com/BlastPowa/NightWatch/compare/main...$branch" -ForegroundColor Green

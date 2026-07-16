@@ -57,4 +57,16 @@ describe('AppShell', () => {
     await user.click(screen.getByRole('button', { name: 'Search' }));
     expect(submitSpy).toHaveBeenCalledWith('midnight cinema');
   });
+
+  it('uses a labeled themed action for the active room', async () => {
+    const user = userEvent.setup();
+    const { onNavigate } = renderShell({
+      room: { active: true, code: 'ABC234', name: 'Friday night', memberCount: 3 },
+    });
+
+    const roomAction = screen.getByRole('button', { name: 'Open current room' });
+    expect(roomAction.textContent).toContain('Open room');
+    await user.click(roomAction);
+    expect(onNavigate).toHaveBeenCalledWith('main');
+  });
 });

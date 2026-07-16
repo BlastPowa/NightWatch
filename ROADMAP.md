@@ -1,8 +1,8 @@
 # NightWatch Development Roadmap
 
-## Current delivery state (2026-07-15)
+## Current delivery state (2026-07-16)
 
-`v0.1.22` is the public baseline. Phase 24 is merged through PRs #34 and #35, and Phases 25–28 are merged through automated PR #36: player-first room dock; banner profiles, Friends, authorized-roster Messages, friend-media discovery; remaining-screen consistency; component interaction tests; responsive visual QA; and Windows packaging. Owner acceptance still covers real two-client, Discord Activity, SQL deployment, and updater round-trip. Phase 29 remains a separately gated source-neutral library for user-owned local and Google Drive files. It does not download YouTube, scrape streaming sites, bypass DRM, or host a shared media catalog. `STATUS.md`, `TASKS.md`, and `CODEX_HANDOFF.md` are authoritative for active work; historical phase entries below remain the delivery ledger.
+`v0.1.22` is the public baseline. Phase 24 is merged through PRs #34 and #35, and Phases 25–28 are merged through automated PR #36. The final `frontend/phase-28-control-polish` patch is prepared with search/control corrections, official muted hover previews, a same-instance synchronized mini-player, official caption preferences, expanded atmosphere/backdrop/card/font customization, rounded scrollbars, and 62 passing tests. Owner acceptance still covers real two-client, Discord Activity, SQL deployment, caption-provider behavior, and updater round-trip. Phase 29 remains a separately gated source-neutral library for user-owned local and Google Drive files; its Claude handoff is ready, and it does not download YouTube, extract protected services, bypass DRM, relay media, or host a shared catalog. `STATUS.md`, `TASKS.md`, and `CODEX_HANDOFF.md` are authoritative for active work; historical phase entries below remain the delivery ledger.
 
 ## Project Goal
 

@@ -6,6 +6,8 @@ import { initCloudSync } from '@/lib/engagement/CloudSync';
 import { electronBridge } from '@/platform/electronBridge';
 import { setPlatformBridge, webBridge } from '@/platform/PlatformBridge';
 import '@/index.css';
+import '@/styles/phase28-controls.css';
+import '@/styles/phase28-player.css';
 
 setPlatformBridge(typeof window.nightwatch !== 'undefined' ? electronBridge : webBridge);
 initCloudSync();

@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-15 after Phases 25–28 merged through PR #36.
+Last updated: 2026-07-16 during the final Phase 28 control-polish branch.
 
 ## Phase 24 backend lane (`backend/phase-24-ui-support`)
 
@@ -52,13 +52,21 @@ Last updated: 2026-07-15 after Phases 25–28 merged through PR #36.
 
 - [x] Add dev-only React Testing Library, user-event, and jsdom.
 - [x] Add shell, avatar, and room-dock keyboard interaction tests; verify responsive layouts and preference variants in code/browser review.
-- [x] Run clean install, strict typecheck, 55 tests, Activity build, Electron build, and Windows packaging.
+- [x] Fix the composite search focus rectangle and add the labeled theme-driven room action.
+- [x] Add capability-gated Friends watching view, expanded categories, full-card hover surfaces, and delayed muted official iframe previews.
+- [x] Keep the same room/player instance mounted as a responsive mini-player across non-room screens.
+- [x] Add official YouTube caption preference/language/font-size support without scraping or generated subtitles.
+- [x] Add Browsing settings, six atmospheres, seven backdrops, four card styles, seven local font profiles, animated secondary colours, rounded scrollbars, and content-only Settings scrolling.
+- [x] Run clean install, strict typecheck, 62 tests, Activity build, Electron build, and Windows packaging.
 - [ ] Owner: run packaged two-client, real Discord Activity, and updater round-trip acceptance.
+- [ ] Owner: confirm real caption-track behavior and mini-player continuity with host/viewer clients.
 - [x] Update active documentation; publish only after the remaining owner acceptance.
 - [ ] Plan the breaking Electron/Vite/Discord Activity SDK security upgrades as a separate platform PR; do not force them into this UI release.
+- [ ] Merge the reviewed `frontend/phase-28-control-polish` PR; do not push directly to `main`.
 
 ## Phase 29 — separately gated media library
 
+- [x] Write `PHASE_29_MEDIA_LIBRARY_HANDOFF.md` for Claude on `backend/phase-29-media-library`.
 - [ ] Add source-neutral playback descriptors/adapters without changing YouTube behavior.
 - [ ] Add owner-private Library metadata and device-local file mappings.
 - [ ] Add Electron-only Google Drive Picker/PKCE/safeStorage/range playback after security review.

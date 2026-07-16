@@ -5,6 +5,7 @@ import { Icon, type IconName } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { resolveExternalAssetUrl } from '@/lib/assets';
 import { getFriendMediaPresence, type FriendMediaPresence } from '@/lib/social/PresenceService';
+import { useSettings } from '@/hooks/useSettings';
 
 interface DiscoveryPanelProps {
   callerId: string;
@@ -17,7 +18,7 @@ interface DiscoveryPanelProps {
   onQueueAdd(videoId: string, title: string): boolean;
 }
 
-type BrowseMode = 'trending' | 'search' | 'history';
+type BrowseMode = 'trending' | 'search' | 'friends' | 'history';
 type Category = { id: string; label: string; icon: IconName; query?: string };
 type BrowseItem = SearchResult & { friendActivity?: FriendMediaPresence };
 
@@ -44,6 +45,10 @@ const CATEGORIES: readonly Category[] = [
   { id: 'fashion', label: 'Fashion', icon: 'profile', query: 'fashion style' },
   { id: 'podcasts', label: 'Podcasts', icon: 'live', query: 'video podcast' },
   { id: 'lifestyle', label: 'Lifestyle', icon: 'home', query: 'lifestyle' },
+  { id: 'anime', label: 'Anime', icon: 'sparkle', query: 'official anime clips trailers' },
+  { id: 'marvel', label: 'Marvel', icon: 'entertainment', query: 'Marvel official trailers clips' },
+  { id: 'tv-shows', label: 'TV Shows', icon: 'film', query: 'official TV show trailers clips' },
+  { id: 'trailers', label: 'Movie Trailers', icon: 'play', query: 'official movie trailers' },
 ];
 
 const OUTCOME_MESSAGE: Record<string, string> = {
@@ -68,6 +73,10 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, frie
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const requestGenerationRef = useRef(0);
   const [categoryEdges, setCategoryEdges] = useState({ left: false, right: true });
+  const settings = useSettings();
+  const previewAllowed = useHoverPreviewAllowed(
+    settings.hoverPreviewEnabled && !settings.reduceMotion,
+  );
 
   useEffect(() => {
     const track = categoryRef.current;
@@ -204,6 +213,15 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, frie
     setMessage(history.length === 0 ? 'This room has no watch history yet.' : null);
   }
 
+  function showFriends(): void {
+    ++requestGenerationRef.current;
+    setMode('friends');
+    setLoading(false);
+    setLoadingMore(false);
+    setNextToken(null);
+    setMessage(friendResults.length === 0 ? 'No friends are sharing a video right now.' : null);
+  }
+
   useEffect(() => { void Promise.all([loadTrending(''), loadHistory()]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { void loadHistory(); }, [roomCode]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -227,6 +245,11 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, frie
     const timer = window.setInterval(() => { void refresh(); }, 30_000);
     return () => { active = false; window.clearInterval(timer); };
   }, [callerId, friendMediaPresence]);
+  useEffect(() => {
+    if (mode === 'friends') {
+      setMessage(friendResults.length === 0 ? 'No friends are sharing a video right now.' : null);
+    }
+  }, [friendResults, mode]);
   useEffect(() => {
     if (searchRequest !== null) void loadSearch(searchRequest.query);
   }, [searchRequest?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -277,22 +300,40 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, frie
         <button type="button" className="category-scroll category-scroll-right" disabled={!categoryEdges.right} onClick={() => moveCategories(1)} aria-label="Scroll video categories right"><Icon name="chevron-right" /></button>
       </div>
 
-      <div className="browse-view-tabs" role="tablist" aria-label="Browse views">
-        <button type="button" role="tab" aria-selected={mode !== 'history'} className={mode !== 'history' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
+      <div
+        className="browse-view-tabs"
+        role="tablist"
+        aria-label="Browse views"
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          const tabs = Array.from(
+            event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+          );
+          const currentIndex = tabs.indexOf(document.activeElement as HTMLButtonElement);
+          if (currentIndex < 0 || tabs.length === 0) return;
+          event.preventDefault();
+          const direction = event.key === 'ArrowRight' ? 1 : -1;
+          const next = tabs[(currentIndex + direction + tabs.length) % tabs.length];
+          next?.focus();
+          next?.click();
+        }}
+      >
+        <button type="button" role="tab" aria-selected={mode === 'trending' || mode === 'search'} className={mode === 'trending' || mode === 'search' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
+        {friendMediaPresence && <button type="button" role="tab" aria-selected={mode === 'friends'} className={mode === 'friends' ? 'browse-view-active' : ''} onClick={showFriends}>Friends watching</button>}
         <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={showHistory}>Previously watched</button>
       </div>
 
       {loading && <BrowseLoading />}
-      {!loading && message !== null && <div className="discovery-empty" role="status"><Icon name="search" size={28} /><strong>{message}</strong><button type="button" className="button" onClick={() => void retryCurrentView()}>{mode === 'history' ? 'Refresh history' : 'Try again'}</button></div>}
+      {!loading && message !== null && <div className="discovery-empty" role="status"><Icon name="search" size={28} /><strong>{message}</strong><button type="button" className="button" onClick={() => mode === 'friends' ? void loadTrending(category) : void retryCurrentView()}>{mode === 'history' ? 'Refresh history' : mode === 'friends' ? 'Back to discover' : 'Try again'}</button></div>}
 
-      {!loading && friendResults.length > 0 && <VideoShelf title="Friends are watching" eyebrow="Shared by friends" items={friendResults} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+      {!loading && friendResults.length > 0 && mode !== 'history' && <VideoShelf title="Friends are watching" eyebrow="Shared by friends" items={friendResults} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 
-      {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+      {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 
-      {!loading && mode !== 'history' && results.length > 0 && (
+      {!loading && (mode === 'trending' || mode === 'search') && results.length > 0 && (
         <div className="browse-results">
-          {history.length > 0 && <VideoShelf title="Continue watching" eyebrow="Pick up together" items={history.slice(0, 8)} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
-          <VideoGrid title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={results} isHost={isHost} queuedId={queuedId} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
+          {history.length > 0 && <VideoShelf title="Continue watching" eyebrow="Pick up together" items={history.slice(0, 8)} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+          <VideoGrid title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={results} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
         </div>
       )}
 
@@ -308,10 +349,11 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, frie
 
 interface ShelfProps {
   title: string; eyebrow: string; items: readonly BrowseItem[]; isHost: boolean; queuedId: string | null;
+  previewAllowed: boolean;
   onPlay(videoId: string, title: string): void; onQueue(result: BrowseItem): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void;
 }
 
-function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
+function VideoShelf({ title, eyebrow, items, isHost, queuedId, previewAllowed, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
   const trackRef = useRef<HTMLUListElement | null>(null);
   const [edges, setEdges] = useState({ left: false, right: true });
   useEffect(() => {
@@ -334,26 +376,64 @@ function VideoShelf({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, 
     <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={`shelf-${title.replace(/\W/g, '-').toLowerCase()}`}>{title}</h2></div><div className="shelf-controls"><span>{items.length} videos</span><button type="button" disabled={!edges.left} onClick={() => move(-1)} aria-label={`Scroll ${title} left`}><Icon name="chevron-left" /></button><button type="button" disabled={!edges.right} onClick={() => move(1)} aria-label={`Scroll ${title} right`}><Icon name="chevron-right" /></button></div></header>
     <div className="shelf-viewport" data-can-scroll-left={edges.left} data-can-scroll-right={edges.right}>
     <ul className="shelf-track" ref={trackRef} tabIndex={0} aria-label={`${title} videos`}>
-      {items.map((result) => <MediaCard key={`${result.videoId}-${result.friendActivity?.userId ?? 'media'}`} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
+      {items.map((result) => <MediaCard key={`${result.videoId}-${result.friendActivity?.userId ?? 'media'}`} result={result} isHost={isHost} queued={queuedId === result.videoId} previewAllowed={previewAllowed} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
     </ul>
     </div>
   </section>;
 }
 
-function VideoGrid({ title, eyebrow, items, isHost, queuedId, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
+function VideoGrid({ title, eyebrow, items, isHost, queuedId, previewAllowed, onPlay, onQueue, onImageError }: ShelfProps): JSX.Element {
   const headingId = `grid-${title.replace(/\W/g, '-').toLowerCase()}`;
   return <section className="video-grid-section" aria-labelledby={headingId}>
     <header className="shelf-heading"><div><span className="eyebrow">{eyebrow}</span><h2 id={headingId}>{title}</h2></div><span className="result-count">{items.length} videos · YouTube</span></header>
     <ul className="media-grid">
-      {items.map((result) => <MediaCard key={`${result.videoId}-${result.friendActivity?.userId ?? 'media'}`} result={result} isHost={isHost} queued={queuedId === result.videoId} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
+      {items.map((result) => <MediaCard key={`${result.videoId}-${result.friendActivity?.userId ?? 'media'}`} result={result} isHost={isHost} queued={queuedId === result.videoId} previewAllowed={previewAllowed} onPlay={onPlay} onQueue={onQueue} onImageError={onImageError} />)}
     </ul>
   </section>;
 }
 
-function MediaCard({ result, isHost, queued, onPlay, onQueue, onImageError }: { result: BrowseItem; isHost: boolean; queued: boolean; onPlay(videoId: string, title: string): void; onQueue(result: BrowseItem): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void }): JSX.Element {
-  return <li className="media-card">
+function MediaCard({ result, isHost, queued, previewAllowed, onPlay, onQueue, onImageError }: { result: BrowseItem; isHost: boolean; queued: boolean; previewAllowed: boolean; onPlay(videoId: string, title: string): void; onQueue(result: BrowseItem): void; onImageError(event: SyntheticEvent<HTMLImageElement>): void }): JSX.Element {
+  const [previewing, setPreviewing] = useState(false);
+  const previewTimerRef = useRef<number | null>(null);
+
+  function clearPreviewTimer(): void {
+    if (previewTimerRef.current !== null) {
+      window.clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+  }
+
+  function startPreview(): void {
+    if (!previewAllowed || previewing) return;
+    clearPreviewTimer();
+    previewTimerRef.current = window.setTimeout(() => {
+      previewTimerRef.current = null;
+      setPreviewing(true);
+    }, 800);
+  }
+
+  function stopPreview(): void {
+    clearPreviewTimer();
+    setPreviewing(false);
+  }
+
+  useEffect(() => {
+    if (!previewAllowed) stopPreview();
+    return clearPreviewTimer;
+  }, [previewAllowed]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return <li className={`media-card${previewing ? ' media-card-previewing' : ''}`} onPointerEnter={startPreview} onPointerLeave={stopPreview}>
     <div className="media-thumb">
       <img src={resolveExternalAssetUrl(result.thumbnailUrl) ?? ''} alt="" loading="lazy" onError={onImageError} />
+      {previewing && (
+        <iframe
+          className="media-hover-preview"
+          src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(result.videoId)}?autoplay=1&mute=1&controls=1&playsinline=1&rel=0`}
+          title={`Preview ${result.title}`}
+          allow="autoplay; encrypted-media; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      )}
       {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
       {result.friendActivity !== undefined && <span className="friend-watch-chip"><ProfileAvatar src={result.friendActivity.avatarUrl} name={result.friendActivity.displayName} className={result.friendActivity.selectedBorderId !== null ? `friend-watch-avatar border-${result.friendActivity.selectedBorderId}` : 'friend-watch-avatar'} /><span><strong>{result.friendActivity.displayName}</strong><small>watching now</small></span></span>}
       <div className="media-card-actions">
@@ -361,8 +441,43 @@ function MediaCard({ result, isHost, queued, onPlay, onQueue, onImageError }: { 
         <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queued ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
       </div>
     </div>
-    <div className="media-card-copy"><ChannelAvatar name={result.channelTitle || result.title} src={result.channelThumbnailUrl} /><span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span></div>
+    <div className={`media-card-copy${previewing ? ' media-card-copy-previewing' : ''}`}>
+      {previewing ? (
+        <div className="media-preview-actions" aria-label={`Actions for ${result.title}`}>
+          {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId, result.title)}><Icon name="play" size={15} />Play now</button>}
+          <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queued ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
+        </div>
+      ) : (
+        <>
+          <ChannelAvatar name={result.channelTitle || result.title} src={result.channelThumbnailUrl} />
+          <span><strong title={result.title}>{result.title}</strong><small title={result.channelTitle || 'YouTube'}>{result.channelTitle || 'YouTube'}</small></span>
+        </>
+      )}
+    </div>
   </li>;
+}
+
+function useHoverPreviewAllowed(enabled: boolean): boolean {
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    if (!enabled) {
+      setAllowed(false);
+      return;
+    }
+    const pointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const viewport = window.matchMedia('(min-width: 900px)');
+    const update = (): void => setAllowed(pointer.matches && viewport.matches);
+    update();
+    pointer.addEventListener('change', update);
+    viewport.addEventListener('change', update);
+    return () => {
+      pointer.removeEventListener('change', update);
+      viewport.removeEventListener('change', update);
+    };
+  }, [enabled]);
+
+  return allowed;
 }
 
 function ChannelAvatar({ name, src }: { name: string; src: string }): JSX.Element {
