@@ -118,5 +118,7 @@ export async function createDiscordBridge(clientId: string): Promise<PlatformBri
     // protocol version, so a room containing one never starts a custom-media
     // session and no participant is left behind silently.
     media: null,
+    // The Activity iframe cannot hold a refresh token safely. Desktop only.
+    youtubeAccount: null,
   };
 }

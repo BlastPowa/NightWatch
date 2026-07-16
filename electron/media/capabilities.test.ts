@@ -1,10 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { maxMediaSizeBytes, resolveCapabilities } from './capabilities';
+import {
+  isYouTubeAccountEnabled,
+  maxMediaSizeBytes,
+  resolveCapabilities,
+} from './capabilities';
 
 const FLAGS = [
   'NIGHTWATCH_ENABLE_LOCAL_FILES',
   'NIGHTWATCH_ENABLE_DRIVE',
   'NIGHTWATCH_ENABLE_LIBRARY',
+  'NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT',
   'NIGHTWATCH_GOOGLE_CLIENT_ID',
   'NIGHTWATCH_GOOGLE_PICKER_API_KEY',
   'NIGHTWATCH_GOOGLE_APP_ID',
@@ -116,6 +121,28 @@ describe('library', () => {
     const capabilities = resolveCapabilities();
     expect(capabilities.library).toBe(true);
     expect(capabilities.reasons.library).toBe('available');
+  });
+});
+
+describe('YouTube account gating', () => {
+  it('requires both the explicit owner flag and the desktop OAuth client id', () => {
+    expect(isYouTubeAccountEnabled()).toBe(false);
+
+    process.env['NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT'] = '1';
+    expect(isYouTubeAccountEnabled()).toBe(false);
+
+    process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] =
+      'test-client-id.apps.googleusercontent.com';
+    expect(isYouTubeAccountEnabled()).toBe(true);
+  });
+
+  it('does not accept truthy-looking flag values', () => {
+    process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] =
+      'test-client-id.apps.googleusercontent.com';
+    for (const value of ['true', 'yes', 'on', '0']) {
+      process.env['NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT'] = value;
+      expect(isYouTubeAccountEnabled()).toBe(false);
+    }
   });
 });
 

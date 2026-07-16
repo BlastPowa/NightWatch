@@ -2,6 +2,21 @@
 
 Last updated: 2026-07-16.
 
+## Phase 30 account/platform work in review
+
+- `backend/phase-30-account-drive` adds a disabled-by-default Electron bridge
+  for an optional read-only YouTube account connection. It uses a separate
+  `youtube.readonly` consent grant and a separate encrypted credential file;
+  it never changes the official player session.
+- The shared Google PKCE flow now accepts only the two explicitly supported
+  scopes (`drive.file` and `youtube.readonly`) and revokes a new grant if
+  secure token persistence fails.
+- Validation passes strict typecheck, all 283 tests across 25 files, the
+  Discord Activity production build, and Windows Electron/NSIS packaging with
+  publishing disabled.
+- Google Cloud and release-variable setup is documented in
+  `GOOGLE_MEDIA_SETUP.md`. No credential values are committed.
+
 ## Phase 29 authorized media (backend and initial frontend merged)
 
 - PR #39 merged the Phase 29 typed contracts, the Electron

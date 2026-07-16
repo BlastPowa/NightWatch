@@ -6,7 +6,11 @@ import type {
   WindowState,
 } from '@shared/ipc';
 import { mediaFail, unsupportedPlatformCapabilities } from '@shared/media';
-import { disconnectedDriveState, type MediaPlatformBridge } from '@shared/mediaBridge';
+import {
+  disconnectedDriveState,
+  type MediaPlatformBridge,
+  type YouTubeAccountBridge,
+} from '@shared/mediaBridge';
 
 /**
  * Platform adapter (§9, ADR-008): the renderer core talks to the host
@@ -52,6 +56,12 @@ export interface PlatformBridge {
    * file controls at all, rather than controls that fail when pressed.
    */
   readonly media: MediaPlatformBridge | null;
+  /**
+   * YouTube account connection (Settings → Account; read-only scope). Null on
+   * any platform that cannot hold a refresh token safely — the renderer keys
+   * off null and shows the "desktop only" card instead of dead buttons.
+   */
+  readonly youtubeAccount: YouTubeAccountBridge | null;
 }
 
 /**
@@ -100,6 +110,7 @@ export const webBridge: PlatformBridge = {
   // A browser tab cannot read a local file the user has not handed it, cannot
   // hold a refresh token safely, and cannot serve a private scheme. YouTube-only.
   media: null,
+  youtubeAccount: null,
   notify: (request) => {
     // Never prompt for permission on our own initiative; only use it if the
     // user has already granted it to this origin.

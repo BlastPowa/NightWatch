@@ -37,10 +37,17 @@ import {
   type DriveConnectionState,
   type PlaybackLease,
   type SelectedMedia,
+  type YouTubeAccountState,
 } from '@shared/mediaBridge';
 import { logger } from '../logger';
-import { isDriveConfigured, maxMediaSizeBytes, resolveCapabilities } from './capabilities';
+import {
+  isDriveConfigured,
+  isYouTubeAccountEnabled,
+  maxMediaSizeBytes,
+  resolveCapabilities,
+} from './capabilities';
 import type { DriveManager } from './driveManager';
+import { disconnectedYouTubeState, type YouTubeAccountManager } from './youtubeAccount';
 import { LeaseRegistry, parseByteRange } from './leases';
 import {
   MappingStore,
@@ -92,6 +99,8 @@ export class MediaService {
     private readonly drive: DriveManager | null = null,
     /** How to reach public/picker.html for the isolated Picker window. */
     private readonly pickerPageUrl: string = 'app://nightwatch/picker.html',
+    /** Null when unconfigured; every call answers typed-off. */
+    private readonly youtubeAccount: YouTubeAccountManager | null = null,
   ) {
     this.store = new MappingStore(userDataDir);
   }
@@ -110,6 +119,7 @@ export class MediaService {
     }
     this.operations.clear();
     this.drive?.abortAuth();
+    this.youtubeAccount?.abortAuth();
   }
 
   /** A window going away takes its leases and its in-flight hashing with it. */
@@ -294,6 +304,63 @@ export class MediaService {
           return result;
         },
         () => driveOff<void>(),
+      ),
+    );
+
+    // YouTube account (Settings → Account). Read-only scope, own flag, own
+    // credential file. Wholly separate from the embedded player's session.
+    const youtubeReady = (): YouTubeAccountManager | null =>
+      isYouTubeAccountEnabled() ? this.youtubeAccount : null;
+
+    const youtubeOff = <T>(): MediaResult<T> =>
+      mediaFail(
+        'capability-disabled',
+        'YouTube account connection is not enabled in this build.',
+      ) as MediaResult<T>;
+
+    ipcMain.handle(
+      IpcChannel.YouTubeAccountGetState,
+      guard<[], YouTubeAccountState>(
+        async () => {
+          const manager = youtubeReady();
+          return manager === null ? disconnectedYouTubeState('not-configured') : manager.getState();
+        },
+        () => disconnectedYouTubeState('not-configured'),
+      ),
+    );
+
+    ipcMain.handle(
+      IpcChannel.YouTubeAccountConnect,
+      guard<[], MediaResult<YouTubeAccountState>>(
+        async () => {
+          const manager = youtubeReady();
+          if (manager === null) {
+            return youtubeOff<YouTubeAccountState>();
+          }
+          const result = await manager.connect();
+          if (result.ok) {
+            logger.write('info', 'media', 'YouTube account connected');
+          }
+          return result;
+        },
+        () => youtubeOff<YouTubeAccountState>(),
+      ),
+    );
+
+    ipcMain.handle(
+      IpcChannel.YouTubeAccountDisconnect,
+      guard<[], MediaResult<void>>(
+        async () => {
+          // As with Drive: removing a stored credential must always work,
+          // flag or no flag.
+          if (this.youtubeAccount === null) {
+            return mediaOk(undefined);
+          }
+          const result = await this.youtubeAccount.disconnect();
+          logger.write('info', 'media', 'YouTube account disconnected');
+          return result;
+        },
+        () => youtubeOff<void>(),
       ),
     );
   }

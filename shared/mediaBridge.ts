@@ -52,6 +52,25 @@ export interface DriveConnectionState {
   reason: 'not-configured' | 'token-store-unavailable' | 'auth-expired' | null;
 }
 
+/**
+ * Whether this device has a connected YouTube account (Settings → Account).
+ * Read-only scope; carries no token, and is wholly separate from both the
+ * Drive connection and the embedded player's own session.
+ */
+export interface YouTubeAccountState {
+  connected: boolean;
+  /** The connected channel's title, display only. Null when disconnected. */
+  channelTitle: string | null;
+  reason: 'not-configured' | 'token-store-unavailable' | 'auth-expired' | null;
+}
+
+/** The YouTube account surface on a platform bridge. Null off desktop. */
+export interface YouTubeAccountBridge {
+  getState(): Promise<YouTubeAccountState>;
+  connect(): Promise<MediaResult<YouTubeAccountState>>;
+  disconnect(): Promise<MediaResult<void>>;
+}
+
 export function disconnectedDriveState(
   reason: DriveConnectionState['reason'] = null,
 ): DriveConnectionState {

@@ -21,6 +21,7 @@ import type {
   FingerprintProgress,
   PlaybackLease,
   SelectedMedia,
+  YouTubeAccountState,
 } from '@shared/mediaBridge';
 
 /**
@@ -153,6 +154,19 @@ const bridge: NightWatchBridge = {
     };
   },
   media,
+  youtubeAccount: {
+    getState: (): Promise<YouTubeAccountState> => {
+      return ipcRenderer.invoke(IpcChannel.YouTubeAccountGetState) as Promise<YouTubeAccountState>;
+    },
+    connect: (): Promise<MediaResult<YouTubeAccountState>> => {
+      return ipcRenderer.invoke(IpcChannel.YouTubeAccountConnect) as Promise<
+        MediaResult<YouTubeAccountState>
+      >;
+    },
+    disconnect: (): Promise<MediaResult<void>> => {
+      return ipcRenderer.invoke(IpcChannel.YouTubeAccountDisconnect) as Promise<MediaResult<void>>;
+    },
+  },
 };
 
 contextBridge.exposeInMainWorld('nightwatch', bridge);

@@ -26,6 +26,7 @@ import { maxMediaSizeBytes } from './media/capabilities';
 import { DriveManager } from './media/driveManager';
 import { MediaService, makeSenderValidator, registerMediaScheme } from './media/service';
 import { DriveTokenStore } from './media/tokenStore';
+import { YouTubeAccountManager } from './media/youtubeAccount';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
 
@@ -446,12 +447,31 @@ if (!hasSingleInstanceLock) {
           })
         : null;
 
+    // YouTube account connection: same desktop OAuth client, its own scope
+    // (youtube.readonly), its own consent, its own credential file.
+    const youtubeAccountManager =
+      driveClientId.length > 0
+        ? new YouTubeAccountManager({
+            fetchFn: (url, init) => net.fetch(url, init),
+            config: {
+              clientId: driveClientId,
+              clientSecret: process.env['NIGHTWATCH_GOOGLE_CLIENT_SECRET'] ?? null,
+            },
+            tokenStore: new DriveTokenStore(
+              app.getPath('userData'),
+              safeStorage,
+              'youtube-credentials.bin',
+            ),
+          })
+        : null;
+
     mediaService = new MediaService(
       app.getPath('userData'),
       makeSenderValidator((webContentsId) => knownWindowIds.has(webContentsId)),
       undefined,
       driveManager,
       DEV_SERVER_URL ? `${DEV_SERVER_URL}picker.html` : 'app://nightwatch/picker.html',
+      youtubeAccountManager,
     );
     // Register the private protocol and every media IPC handler before the
     // renderer can issue its first capability request.
