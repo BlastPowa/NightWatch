@@ -8,6 +8,11 @@
  * typing machinery below never needs to change.
  */
 
+import {
+  MEDIA_V1_EVENTS,
+  type Phase29RealtimeEvents,
+} from './mediaPlayback';
+
 /** Wire format for every broadcast payload NightWatch sends. */
 export interface EventEnvelope<TData> {
   /** Client-generated id of the sender (user or guest session). */
@@ -19,7 +24,7 @@ export interface EventEnvelope<TData> {
 }
 
 /** Central registry mapping event names to their payload types. */
-export interface RealtimeEventMap {
+export interface RealtimeEventMap extends Phase29RealtimeEvents {
   /** Host loaded a new video. */
   'playback:load': { videoId: string };
   /** Host started playback. hostClockMs allows latency compensation. */
@@ -68,6 +73,7 @@ export const ROOM_EVENTS: readonly (keyof RealtimeEventMap & string)[] = [
   'queue:state',
   'sync:request',
   'sync:state',
+  ...MEDIA_V1_EVENTS,
 ];
 
 export type RealtimeEventName = keyof RealtimeEventMap & string;

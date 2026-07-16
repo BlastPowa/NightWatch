@@ -20,6 +20,7 @@ import {
   type MediaResult,
   type MediaSourceDescriptor,
 } from './media';
+import { isReactionEmoji, type ReactionEmoji } from './reactions';
 
 // ---------------------------------------------------------------------------
 // Playback adapter
@@ -162,9 +163,9 @@ export type MediaReadinessOutcome =
 /**
  * The custom-media event namespace.
  *
- * Kept as its own map rather than merged into RealtimeEventMap: the legacy
- * event names and payloads must not change shape, and nothing here may be
- * registered on a room until the sync work in the follow-up branch lands.
+ * Kept under its own names so the legacy event payloads never change shape.
+ * Phase 31 registers these names alongside the legacy room bindings; old
+ * clients simply do not subscribe to names they do not know.
  */
 export interface Phase29RealtimeEvents {
   'media:v1:load': {
@@ -184,6 +185,16 @@ export interface Phase29RealtimeEvents {
   'media:v1:snapshot': PlaybackSnapshotV1;
   'media:v1:request-snapshot': { sessionId: string };
   'media:v1:unload': { sessionId: string; revision: number };
+  /**
+   * Ephemeral room reaction for HTML media. Persistent timeline notes remain
+   * separately permissioned and are not smuggled into this event.
+   */
+  'media:v1:reaction': {
+    sessionId: string;
+    sourceKey: string;
+    emoji: ReactionEmoji;
+    positionSeconds: number;
+  };
 }
 
 export type Phase29EventName = keyof Phase29RealtimeEvents & string;
@@ -207,6 +218,7 @@ export const MEDIA_V1_EVENTS: readonly Phase29EventName[] = [
   'media:v1:snapshot',
   'media:v1:request-snapshot',
   'media:v1:unload',
+  'media:v1:reaction',
 ];
 
 export function isHostAuthoritativeMediaEvent(name: string): boolean {
@@ -277,6 +289,109 @@ export function parseMediaReadyEvent(
     ready: record['ready'],
     outcome: outcome as MediaReadinessOutcome,
   });
+}
+
+export function parseMediaRequestSnapshotEvent(
+  value: unknown,
+): MediaResult<Phase29RealtimeEvents['media:v1:request-snapshot']> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return mediaFail('invalid-request', 'Snapshot request must be an object.');
+  }
+  const record = value as Record<string, unknown>;
+  if (Object.keys(record).some((key) => key !== 'sessionId')) {
+    return mediaFail('invalid-request', 'Snapshot request has unexpected fields.');
+  }
+  const sessionId = record['sessionId'];
+  if (typeof sessionId !== 'string' || !SESSION_ID_PATTERN.test(sessionId)) {
+    return mediaFail('invalid-request', 'Snapshot request has an invalid session id.');
+  }
+  return mediaOk({ sessionId });
+}
+
+export function parseMediaUnloadEvent(
+  value: unknown,
+): MediaResult<Phase29RealtimeEvents['media:v1:unload']> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return mediaFail('invalid-request', 'Unload event must be an object.');
+  }
+  const record = value as Record<string, unknown>;
+  if (Object.keys(record).some((key) => key !== 'sessionId' && key !== 'revision')) {
+    return mediaFail('invalid-request', 'Unload event has unexpected fields.');
+  }
+  const sessionId = record['sessionId'];
+  if (typeof sessionId !== 'string' || !SESSION_ID_PATTERN.test(sessionId)) {
+    return mediaFail('invalid-request', 'Unload event has an invalid session id.');
+  }
+  const revision = record['revision'];
+  if (typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0) {
+    return mediaFail('invalid-request', 'Unload event has an invalid revision.');
+  }
+  return mediaOk({ sessionId, revision });
+}
+
+export function parseMediaReactionEvent(
+  value: unknown,
+): MediaResult<Phase29RealtimeEvents['media:v1:reaction']> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return mediaFail('invalid-request', 'Media reaction must be an object.');
+  }
+  const record = value as Record<string, unknown>;
+  if (
+    Object.keys(record).some(
+      (key) =>
+        key !== 'sessionId' &&
+        key !== 'sourceKey' &&
+        key !== 'emoji' &&
+        key !== 'positionSeconds',
+    )
+  ) {
+    return mediaFail('invalid-request', 'Media reaction has unexpected fields.');
+  }
+  const sessionId = record['sessionId'];
+  if (typeof sessionId !== 'string' || !SESSION_ID_PATTERN.test(sessionId)) {
+    return mediaFail('invalid-request', 'Media reaction has an invalid session id.');
+  }
+  const sourceKey = record['sourceKey'];
+  if (typeof sourceKey !== 'string' || !SOURCE_KEY_PATTERN.test(sourceKey)) {
+    return mediaFail('invalid-request', 'Media reaction has an invalid source key.');
+  }
+  const emoji = record['emoji'];
+  if (typeof emoji !== 'string' || !isReactionEmoji(emoji)) {
+    return mediaFail('invalid-request', 'Media reaction has an unsupported emoji.');
+  }
+  const positionSeconds = record['positionSeconds'];
+  if (!isFiniteNonNegative(positionSeconds)) {
+    return mediaFail('invalid-request', 'Media reaction has an invalid position.');
+  }
+  return mediaOk({ sessionId, sourceKey, emoji, positionSeconds });
+}
+
+/**
+ * Validate any untrusted Phase 29/31 room payload before it reaches feature
+ * listeners. The return value is intentionally opaque to the room service:
+ * feature code receives the original typed envelope only after this succeeds.
+ */
+export function validatePhase29EventPayload(
+  name: Phase29EventName,
+  value: unknown,
+): MediaResult<unknown> {
+  switch (name) {
+    case 'media:v1:load':
+      return parseMediaLoadEvent(value);
+    case 'media:v1:ready':
+      return parseMediaReadyEvent(value);
+    case 'media:v1:play':
+    case 'media:v1:pause':
+    case 'media:v1:seek':
+    case 'media:v1:snapshot':
+      return parsePlaybackSnapshot(value);
+    case 'media:v1:request-snapshot':
+      return parseMediaRequestSnapshotEvent(value);
+    case 'media:v1:unload':
+      return parseMediaUnloadEvent(value);
+    case 'media:v1:reaction':
+      return parseMediaReactionEvent(value);
+  }
 }
 
 /**
