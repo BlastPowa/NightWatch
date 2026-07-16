@@ -4,7 +4,19 @@ import {
   type EventPayload,
   type RealtimeEventName,
 } from '@shared/events';
-import { sanitizeAvatarUrl, type PresenceMeta, type RoomMember } from '@shared/room';
+import {
+  sanitizeAvatarUrl,
+  sanitizeMediaProtocolVersions,
+  type PresenceMeta,
+  type RoomMember,
+} from '@shared/room';
+import type { MediaProtocolVersion } from '@shared/media';
+import {
+  MEDIA_V1_EVENTS,
+  isHostAuthoritativeMediaEvent,
+  validatePhase29EventPayload,
+  type Phase29EventName,
+} from '@shared/mediaPlayback';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';
@@ -49,6 +61,7 @@ function deriveMembers(presence: Record<string, PresenceMeta[]>): RoomMember[] {
     // Never trust a peer's avatar value: validate the host/format before it can
     // reach another member's UI. Invalid or absent → null (render the initial).
     avatarUrl: sanitizeAvatarUrl(meta.avatarUrl),
+    mediaProtocolVersions: sanitizeMediaProtocolVersions(meta.mediaProtocolVersions),
   }));
 }
 
@@ -69,6 +82,7 @@ export class RoomService {
     private readonly identity: GuestIdentity,
     code: string,
     private readonly listener: RoomStateListener,
+    private readonly mediaProtocolVersions: readonly MediaProtocolVersion[] = [],
   ) {
     this.state = { code, status: 'joining', members: [], hostId: null };
   }
@@ -93,6 +107,32 @@ export class RoomService {
               (envelope as { data?: unknown }).data === null
             ) {
               return;
+            }
+            const senderId = (envelope as { senderId: string }).senderId;
+            if ((MEDIA_V1_EVENTS as readonly string[]).includes(event)) {
+              const mediaEvent = event as Phase29EventName;
+              if (
+                validatePhase29EventPayload(
+                  mediaEvent,
+                  (envelope as { data: unknown }).data,
+                ).ok === false
+              ) {
+                return;
+              }
+              // The current host is the only authority for load/state/unload.
+              // Readiness and snapshot requests remain participant events.
+              if (
+                isHostAuthoritativeMediaEvent(mediaEvent) &&
+                senderId !== this.state.hostId
+              ) {
+                return;
+              }
+              // Ignore an identity not currently represented in Presence.
+              // This cannot make client-side host enforcement cryptographic,
+              // but it prevents stale/disconnected senders from driving state.
+              if (!this.state.members.some((member) => member.id === senderId)) {
+                return;
+              }
             }
             this.eventListeners.get(event)?.forEach((listener) => listener(envelope));
           },
@@ -168,6 +208,9 @@ export class RoomService {
           joinedAt: this.joinedAt,
           streakDays: achievementTracker.get().stats.streakDays,
           ...(avatarUrl !== null ? { avatarUrl } : {}),
+          ...(this.mediaProtocolVersions.length > 0
+            ? { mediaProtocolVersions: sanitizeMediaProtocolVersions(this.mediaProtocolVersions) }
+            : {}),
         };
         void this.handle?.track({ ...meta });
         break;

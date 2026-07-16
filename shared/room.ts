@@ -4,6 +4,8 @@
  * as a Supabase Realtime channel and the presence state of its members.
  */
 
+import type { MediaProtocolVersion } from './media';
+
 export const ROOM_CODE_LENGTH = 6;
 
 /** Deep-link invite for a room (Phase 16), e.g. nightwatch://join/KX3F9Q */
@@ -127,6 +129,11 @@ export interface PresenceMeta {
    * Always validate with sanitizeAvatarUrl when consuming — never render raw.
    */
   avatarUrl?: string;
+  /**
+   * Custom-media protocol versions this client can actually play. Optional
+   * for old clients and platforms that remain YouTube-only.
+   */
+  mediaProtocolVersions?: readonly MediaProtocolVersion[];
 }
 
 /** A member of a room as derived from Presence state. */
@@ -138,4 +145,16 @@ export interface RoomMember {
   streakDays: number;
   /** Validated Discord CDN avatar URL, or null to render the initial. */
   avatarUrl: string | null;
+  /**
+   * Empty/absent means YouTube-only or an older incompatible client.
+   * Optional keeps manually-constructed old-client room state compatible.
+   */
+  mediaProtocolVersions?: readonly MediaProtocolVersion[];
+}
+
+export function sanitizeMediaProtocolVersions(raw: unknown): MediaProtocolVersion[] {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw.some((value) => value === 1) ? [1] : [];
 }

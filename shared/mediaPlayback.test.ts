@@ -9,7 +9,11 @@ import {
   isHostAuthoritativeMediaEvent,
   parseMediaLoadEvent,
   parseMediaReadyEvent,
+  parseMediaReactionEvent,
+  parseMediaRequestSnapshotEvent,
+  parseMediaUnloadEvent,
   parsePlaybackSnapshot,
+  validatePhase29EventPayload,
   type PlaybackSnapshotV1,
 } from './mediaPlayback';
 
@@ -36,17 +40,15 @@ const snapshot: PlaybackSnapshotV1 = {
   revision: 3,
 };
 
-describe('legacy events are untouched', () => {
-  it('does not add media:v1 events to the existing room event registry', () => {
-    // A v0.1.x client binds exactly these names. Adding to this list would put
-    // a custom descriptor on a channel old clients read as YouTube.
+describe('room event registration', () => {
+  it('registers every media:v1 event without changing legacy payload names', () => {
     for (const name of MEDIA_V1_EVENTS) {
-      expect(ROOM_EVENTS).not.toContain(name);
+      expect(ROOM_EVENTS).toContain(name);
     }
   });
 
-  it('keeps the legacy playback and sync events exactly as they were', () => {
-    expect(ROOM_EVENTS).toEqual([
+  it('keeps the legacy playback and sync events in their original order', () => {
+    expect(ROOM_EVENTS.slice(0, 11)).toEqual([
       'playback:load',
       'playback:play',
       'playback:pause',
@@ -190,6 +192,88 @@ describe('ready event validation', () => {
       outcome: 'disk-error: C:/Users/me/clip.mp4 not found',
     });
     expect(parsed.ok).toBe(false);
+  });
+});
+
+describe('snapshot request and unload validation', () => {
+  it('accepts the exact safe request and unload shapes', () => {
+    expect(parseMediaRequestSnapshotEvent({ sessionId: 'session_abcd1234' }).ok).toBe(true);
+    expect(
+      parseMediaUnloadEvent({ sessionId: 'session_abcd1234', revision: 9 }).ok,
+    ).toBe(true);
+  });
+
+  it('rejects extra fields, malformed ids, and stale-shaped revisions', () => {
+    expect(
+      parseMediaRequestSnapshotEvent({
+        sessionId: 'session_abcd1234',
+        path: 'C:/private/movie.mp4',
+      }).ok,
+    ).toBe(false);
+    expect(parseMediaUnloadEvent({ sessionId: 'x', revision: 1 }).ok).toBe(false);
+    expect(
+      parseMediaUnloadEvent({ sessionId: 'session_abcd1234', revision: 1.5 }).ok,
+    ).toBe(false);
+  });
+
+  it('routes every event through its validator', () => {
+    expect(
+      validatePhase29EventPayload('media:v1:load', {
+        sessionId: 'session_abcd1234',
+        source: localSource,
+        revision: 1,
+      }).ok,
+    ).toBe(true);
+    expect(
+      validatePhase29EventPayload('media:v1:snapshot', snapshot).ok,
+    ).toBe(true);
+    expect(
+      validatePhase29EventPayload('media:v1:request-snapshot', {
+        sessionId: '!',
+      }).ok,
+    ).toBe(false);
+  });
+});
+
+describe('HTML media reactions', () => {
+  it('accepts a safe timestamp reaction and registers it as participant-authored', () => {
+    expect(
+      parseMediaReactionEvent({
+        sessionId: 'session_abcd1234',
+        sourceKey: deriveSourceKey(localSource),
+        emoji: '🔥',
+        positionSeconds: 33.5,
+      }).ok,
+    ).toBe(true);
+    expect(isHostAuthoritativeMediaEvent('media:v1:reaction')).toBe(false);
+  });
+
+  it('rejects unsupported emoji, private fields, and invalid positions', () => {
+    expect(
+      parseMediaReactionEvent({
+        sessionId: 'session_abcd1234',
+        sourceKey: deriveSourceKey(localSource),
+        emoji: 'not-an-emoji',
+        positionSeconds: 2,
+      }).ok,
+    ).toBe(false);
+    expect(
+      parseMediaReactionEvent({
+        sessionId: 'session_abcd1234',
+        sourceKey: deriveSourceKey(localSource),
+        emoji: '🔥',
+        positionSeconds: Number.NaN,
+      }).ok,
+    ).toBe(false);
+    expect(
+      parseMediaReactionEvent({
+        sessionId: 'session_abcd1234',
+        sourceKey: deriveSourceKey(localSource),
+        emoji: '🔥',
+        positionSeconds: 2,
+        path: 'C:/private/movie.mp4',
+      }).ok,
+    ).toBe(false);
   });
 });
 
