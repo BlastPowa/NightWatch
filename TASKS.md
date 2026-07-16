@@ -98,4 +98,9 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [x] Add source-neutral playback descriptors/adapters without changing YouTube behavior.
 - [x] Add owner-private Library metadata and device-local file mappings.
 - [x] Add Electron-only Google Drive Picker/PKCE/safeStorage/range playback after security review.
+- [x] Add capability-gated Library navigation and working local/Drive source selection.
+- [x] Add fingerprint progress/cancellation, codec checks, opaque playback leases,
+  native HTML video preview, and lease cleanup.
+- [ ] Add persistent Library metadata cards, collections, progress, and delete/export UI.
+- [ ] Wire `media:v1:*` into room synchronization before exposing “Play in room”.
 - [x] Never download YouTube, bypass DRM, scrape catalogs, or relay participant media bytes.
