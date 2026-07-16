@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## 0.1.24 - 2026-07-16
 
 ### Phase 29 capability-gated Library UI
 

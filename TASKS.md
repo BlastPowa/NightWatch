@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-16 for the v0.1.23 release.
+Last updated: 2026-07-16 for the v0.1.24 release.
 
 ## Phase 29 backend lane (`backend/phase-29-media-library`)
 
@@ -101,6 +101,7 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [x] Add capability-gated Library navigation and working local/Drive source selection.
 - [x] Add fingerprint progress/cancellation, codec checks, opaque playback leases,
   native HTML video preview, and lease cleanup.
+- [x] Merge Drive through PR #41 and the initial Library frontend through PR #42.
 - [ ] Add persistent Library metadata cards, collections, progress, and delete/export UI.
 - [ ] Wire `media:v1:*` into room synchronization before exposing “Play in room”.
 - [x] Never download YouTube, bypass DRM, scrape catalogs, or relay participant media bytes.
