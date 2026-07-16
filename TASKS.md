@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-16 during the Phase 29 backend media-library branch.
+Last updated: 2026-07-16 for the v0.1.23 release.
 
 ## Phase 29 backend lane (`backend/phase-29-media-library`)
 
@@ -19,8 +19,10 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
   reported successful. Keep capability flags off until UI/package acceptance.
 - [x] Review the contracts and threat model before enabling Phase 29 UI.
 - [x] Run `npm run build -- --publish never`; installer and blockmap package successfully.
+- [x] Merge the reviewed Phase 29 backend/platform branch through PR #39.
 - [ ] Owner: packaged Windows acceptance for local playback, range seeking, and app restart.
-- [ ] Next branch — step 3: Google Drive system-browser PKCE, `safeStorage` refresh tokens, sandboxed Picker, Drive range streaming.
+- [ ] In progress on `backend/phase-29-drive` — step 3: Google Drive system-browser
+  PKCE, `safeStorage` refresh tokens, sandboxed Picker, and Drive range streaming.
 - [ ] Next branch — step 4: register `media:v1:*` on the room channel and wire the SyncEngine through the adapter.
 - [ ] Enable local files first; enable Drive only after OAuth verification and revocation/range tests pass.
 

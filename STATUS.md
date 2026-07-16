@@ -2,9 +2,9 @@
 
 Last updated: 2026-07-16.
 
-## Phase 29 authorized media (backend, in review)
+## Phase 29 authorized media (backend merged)
 
-- `backend/phase-29-media-library` holds the Phase 29 typed contracts, the Electron
+- PR #39 merged the Phase 29 typed contracts, the Electron
   local-media platform, and migration `0022`. It stops at the capability handoff
   gate: every new capability defaults to off and no UI is wired. See
   `PHASE_29_BACKEND_STATUS.md`.
@@ -27,12 +27,12 @@ Last updated: 2026-07-16.
 
 ## Release baseline
 
-- Current public release: `v0.1.22`.
+- Current public release: `v0.1.23`.
 - Phase 24 frontend merged through PR #35, Phase 24 backend support merged through PR #34, and the complete Phase 25–28 frontend overhaul merged through PR #36.
 - Migration `0021`, privacy-safe media presence, canonical Discord avatars, deeper Browse paging, and `search-youtube` details mode are present on `main`; database/function deployment still requires the owner environment.
 - Releases remain intentional GitHub Actions runs after reviewed feature PRs; no direct push to `main`.
-- The Phase 28 control/settings completion pass merged through PR #38. Phase 29
-  backend/platform support is the only pending reviewed merge.
+- The Phase 28 control/settings completion pass merged through PR #38 and Phase 29
+  backend/platform support merged through PR #39.
 
 ## Merged cinematic overhaul
 
