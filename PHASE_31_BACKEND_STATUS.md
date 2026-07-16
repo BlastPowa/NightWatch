@@ -1,26 +1,74 @@
 # Phase 31 backend status — social reliability diagnostic
 
-Last updated: 2026-07-16 (second push). Branch: `backend/phase-31-social-reliability`.
+Last updated: 2026-07-16 (third update). Branch: `backend/phase-31-social-reliability`.
 
-## Update: owner test-run fix + production privacy leak found
+## Current state: BACKEND COMPLETE AND DEPLOYED
 
-The owner's first run of `phase31_live_room_social_test.sql` correctly failed on
-"the hash helper is not client-callable": Postgres grants EXECUTE on every new
-function to PUBLIC by default, and revoking only `anon, authenticated` left the
-PUBLIC grant standing. `0023` now revokes `public` too (it is safely
-re-runnable end to end).
+- Migrations `0023`, `0024`, and `0025` are **applied to production** and both
+  Phase 31 SQL test files passed on the owner's run.
+- Post-deployment verification against the live project (2026-07-16):
+  - `is_blocked` / `are_friends` / `under_limit_*` / `display_name_of` now
+    return `42501 permission denied` to clients — the graph-enumeration leak
+    is closed.
+  - `heartbeat_live_room_social` / `list_live_room_co_watchers` refuse
+    anonymous callers (authenticated-only, as designed).
+  - `social_diagnostics()` reports all twelve social functions deployed,
+    `hasSession` truthfully, and both `messages` and `friend_requests` in the
+    Realtime publication.
+- `npm run typecheck` passes; `npm test` 308/308 (16 new).
 
-Investigating that default exposed a **pre-existing production leak**: no
-migration ever revoked PUBLIC on the internal helpers, so an anonymous
-PostgREST request could call `is_blocked(a, b)` and `are_friends(a, b)` for
-arbitrary user ids (verified live on 2026-07-16), exposing the block and
-friendship graphs, plus `under_limit_*()` rate state and `display_name_of()`.
-Migration `0025_internal_helper_grants.sql` revokes client execute on every
-internal helper while keeping the three membership helpers that RLS policies
-evaluate as the querying role (`is_active_member`, `is_club_member`,
-`is_club_staff`) callable by `authenticated`.
-`supabase/tests/phase31_helper_grants_test.sql` proves both directions: the
-predicates are denied to clients, and the policy/RPC surface still works.
+**Nothing further is owed by the backend lane. The remaining work is the
+frontend integration below and one owner release-flag check.**
+
+## For Codex — exact frontend integration steps
+
+Rebase the Phase 31 frontend branch onto
+`backend/phase-31-social-reliability` (or onto `main` once it merges), then:
+
+1. **Live-room co-watcher suggestions** — `src/lib/social/LiveRoomSocialService.ts`:
+   - On joining any live room as a signed-in user, call
+     `heartbeatLiveRoomSocial(roomCode, presenceId)` and repeat every ~60s
+     while in the room. `presenceId` is any opaque per-session id matching
+     `[A-Za-z0-9_-]{1,64}` (the existing Realtime presence id is fine).
+   - Populate the existing Friends "Suggestions" section from
+     `listLiveRoomCoWatchers(roomCode)`. Rows are `LiveRoomCoWatcher`
+     (`userId`, `displayName`, `avatarUrl`, `selectedBorderId`) and are
+     already filtered server-side: blocks (both directions), accepted
+     friends, and pending requests never appear. Send requests through the
+     existing `send_friend_request` flow using `userId`.
+   - `forbidden` from list means the caller's own heartbeat went stale —
+     heartbeat again, then retry. `rate-limited` only fires on switching
+     rooms faster than every 10s; back off, never tight-loop.
+   - Call `leaveLiveRoomSocial(roomCode)` when leaving the room (best-effort;
+     staleness handles crashes). Guests never call any of these.
+2. **Explain disabled social controls** — `src/lib/social/SocialDiagnosticsService.ts`:
+   - When social capabilities come back false or a social screen would render
+     disabled controls, call `diagnoseSocial()` and branch on the closed
+     union: `account-required` → show a "NightWatch account required" state
+     (this is what the v0.1.25 users were actually in);
+     `deployment-missing` → name the missing functions in a support-facing
+     message; `offline` → existing offline treatment; `ready` → the controls
+     should work, so a dead button is a real bug to fix, not a state to hide.
+   - Never treat a connected YouTube account as a NightWatch session.
+3. **Room chat / reactions** — no SQL involved (Realtime Broadcast). NightWatch
+   renders locally before broadcasting, so a click with no local echo is a
+   frontend disabled-state or pointer bug; the `account-required` state above
+   is the expected cause to surface. Reactions stay unavailable until a video
+   is loaded, by design.
+
+## Owner — remaining checklist
+
+1. (Done) `0023`–`0025` applied; both SQL test files passed.
+2. Before the next release, set the GitHub Actions **repository variables**
+   that gate packaged features: `NIGHTWATCH_ENABLE_LIBRARY=1` is safe now
+   (migration `0022` deployed and tested); `NIGHTWATCH_ENABLE_LOCAL_FILES`,
+   `NIGHTWATCH_ENABLE_DRIVE` (+ Google values per `GOOGLE_MEDIA_SETUP.md`),
+   and `NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT` as desired — otherwise those
+   features ship hidden again.
+3. Optional hygiene: confirm `REPLICA IDENTITY FULL` on `messages` /
+   `friend_requests`, and run `supabase migration repair` so the remote
+   migration-history table reflects what is actually applied (it is currently
+   empty because everything went through the SQL editor).
 
 ## 1. Root cause per reported symptom
 
@@ -29,13 +77,13 @@ narrows every symptom to two shared states rather than five independent bugs.
 
 | Symptom | Root cause |
 | --- | --- |
-| Same room, cannot find/add each other | Structural gap, now fixed by migration `0023`. Co-watcher suggestions come only from `room_participants`, which has a foreign key to persistent `rooms`. An ordinary six-character live room writes no participant row, so the social graph never sees the pair. |
+| Same room, cannot find/add each other | Structural gap, fixed by migration `0023`. Co-watcher suggestions came only from `room_participants`, which has a foreign key to persistent `rooms`. An ordinary six-character live room writes no participant row, so the social graph never saw the pair. |
 | Message Send unavailable/failing | Not a backend failure: `send_message` and every messaging RPC is deployed with correct grants. The users had connected a **YouTube account**, which does not create a NightWatch session; every social RPC then raises `unauthenticated` and the capability layer hides/disables the controls. |
 | Group creation/member controls unavailable | Same shared state: no NightWatch session. `create_group_conversation` etc. are deployed and granted. |
 | Room chat and reactions appear dead | These use Realtime Broadcast, not SQL, and NightWatch renders locally before broadcasting — a click with no local echo is a frontend disabled-state (again driven by the missing session) or pointer issue, not a database problem. Reactions are additionally unavailable until a video is loaded, by design. |
 | Several controls disabled at once | The tell for the shared state. `social_diagnostics()` (migration `0024`) now lets the UI say "NightWatch account required" instead of showing uniform dead controls. |
 
-## 2. Migration/RPC changes on this branch
+## 2. Migration/RPC changes on this branch (all applied)
 
 - `supabase/migrations/0023_live_room_social.sql`
   - `live_room_social_presence` — one row per (room, user), keyed by
@@ -54,12 +102,25 @@ narrows every symptom to two shared states rather than five independent bugs.
     either way; exposes only safe display name, `safe_avatar_url`, and
     `validated_border`. Never returns the room code or private stats.
   - `leave_live_room_social(p_room_code)` — deletes only the caller's row.
-  - All three granted to `authenticated` only; the hash helper is internal.
+  - All three granted to `authenticated` only; PUBLIC explicitly revoked
+    (Postgres grants every new function to PUBLIC by default — the owner's
+    first test run caught exactly this); the hash helper is internal.
 - `supabase/migrations/0024_social_diagnostics.sql`
   - `social_diagnostics()` — granted to `anon` + `authenticated`; returns
     `hasSession`, a deployed/missing boolean per social RPC, and which social
     tables are in the `supabase_realtime` publication. Reveals deployment facts
     and the caller's own auth state only.
+- `supabase/migrations/0025_internal_helper_grants.sql`
+  - Closes a **pre-existing production leak**: the PUBLIC default grant left
+    every internal helper callable through PostgREST, so an anonymous request
+    could call `is_blocked(a, b)` / `are_friends(a, b)` for arbitrary user
+    ids (verified live, now verified closed). Revokes client execute on the
+    internal surface; keeps `is_active_member` / `is_club_member` /
+    `is_club_staff` callable by `authenticated` because RLS policies evaluate
+    them as the querying role.
+- Tests: `supabase/tests/phase31_live_room_social_test.sql` and
+  `supabase/tests/phase31_helper_grants_test.sql` — rollback-only; both passed
+  on the owner's run.
 
 ## 3. Production deployment audit results (run 2026-07-16)
 
@@ -68,65 +129,21 @@ grants were probed through PostgREST exactly as the app calls them, and the
 Realtime publication was verified functionally by subscribing with the anon
 client.
 
-- **RPC presence + execute grants: PASS.** `get_social_graph`,
-  `send_friend_request`, `list_conversations`, `create_direct_conversation`,
-  `create_group_conversation`, `send_message`, `get_messages`,
-  `get_conversation_members`, `get_friend_presence_v2`, `heartbeat_presence`,
-  and the notification RPCs all exist and raise `unauthenticated` (i.e. they
-  executed and enforced auth — grants are in place).
+- **RPC presence + execute grants: PASS.** All social RPCs exist and raise
+  `unauthenticated` (i.e. they executed and enforced auth — grants in place).
 - **Realtime publication: PASS.** `postgres_changes` subscriptions on
-  `public.messages` and `public.friend_requests` reach `SUBSCRIBED`, so both
-  tables are in `supabase_realtime`.
-- **Migration history table is empty.** All 22 migrations were applied through
-  the SQL editor, so `supabase migration list` shows nothing applied remotely.
-  Objects through `0022` verifiably exist; consider
-  `supabase migration repair` someday so drift is detectable.
-- **Not verifiable without SQL access (owner, one query each):**
-  `REPLICA IDENTITY FULL` on `messages`/`friend_requests`, and the RLS
-  membership checks for one failing conversation (the handoff's queries are
-  ready to paste). Given every RPC is present and message tables are empty in
-  production (no rows have ever been written), the "failing send" was almost
-  certainly the missing-session state, not RLS.
+  `public.messages` and `public.friend_requests` reach `SUBSCRIBED`.
+- **Migration history table is empty** (everything applied via SQL editor) —
+  see owner checklist item 3.
+- **Message tables were empty in production** — no send had ever reached the
+  database, consistent with the missing-session root cause rather than RLS.
 
-## 4. Dashboard/owner actions
-
-1. Run `supabase/tests/phase31_live_room_social_test.sql` and
-   `supabase/tests/phase31_helper_grants_test.sql` against a disposable
-   database (each creates throwaway users, asserts, and rolls back; any
-   failure names the case). Note: `0023`, `0024`, and `0025` must be applied
-   to that database first — the tests exercise them.
-2. Apply `0023_live_room_social.sql`, `0024_social_diagnostics.sql`, then
-   `0025_internal_helper_grants.sql` to production. `0023`/`0024` are
-   additive; `0025` only removes grants no client feature uses. **Apply
-   `0025` promptly — the graph-enumeration leak is live in production.**
-3. Optionally confirm `REPLICA IDENTITY FULL` on `messages` and
-   `friend_requests` (handoff query) — Realtime INSERT delivery already works.
-4. No new environment keys, no new dashboard toggles.
-5. Release capability flags: packaged releases read GitHub Actions repository
-   variables (`NIGHTWATCH_ENABLE_LOCAL_FILES`, `NIGHTWATCH_ENABLE_DRIVE`,
-   `NIGHTWATCH_ENABLE_LIBRARY`, `NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT`), which
-   cannot be inspected from this machine. The Library migration (`0022`) is
-   deployed and tested, so `NIGHTWATCH_ENABLE_LIBRARY=1` is safe to set when
-   desired; Drive additionally needs the Google values as Actions variables
-   per `GOOGLE_MEDIA_SETUP.md`.
-
-## 5. Typed frontend contracts (stable to build against)
+## 4. Typed frontend contracts (stable to build against)
 
 - `src/lib/social/LiveRoomSocialService.ts` — `LiveRoomCoWatcher`
   (`userId`, `displayName`, `avatarUrl`, `selectedBorderId`) plus
   `heartbeatLiveRoomSocial`, `listLiveRoomCoWatchers`, `leaveLiveRoomSocial`,
-  all returning the existing `SocialResult` union. Suggested cadence: heartbeat
-  on join and every ~60s; `forbidden` from list means "heartbeat again";
-  results feed the existing block-aware `send_friend_request` flow.
+  all returning the existing `SocialResult` union.
 - `src/lib/social/SocialDiagnosticsService.ts` — `diagnoseSocial()` returning
   `ready | account-required | deployment-missing (with names) | offline |
-  error`. `account-required` is the state the affected users were in; the UI
-  should surface "NightWatch account required" rather than uniform disabled
-  controls. YouTube OAuth must never be treated as a NightWatch session.
-
-## Verification performed
-
-- `npm run typecheck` — passes.
-- `npm test` — 308 tests across 30 files, all passing (16 new).
-- SQL tests are written but need the owner run (no local Postgres/Docker on
-  this machine).
+  error`.
