@@ -20,29 +20,30 @@ defaults to off, and no UI is wired.
 | Leases + byte-range parsing | `electron/media/leases.ts` | Complete, 24 tests |
 | IPC handlers + `nightwatch-media://` streaming | `electron/media/service.ts` | Complete, 21 tests |
 | Platform bridges | `src/platform/*` | Electron delegates; Discord/web `media: null` |
-| Library metadata | `supabase/migrations/0022_media_library.sql` | Written, **not yet run** |
-| Library RLS tests | `supabase/tests/phase29_media_library_test.sql` | Written, **not yet run** |
+| Library metadata | `supabase/migrations/0022_media_library.sql` | Owner reports applied successfully |
+| Library RLS tests | `supabase/tests/phase29_media_library_test.sql` | Owner reports all checks passed |
 
 ## Verification actually performed
 
 - `npm run typecheck` — passes.
-- `npm test` — 196 tests across 18 files, all passing (78 of them new, in
+- `npm test` — 197 tests across 18 files, all passing (79 of them new, in
   `electron/media/`; 56 new in `shared/`).
 - `npm run build:activity` — succeeds. Verified by grep that the Activity bundle
   contains no `nightwatch-media`, `pickLocalFile`, or `pickDriveFile` symbol: with
   `media: null` the whole surface tree-shakes out.
 - Electron renderer build — verified the production CSP emits
   `media-src 'self' nightwatch-media: blob:;`.
+- `npm run build -- --publish never` — succeeds and creates the Windows NSIS
+  installer plus blockmap.
+- Owner database run — migration `0022` applied and
+  `phase29_media_library_test.sql` reported all checks passing.
 
 ## Not verified — owner action required
 
-- **The migration and its RLS tests have never been executed.** Docker is not
-  installed on this machine, so the Supabase CLI cannot start a local database, and
-  running them against the linked production project was not appropriate. They must
-  pass against a disposable database before the Library flag is considered.
-- `npm run build -- --publish never` (full Electron package) was not run here.
-- The packaged Windows Electron test and the two-client synchronization tests in the
-  handoff are not done; they need a packaged build and two authorized accounts.
+- The packaged Windows local-playback test (selection, range seeking, same-size
+  replacement rejection, app restart) still needs owner interaction.
+- Two-client synchronization remains a later delivery step: only the typed
+  `media:v1:*` contracts exist on this branch.
 
 ## Deliberately deferred
 

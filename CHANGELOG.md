@@ -30,6 +30,11 @@ gate so the contracts can be reviewed before any UI is enabled.
 - Added `PlatformBridge.media`, nullable. Discord Activity and the web build are
   `null` and advertise no protocol version, so they stay YouTube-only and a room
   containing one never silently starts a custom-media session without them.
+- Hardened local playback leases so a same-size file replacement invalidates the
+  active lease instead of serving bytes that no longer match the agreed fingerprint.
+- Ensured media protocol and IPC initialization completes before the first renderer
+  window opens, removing a startup race where capability calls could arrive before
+  their handlers were registered.
 - Added migration `0022_media_library.sql`: owner-private `media_library_items`
   with owner-only RLS on all four verbs, a unique owner/kind/source constraint,
   typed save/progress/export/delete RPCs, and progress clamped to duration. Local

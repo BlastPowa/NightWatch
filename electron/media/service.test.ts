@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, stat, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,6 +28,7 @@ let leases: InstanceType<typeof LeaseRegistry>;
 let service: InstanceType<typeof MediaService>;
 let videoPath: string;
 let videoBytes: Buffer;
+let videoModifiedAtMs: number;
 
 const SIZE = 4096;
 
@@ -47,6 +48,7 @@ beforeEach(async () => {
   videoBytes = randomBytes(SIZE);
   videoPath = path.join(workDir, 'clip.mp4');
   await writeFile(videoPath, videoBytes);
+  videoModifiedAtMs = (await stat(videoPath)).mtimeMs;
 
   leases = new LeaseRegistry();
   service = new MediaService(workDir, () => true, leases);
@@ -58,7 +60,10 @@ afterEach(async () => {
 });
 
 function leaseUrl(size = SIZE, filePath = videoPath): string {
-  return leases.create(descriptorFor(size), 1, { localPath: filePath }).playbackUrl;
+  return leases.create(descriptorFor(size), 1, {
+    localPath: filePath,
+    localModifiedAtMs: videoModifiedAtMs,
+  }).playbackUrl;
 }
 
 async function bodyOf(response: Response): Promise<Buffer> {
@@ -137,6 +142,15 @@ describe('lease enforcement', () => {
   it('404s and revokes when the file changed size under the lease', async () => {
     const url = leaseUrl();
     await writeFile(videoPath, randomBytes(SIZE * 2));
+    expect((await service.handleStreamRequest(new Request(url))).status).toBe(404);
+  });
+
+  it('404s and revokes when same-size bytes replace the leased file', async () => {
+    const url = leaseUrl();
+    await writeFile(videoPath, randomBytes(SIZE));
+    const future = new Date(Date.now() + 10_000);
+    await utimes(videoPath, future, future);
+    expect((await service.handleStreamRequest(new Request(url))).status).toBe(404);
     expect((await service.handleStreamRequest(new Request(url))).status).toBe(404);
   });
 });

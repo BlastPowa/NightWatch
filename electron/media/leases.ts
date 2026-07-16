@@ -19,6 +19,8 @@ export interface LeaseRecord {
   descriptor: HtmlMediaSourceDescriptor;
   /** Resolved absolute path for local sources. Never leaves the main process. */
   localPath: string | null;
+  /** File identity captured when the lease was issued. Main-process only. */
+  localModifiedAtMs: number | null;
   /** Drive file id for drive sources. */
   driveFileId: string | null;
   expiresAt: number;
@@ -37,7 +39,7 @@ export class LeaseRegistry {
   create(
     descriptor: HtmlMediaSourceDescriptor,
     windowId: number,
-    source: { localPath?: string; driveFileId?: string },
+    source: { localPath?: string; localModifiedAtMs?: number; driveFileId?: string },
     now: number = Date.now(),
   ): PlaybackLease {
     const leaseId = this.newLeaseId();
@@ -46,6 +48,7 @@ export class LeaseRegistry {
       leaseId,
       descriptor,
       localPath: source.localPath ?? null,
+      localModifiedAtMs: source.localModifiedAtMs ?? null,
       driveFileId: source.driveFileId ?? null,
       expiresAt,
       windowId,

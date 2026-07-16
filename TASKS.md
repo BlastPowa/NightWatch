@@ -15,9 +15,11 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [x] Step 2 — `PlatformBridge.media`; Discord/web `null` and YouTube-only.
 - [x] Step 5 — migration `0022` (owner-private Library, forced RLS, typed RPCs) + `phase29_media_library_test.sql`.
 - [x] Repair `main`: add the React Testing Library / user-event / jsdom dev dependencies Phase 28 documented but never added, without which typecheck and tests both failed.
-- [ ] Owner: run `phase29_media_library_test.sql` on a disposable DB, then deploy `0022`. Keep `NIGHTWATCH_ENABLE_LIBRARY` unset until deployed.
-- [ ] Owner: review the contracts and threat model — the gate before any Phase 29 UI is enabled.
-- [ ] Owner: `npm run build -- --publish never` and packaged Windows acceptance for local playback, range seeking, and app restart.
+- [x] Owner: run `phase29_media_library_test.sql` and deploy `0022`; both were
+  reported successful. Keep capability flags off until UI/package acceptance.
+- [x] Review the contracts and threat model before enabling Phase 29 UI.
+- [x] Run `npm run build -- --publish never`; installer and blockmap package successfully.
+- [ ] Owner: packaged Windows acceptance for local playback, range seeking, and app restart.
 - [ ] Next branch — step 3: Google Drive system-browser PKCE, `safeStorage` refresh tokens, sandboxed Picker, Drive range streaming.
 - [ ] Next branch — step 4: register `media:v1:*` on the room channel and wire the SyncEngine through the adapter.
 - [ ] Enable local files first; enable Drive only after OAuth verification and revocation/range tests pass.
@@ -82,12 +84,12 @@ are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
 - [ ] Owner: confirm real caption-track behavior and mini-player continuity with host/viewer clients.
 - [x] Update active documentation; publish only after the remaining owner acceptance.
 - [ ] Plan the breaking Electron/Vite/Discord Activity SDK security upgrades as a separate platform PR; do not force them into this UI release.
-- [ ] Merge the reviewed `frontend/phase-28-control-polish` PR; do not push directly to `main`.
+- [x] Merge the reviewed `frontend/phase-28-control-polish` PR #38; no direct push to `main`.
 
 ## Phase 29 — separately gated media library
 
 - [x] Write `PHASE_29_MEDIA_LIBRARY_HANDOFF.md` for Claude on `backend/phase-29-media-library`.
-- [ ] Add source-neutral playback descriptors/adapters without changing YouTube behavior.
-- [ ] Add owner-private Library metadata and device-local file mappings.
+- [x] Add source-neutral playback descriptors/adapters without changing YouTube behavior.
+- [x] Add owner-private Library metadata and device-local file mappings.
 - [ ] Add Electron-only Google Drive Picker/PKCE/safeStorage/range playback after security review.
 - [ ] Never download YouTube, bypass DRM, scrape catalogs, or relay participant media bytes.

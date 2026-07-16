@@ -54,9 +54,13 @@ describe('lease issuance', () => {
 describe('lease resolution', () => {
   it('resolves a live lease', () => {
     const registry = new LeaseRegistry();
-    const lease = registry.create(descriptor, 7, { localPath: 'C:/videos/clip.mp4' });
+    const lease = registry.create(descriptor, 7, {
+      localPath: 'C:/videos/clip.mp4',
+      localModifiedAtMs: 1234,
+    });
     const record = registry.resolve(lease.leaseId);
     expect(record?.localPath).toBe('C:/videos/clip.mp4');
+    expect(record?.localModifiedAtMs).toBe(1234);
     expect(record?.windowId).toBe(7);
   });
 

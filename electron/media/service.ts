@@ -481,8 +481,14 @@ export class MediaService {
       await this.store.remove(mapping.localHandle);
       return mediaFail('file-changed', 'Your copy of this video has changed. Choose it again.');
     }
+    if (mapping.size !== descriptor.size || mapping.mimeType !== descriptor.mimeType) {
+      return mediaFail('source-mismatch', 'Your copy of this video does not match the selected source.');
+    }
 
-    const lease = this.leases.create(descriptor, window.id, { localPath: mapping.path });
+    const lease = this.leases.create(descriptor, window.id, {
+      localPath: mapping.path,
+      localModifiedAtMs: mapping.modifiedAtMs,
+    });
     // Never log the lease id or the URL — the id is the capability.
     logger.write('info', 'media', 'Issued a local playback lease');
     return mediaOk(lease);
@@ -533,7 +539,10 @@ export class MediaService {
     }
     // The bytes moved under the lease: the fingerprint the room agreed on no
     // longer describes this file, so it must not be served.
-    if (identity.size !== record.descriptor.size) {
+    if (
+      identity.size !== record.descriptor.size ||
+      (record.localModifiedAtMs !== null && identity.modifiedAtMs !== record.localModifiedAtMs)
+    ) {
       this.leases.release(leaseId);
       return new Response(null, { status: 404 });
     }

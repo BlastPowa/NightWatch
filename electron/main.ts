@@ -350,7 +350,7 @@ if (!hasSingleInstanceLock) {
     logger.write('error', 'main', `Unhandled rejection: ${String(reason)}`);
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     logger.init();
     logger.write('info', 'main', `NightWatch ${app.getVersion()} starting (packaged=${app.isPackaged})`);
 
@@ -426,7 +426,9 @@ if (!hasSingleInstanceLock) {
       app.getPath('userData'),
       makeSenderValidator((webContentsId) => knownWindowIds.has(webContentsId)),
     );
-    void mediaService.init();
+    // Register the private protocol and every media IPC handler before the
+    // renderer can issue its first capability request.
+    await mediaService.init();
 
     richPresence.start();
     updateManager.init();
