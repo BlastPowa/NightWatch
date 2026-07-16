@@ -14,6 +14,7 @@ export type AppView =
   | 'friends'
   | 'messages'
   | 'creator'
+  | 'library'
   | 'settings'
   | 'card'
   | 'about';
@@ -28,6 +29,7 @@ interface AppShellProps {
     messaging: boolean;
     creatorClubs: boolean;
     notifications: boolean;
+    library: boolean;
   };
   room: {
     active: boolean;
@@ -82,6 +84,7 @@ export function AppShell({
     { view: 'discover', label: 'Browse', icon: 'home', visible: true },
     { view: 'main', label: room.active ? 'Room' : 'Join', icon: 'play', visible: true },
     { view: 'rooms', label: 'Parties', icon: 'parties', visible: isElectron },
+    { view: 'library', label: 'Library', icon: 'library', visible: capabilities.library },
     { view: 'friends', label: 'Friends', icon: 'friends', visible: capabilities.friends },
     { view: 'messages', label: 'Messages', icon: 'message', visible: capabilities.messaging },
     { view: 'creator', label: 'Creator Club', icon: 'creator', visible: capabilities.creatorClubs },
@@ -186,6 +189,7 @@ function viewLabel(view: AppView): string {
     case 'friends': return 'Friends';
     case 'messages': return 'Messages';
     case 'creator': return 'Creator Club';
+    case 'library': return 'Library';
     case 'settings': return 'Settings';
     case 'card': return 'Profile';
     case 'about': return 'About';

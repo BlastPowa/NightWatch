@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 
 export type IconName =
   | 'home' | 'play' | 'parties' | 'friends' | 'message' | 'creator'
-  | 'profile' | 'settings' | 'info' | 'search' | 'close' | 'bell'
+  | 'profile' | 'library' | 'settings' | 'info' | 'search' | 'close' | 'bell'
   | 'music' | 'gaming' | 'live' | 'film' | 'entertainment' | 'comedy'
   | 'sports' | 'news' | 'education' | 'technology' | 'travel' | 'tools'
   | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right'
@@ -36,6 +36,7 @@ function glyph(name: IconName): JSX.Element {
     case 'message': return <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.4A2.5 2.5 0 0 1 4 13.5v-8Z" /><path d="M8 8h8M8 12h5" /></>;
     case 'creator': return <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M22 12h-3M12 22v-3M2 12h3" /><path d="m17.7 6.3-2.1 2.1" /></>;
     case 'profile': return <><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /><circle cx="12" cy="12" r="10" opacity=".35" /></>;
+    case 'library': return <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 4v16M11 8h6M11 12h6M11 16h4" /></>;
     case 'settings': return <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.5 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.4.3.7.6 1 .3.2.7.4 1.1.4h.1v4h-.1A1.7 1.7 0 0 0 19.4 15Z" /></>;
     case 'info': return <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5h.01" /></>;
     case 'search': return <><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.2 4.2" /></>;

@@ -2,11 +2,11 @@
 
 Last updated: 2026-07-16.
 
-## Phase 29 authorized media (backend merged)
+## Phase 29 authorized media (backend merged, frontend in review)
 
 - PR #39 merged the Phase 29 typed contracts, the Electron
-  local-media platform, and migration `0022`. It stops at the capability handoff
-  gate: every new capability defaults to off and no UI is wired. See
+  local-media platform, and migration `0022`. Every capability still defaults
+  off. See
   `PHASE_29_BACKEND_STATUS.md`.
 - Green on the merged local-media baseline: strict typecheck, 197 tests,
   Discord Activity build, and the full Windows installer/blockmap package.
@@ -21,6 +21,9 @@ Last updated: 2026-07-16.
   synchronization remain outstanding.
 - Drive validation now passes strict typecheck, all 265 tests across 22 files,
   the Discord Activity build, and Windows Electron/NSIS packaging.
+- `frontend/phase-29-library-ui` adds capability-gated navigation, local/Drive
+  selection, fingerprint progress/cancellation, opaque lease playback, and
+  native HTML video controls. The combined suite passes 268 tests across 23 files.
 - Fixed on this branch: `main` could not typecheck or test at all, because Phase 28
   added component tests importing React Testing Library / user-event / jsdom without
   ever adding those dev dependencies to `package.json`.
@@ -59,7 +62,7 @@ Last updated: 2026-07-16.
 - Run `supabase/tests/phase24_media_presence_test.sql` against a disposable database, then deploy migration `0021` and redeploy `search-youtube` before relying on the capability-gated friend-media shelf.
 - Run a real two-client packaged regression: create/join, playback drift, queue, host migration, chat, reactions, notes, reconnect, invites, messaging, and Creator Club.
 - Verify real Discord Activity avatar URL mappings and launch behavior.
-- Verify the installed updater round-trip from `v0.1.22` to the eventual overhaul release.
+- Verify the installed updater round-trip from `v0.1.23` to the next approved release.
 - Verify the same-instance mini-player with two packaged clients and real YouTube caption tracks/languages; automated tests cover presentation continuity and official caption parameters, but live provider behavior remains an owner acceptance item.
 - Claude's separately gated Phase 29 handoff is ready at `C:\Users\Blast\source\repos\NightWatch-fable\PHASE_29_MEDIA_LIBRARY_HANDOFF.md` for `backend/phase-29-media-library`; it explicitly excludes protected-service downloads, DRM extraction, media relays, and free-unlimited-cloud claims.
 - Phase 29 local/Google Drive media remains separately gated and is not part of the Phase 24–28 completion gate.

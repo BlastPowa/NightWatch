@@ -3,6 +3,19 @@
 
 ## Unreleased
 
+### Phase 29 capability-gated Library UI
+
+- Added Library navigation only when the Electron media bridge reports a live
+  local-file or Google Drive capability; browser and Discord Activity builds
+  remain YouTube-only with no dead controls.
+- Added working local-file and Drive selection flows, streaming fingerprint
+  progress/cancellation, codec support checks, opaque playback-lease creation,
+  lease cleanup, and native HTML video controls.
+- Added a cinematic responsive Library workspace with clear device/privacy
+  boundaries and no display of paths, tokens, file handles, or lease ids.
+- Added Library navigation/lease lifecycle tests. The rebased frontend suite now
+  passes 268 tests across 23 files.
+
 ### Phase 29 Google Drive platform (branch `backend/phase-29-drive`)
 
 Delivery step 3 of the Phase 29 handoff, built on the merged contracts. Drive

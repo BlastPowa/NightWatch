@@ -9,6 +9,7 @@ import { FriendsScreen } from '@/components/FriendsScreen';
 import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { MessagesScreen } from '@/components/MessagesScreen';
 import { CreatorClubScreen } from '@/components/CreatorClubScreen';
+import { LibraryScreen } from '@/components/LibraryScreen';
 import { RoomInvitesPanel } from '@/components/RoomInvitesPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
@@ -33,6 +34,7 @@ import {
 } from '@/lib/identity';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
 import { canonicalDiscordAvatarUrl } from '@/lib/assets';
+import type { MediaCapabilities } from '@shared/media';
 
 interface PendingVideo {
   videoId: string;
@@ -59,6 +61,7 @@ export function App(): JSX.Element {
   const settings = useSettings();
   const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
+  const [mediaCapabilities, setMediaCapabilities] = useState<MediaCapabilities | null>(null);
 
   useEffect(() => {
     return achievementTracker.onUnlock((achievement) => {
@@ -144,7 +147,35 @@ export function App(): JSX.Element {
     );
   }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
-  const isElectron = getPlatformBridge().kind === 'electron';
+  const platformBridge = getPlatformBridge();
+  const isElectron = platformBridge.kind === 'electron';
+  const mediaBridge = platformBridge.media;
+  const libraryAvailable =
+    mediaBridge !== null &&
+    mediaCapabilities !== null &&
+    (mediaCapabilities.localFiles || mediaCapabilities.googleDrive);
+
+  useEffect(() => {
+    if (mediaBridge === null) {
+      setMediaCapabilities(null);
+      return;
+    }
+    let cancelled = false;
+    void mediaBridge.getCapabilities().then((capabilities) => {
+      if (!cancelled) {
+        setMediaCapabilities(capabilities);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mediaBridge]);
+
+  useEffect(() => {
+    if (view === 'library' && mediaCapabilities !== null && !libraryAvailable) {
+      setView('discover');
+    }
+  }, [libraryAvailable, mediaCapabilities, view]);
 
   // Persistent-room banner: look the code up when joining (null = ephemeral).
   useEffect(() => {
@@ -318,7 +349,7 @@ export function App(): JSX.Element {
       view={view}
       onNavigate={setView}
       isElectron={isElectron}
-      capabilities={socialCapabilities}
+      capabilities={{ ...socialCapabilities, library: libraryAvailable }}
       room={{ active: inRoom, code: inRoom ? session.state.code : '', name: roomMeta?.name ?? 'Watch room', memberCount: inRoom ? session.state.members.length : 0 }}
       identity={{ name: displayName, avatarUrl: displayAvatarUrl, connected: authUser !== null || platformAvatarUrl !== null }}
       runtime={{ connectionStatus, bridgeError, appInfo }}
@@ -353,6 +384,9 @@ export function App(): JSX.Element {
         {view === 'friends' && socialCapabilities.friends && <FriendsScreen onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
         {view === 'messages' && socialCapabilities.messaging && authUser !== null && <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} />}
         {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
+        {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (
+          <LibraryScreen bridge={mediaBridge} capabilities={mediaCapabilities} />
+        )}
         {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
         {view === 'about' && <AboutScreen />}
         {/* A joined room always remains mounted. Navigating away changes the
