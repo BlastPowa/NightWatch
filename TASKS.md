@@ -1,6 +1,26 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-16 during the final Phase 28 control-polish branch.
+Last updated: 2026-07-16 during the Phase 29 backend media-library branch.
+
+## Phase 29 backend lane (`backend/phase-29-media-library`)
+
+Delivery order is fixed by `PHASE_29_MEDIA_LIBRARY_HANDOFF.md`. Steps 1, 2, and 5
+are done; step 3 (Drive) does not begin until steps 1–2 are reviewed.
+
+- [x] Step 1 — shared source/capability/result contracts + unit tests (`shared/media.ts`, 33 tests).
+- [x] Step 1 — playback adapter + `media:v1:*` event contracts and validators (`shared/mediaPlayback.ts`, 23 tests).
+- [x] Step 2 — typed IPC surface, sender/argument validation, no generic invoke in preload.
+- [x] Step 2 — native local-file selection, streaming SHA-256 with progress/cancellation, device-local mapping store (22 tests).
+- [x] Step 2 — opaque 128-bit leases and `nightwatch-media://` single-range `206`/`416` streaming (45 tests).
+- [x] Step 2 — `PlatformBridge.media`; Discord/web `null` and YouTube-only.
+- [x] Step 5 — migration `0022` (owner-private Library, forced RLS, typed RPCs) + `phase29_media_library_test.sql`.
+- [x] Repair `main`: add the React Testing Library / user-event / jsdom dev dependencies Phase 28 documented but never added, without which typecheck and tests both failed.
+- [ ] Owner: run `phase29_media_library_test.sql` on a disposable DB, then deploy `0022`. Keep `NIGHTWATCH_ENABLE_LIBRARY` unset until deployed.
+- [ ] Owner: review the contracts and threat model — the gate before any Phase 29 UI is enabled.
+- [ ] Owner: `npm run build -- --publish never` and packaged Windows acceptance for local playback, range seeking, and app restart.
+- [ ] Next branch — step 3: Google Drive system-browser PKCE, `safeStorage` refresh tokens, sandboxed Picker, Drive range streaming.
+- [ ] Next branch — step 4: register `media:v1:*` on the room channel and wire the SyncEngine through the adapter.
+- [ ] Enable local files first; enable Drive only after OAuth verification and revocation/range tests pass.
 
 ## Phase 24 backend lane (`backend/phase-24-ui-support`)
 

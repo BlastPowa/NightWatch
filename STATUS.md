@@ -2,6 +2,24 @@
 
 Last updated: 2026-07-16.
 
+## Phase 29 authorized media (backend, in review)
+
+- `backend/phase-29-media-library` holds the Phase 29 typed contracts, the Electron
+  local-media platform, and migration `0022`. It stops at the capability handoff
+  gate: every new capability defaults to off and no UI is wired. See
+  `PHASE_29_BACKEND_STATUS.md`.
+- Green here: `npm run typecheck`, `npm test` (196 tests / 18 files), and
+  `npm run build:activity` — the Activity bundle contains no local/Drive surface.
+- Not yet run: migration `0022` and its RLS tests (no local Postgres available on
+  the dev machine), the full Electron package, and the packaged/two-client tests.
+- Google Drive is deliberately not implemented: its surface returns typed
+  `capability-disabled` and reports `security-review-required`, per the Phase 29
+  rule that Drive work does not start until the contract and local-file security
+  tests are green.
+- Fixed on this branch: `main` could not typecheck or test at all, because Phase 28
+  added component tests importing React Testing Library / user-event / jsdom without
+  ever adding those dev dependencies to `package.json`.
+
 ## Release baseline
 
 - Current public release: `v0.1.22`.
