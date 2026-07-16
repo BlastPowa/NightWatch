@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { defineConfig, type PluginOption } from 'vite';
+import { defineConfig, loadEnv, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron/simple';
 import electronBuild from 'vite-plugin-electron';
@@ -35,7 +35,27 @@ function productionCsp(): PluginOption {
   };
 }
 
-export default defineConfig({
+const PUBLIC_MEDIA_CONFIG = [
+  'NIGHTWATCH_ENABLE_LOCAL_FILES',
+  'NIGHTWATCH_ENABLE_DRIVE',
+  'NIGHTWATCH_ENABLE_LIBRARY',
+  'NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT',
+  'NIGHTWATCH_GOOGLE_CLIENT_ID',
+  'NIGHTWATCH_GOOGLE_PICKER_API_KEY',
+  'NIGHTWATCH_GOOGLE_APP_ID',
+  'NIGHTWATCH_MAX_MEDIA_BYTES',
+] as const;
+
+export default defineConfig(({ mode }) => {
+  const fileEnv = loadEnv(mode, process.cwd(), '');
+  const mediaDefines = Object.fromEntries(
+    PUBLIC_MEDIA_CONFIG.map((name) => [
+      `__${name}__`,
+      JSON.stringify(process.env[name] ?? fileEnv[name] ?? ''),
+    ]),
+  );
+
+  return {
   plugins: [
     productionCsp(),
     react(),
@@ -43,6 +63,7 @@ export default defineConfig({
       main: {
         entry: 'electron/main.ts',
         vite: {
+          define: mediaDefines,
           resolve: {
             alias: { '@shared': path.resolve(__dirname, 'shared') },
           },
@@ -109,4 +130,5 @@ export default defineConfig({
     // no source exposure); dev uses the dev server anyway.
     sourcemap: false,
   },
+  };
 });

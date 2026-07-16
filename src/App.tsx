@@ -10,6 +10,7 @@ import { MyRoomsScreen } from '@/components/MyRoomsScreen';
 import { MessagesScreen } from '@/components/MessagesScreen';
 import { CreatorClubScreen } from '@/components/CreatorClubScreen';
 import { LibraryScreen } from '@/components/LibraryScreen';
+import { FaqScreen } from '@/components/FaqScreen';
 import { RoomInvitesPanel } from '@/components/RoomInvitesPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
@@ -76,6 +77,9 @@ export function App(): JSX.Element {
     document.documentElement.dataset['background'] = settings.backgroundStyle;
     document.documentElement.dataset['cardStyle'] = settings.cardStyle;
     document.documentElement.dataset['uiFont'] = settings.uiFont;
+    document.documentElement.dataset['customBackground'] = String(
+      settings.customBackgroundEnabled && settings.customBackgroundImage !== null,
+    );
     document.documentElement.dataset['reduceMotion'] = String(settings.reduceMotion);
     document.documentElement.dataset['highContrast'] = String(settings.highContrast);
     document.documentElement.dataset['reduceTransparency'] = String(settings.reduceTransparency);
@@ -94,6 +98,14 @@ export function App(): JSX.Element {
       document.documentElement.style.removeProperty('--nw-border');
     }
     document.documentElement.style.setProperty('--nw-glow-strength', `${settings.accentGlowPercent}%`);
+    if (settings.customBackgroundImage !== null) {
+      document.documentElement.style.setProperty(
+        '--nw-custom-background-image',
+        `url(${settings.customBackgroundImage})`,
+      );
+    } else {
+      document.documentElement.style.removeProperty('--nw-custom-background-image');
+    }
     document.documentElement.style.setProperty('--nw-radius-lg', `${settings.cornerRadiusPx}px`);
     document.documentElement.style.setProperty(
       '--nw-radius',
@@ -374,7 +386,14 @@ export function App(): JSX.Element {
             </div>
           </div>
         )}
-        {view === 'settings' && <SettingsPanel user={authUser} />}
+        {view === 'settings' && (
+          <SettingsPanel
+            user={authUser}
+            driveAvailable={mediaCapabilities?.googleDrive === true}
+            youtubeAccount={platformBridge.youtubeAccount}
+            onOpenLibrary={() => setView('library')}
+          />
+        )}
         {view === 'rooms' && (
           <>
             {socialCapabilities.friends && <RoomInvitesPanel onJoin={handleJoinPersistentRoom} />}
@@ -387,6 +406,7 @@ export function App(): JSX.Element {
         {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (
           <LibraryScreen bridge={mediaBridge} capabilities={mediaCapabilities} />
         )}
+        {view === 'faq' && <FaqScreen />}
         {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
         {view === 'about' && <AboutScreen />}
         {/* A joined room always remains mounted. Navigating away changes the

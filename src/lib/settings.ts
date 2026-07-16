@@ -111,6 +111,10 @@ export interface Settings {
   captionLanguage: CaptionLanguage;
   captionFontSize: CaptionFontSize;
   uiFont: UiFont;
+  /** Resized device-local image used only when the matching presentation flag is enabled. */
+  customBackgroundImage: string | null;
+  customBackgroundEnabled: boolean;
+  profileBackgroundEnabled: boolean;
 }
 
 export const NEUTRAL_FILTERS: VideoFilters = { brightness: 100, contrast: 100, saturation: 100 };
@@ -139,6 +143,9 @@ export const DEFAULT_SETTINGS: Settings = {
   captionLanguage: 'auto',
   captionFontSize: 0,
   uiFont: 'system',
+  customBackgroundImage: null,
+  customBackgroundEnabled: false,
+  profileBackgroundEnabled: false,
 };
 
 const STORAGE_KEY = 'nightwatch:settings';
@@ -151,6 +158,17 @@ function safeColor(value: unknown, fallback: string): string {
   return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
     ? value.toLowerCase()
     : fallback;
+}
+
+function safeBackgroundImage(value: unknown): string | null {
+  if (
+    typeof value !== 'string' ||
+    value.length > 3_000_000 ||
+    !/^data:image\/(?:png|jpe?g|webp);base64,[a-z0-9+/=]+$/i.test(value)
+  ) {
+    return null;
+  }
+  return value;
 }
 
 function sanitize(raw: unknown): Settings {
@@ -225,6 +243,15 @@ function sanitize(raw: unknown): Settings {
     captionLanguage,
     captionFontSize,
     uiFont,
+    customBackgroundImage: safeBackgroundImage(partial.customBackgroundImage),
+    customBackgroundEnabled:
+      typeof partial.customBackgroundEnabled === 'boolean'
+        ? partial.customBackgroundEnabled
+        : false,
+    profileBackgroundEnabled:
+      typeof partial.profileBackgroundEnabled === 'boolean'
+        ? partial.profileBackgroundEnabled
+        : false,
     chatFilterEnabled:
       typeof partial.chatFilterEnabled === 'boolean' ? partial.chatFilterEnabled : true,
     richPresenceEnabled:

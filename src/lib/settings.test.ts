@@ -35,6 +35,9 @@ describe('settings custom atmosphere migration', () => {
       captionFontSize: 0,
       uiFont: 'system',
       cardStyle: 'glass',
+      customBackgroundImage: null,
+      customBackgroundEnabled: false,
+      profileBackgroundEnabled: false,
     });
   });
 
@@ -59,6 +62,9 @@ describe('settings custom atmosphere migration', () => {
         uiFont: 'cinematic',
         backgroundStyle: 'nebula',
         cardStyle: 'outline',
+        customBackgroundImage: 'data:image/png;base64,aGVsbG8=',
+        customBackgroundEnabled: true,
+        profileBackgroundEnabled: true,
       }),
     }));
     const { settingsStore } = await import('@/lib/settings');
@@ -72,6 +78,9 @@ describe('settings custom atmosphere migration', () => {
       uiFont: 'cinematic',
       backgroundStyle: 'nebula',
       cardStyle: 'outline',
+      customBackgroundImage: 'data:image/png;base64,aGVsbG8=',
+      customBackgroundEnabled: true,
+      profileBackgroundEnabled: true,
     });
   });
 
@@ -87,6 +96,9 @@ describe('settings custom atmosphere migration', () => {
         uiFont: 'streaming-brand',
         backgroundStyle: 'rainbow',
         cardStyle: 'floating',
+        customBackgroundImage: 'https://tracking.example/background.jpg',
+        customBackgroundEnabled: 'yes',
+        profileBackgroundEnabled: 1,
       }),
     }));
     const { DEFAULT_SETTINGS, settingsStore } = await import('@/lib/settings');
@@ -100,6 +112,9 @@ describe('settings custom atmosphere migration', () => {
       uiFont: 'system',
       backgroundStyle: DEFAULT_SETTINGS.backgroundStyle,
       cardStyle: DEFAULT_SETTINGS.cardStyle,
+      customBackgroundImage: null,
+      customBackgroundEnabled: false,
+      profileBackgroundEnabled: false,
     });
   });
 });

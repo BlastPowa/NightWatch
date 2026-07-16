@@ -23,6 +23,7 @@ import {
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
 import { maxMediaSizeBytes } from './media/capabilities';
+import { drivePublicConfiguration } from './media/buildConfig';
 import { DriveManager } from './media/driveManager';
 import { MediaService, makeSenderValidator, registerMediaScheme } from './media/service';
 import { DriveTokenStore } from './media/tokenStore';
@@ -431,17 +432,17 @@ if (!hasSingleInstanceLock) {
     // it every Drive call answers typed 'not-configured'. Tokens are encrypted
     // by safeStorage; if the OS cannot encrypt, Drive stays disconnected —
     // there is no plaintext fallback.
-    const driveClientId = process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] ?? '';
+    const driveConfig = drivePublicConfiguration();
     const driveManager =
-      driveClientId.length > 0
+      driveConfig.clientId.length > 0
         ? new DriveManager({
             fetchFn: (url, init) => net.fetch(url, init),
             config: {
-              clientId: driveClientId,
+              clientId: driveConfig.clientId,
               clientSecret: process.env['NIGHTWATCH_GOOGLE_CLIENT_SECRET'] ?? null,
             },
-            pickerApiKey: process.env['NIGHTWATCH_GOOGLE_PICKER_API_KEY'] ?? '',
-            appId: process.env['NIGHTWATCH_GOOGLE_APP_ID'] ?? '',
+            pickerApiKey: driveConfig.pickerApiKey,
+            appId: driveConfig.appId,
             tokenStore: new DriveTokenStore(app.getPath('userData'), safeStorage),
             maxSizeBytes: maxMediaSizeBytes,
           })
@@ -450,11 +451,11 @@ if (!hasSingleInstanceLock) {
     // YouTube account connection: same desktop OAuth client, its own scope
     // (youtube.readonly), its own consent, its own credential file.
     const youtubeAccountManager =
-      driveClientId.length > 0
+      driveConfig.clientId.length > 0
         ? new YouTubeAccountManager({
             fetchFn: (url, init) => net.fetch(url, init),
             config: {
-              clientId: driveClientId,
+              clientId: driveConfig.clientId,
               clientSecret: process.env['NIGHTWATCH_GOOGLE_CLIENT_SECRET'] ?? null,
             },
             tokenStore: new DriveTokenStore(

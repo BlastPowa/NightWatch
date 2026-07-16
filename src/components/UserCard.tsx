@@ -1,6 +1,8 @@
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import type { AuthUser } from '@/lib/auth';
+import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { useSettings } from '@/hooks/useSettings';
 import { listBorders, selectBorder, unlockBorder, type ProfileBorder } from '@/lib/social/ProfileService';
 import { ACHIEVEMENTS, achievementTracker } from '@/lib/engagement/AchievementTracker';
 import { getCloudSyncState, setShareStats, subscribeCloudSync } from '@/lib/engagement/CloudSync';
@@ -12,6 +14,7 @@ import {
   type LeaderboardScope,
 } from '@/lib/engagement/LeaderboardService';
 import '@/styles/phase26-social.css';
+import '@/styles/phase30-profile.css';
 
 type ProfileTab = 'overview' | 'achievements';
 
@@ -36,6 +39,7 @@ interface UserCardProps {
 
 /** Local engagement profile. Stats are device-local unless cloud sync is active. */
 export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
+  const settings = useSettings();
   const snapshot = useSyncExternalStore(
     (onChange) => achievementTracker.subscribe(onChange),
     () => achievementTracker.get(),
@@ -54,6 +58,10 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
 
   const safeName = displayName.trim() || 'Anonymous';
   const selectedBorderId = borders.find((border) => border.selected)?.id ?? 'default';
+  const latestAchievement = [...ACHIEVEMENTS].reverse().find((achievement) => unlocked.has(achievement.id));
+  const profileStyle = settings.profileBackgroundEnabled && settings.customBackgroundImage !== null
+    ? { '--profile-custom-background': `url(${settings.customBackgroundImage})` } as CSSProperties
+    : undefined;
 
   useEffect(() => {
     if (user === null) {
@@ -102,7 +110,7 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
   }
 
   return (
-    <div className="settings-page user-card-page phase26-profile-page fade-up">
+    <div className={`phase26-profile-page profile-showcase-page fade-up${profileStyle === undefined ? '' : ' profile-showcase-custom'}`} style={profileStyle}>
       <section className="profile-banner" aria-labelledby="profile-title">
         <div className="profile-banner-art" aria-hidden="true"><span /><span /></div>
         <div className="profile-banner-content">
@@ -113,6 +121,11 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
             <span className="eyebrow">NightWatch profile</span>
             <h1 id="profile-title">{safeName}</h1>
             <p>{snapshot.unlockedIds.length}/{ACHIEVEMENTS.length} achievements · {cloud ? 'Synced across devices' : 'Stored on this device'}</p>
+          </div>
+          <div className="profile-banner-meta">
+            <span>Profile level</span>
+            <strong>{snapshot.unlockedIds.length}</strong>
+            <small>{cloud ? 'Community profile' : 'Device profile'}</small>
           </div>
         </div>
       </section>
@@ -136,7 +149,25 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
             </div>
           </section>
 
-          <section className="card settings-card leaderboard-card">
+          <aside className="profile-side-stack">
+            <section className="card settings-card profile-status-card">
+              <div className="profile-status-heading">
+                <span className="profile-status-dot" />
+                <div>
+                  <strong>{user === null ? 'Local profile' : 'Discord connected'}</strong>
+                  <small>{cloud ? 'Cloud sync active' : 'Private to this device'}</small>
+                </div>
+              </div>
+              <div className="profile-featured-achievement">
+                <span><Icon name="sparkle" size={18} /></span>
+                <div>
+                  <small>Featured achievement</small>
+                  <strong>{latestAchievement?.title ?? 'Your first night awaits'}</strong>
+                  <p>{latestAchievement?.description ?? 'Join a room to begin earning profile showcases.'}</p>
+                </div>
+              </div>
+            </section>
+            <section className="card settings-card leaderboard-card">
             <div className="section-heading-row"><div><span className="eyebrow">Community</span><h2 className="settings-heading">Leaderboard</h2></div></div>
             {!cloud ? (
               <p className="user-sub">Sign in with Discord from My Rooms to sync your stats and join the leaderboard.</p>
@@ -156,7 +187,8 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
                 <label className="toggle-row"><input type="checkbox" checked={share} onChange={(event) => setShareStats(event.target.checked)} /><span>Show me on the leaderboard<span className="toggle-hint"> — shares your Discord name and stats, never what you watch.</span></span></label>
               </>
             )}
-          </section>
+            </section>
+          </aside>
         </div>
       )}
 

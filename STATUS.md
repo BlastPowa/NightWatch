@@ -2,20 +2,55 @@
 
 Last updated: 2026-07-16.
 
-## Phase 30 account/platform work in review
+## Phase 30 account/platform support
 
-- `backend/phase-30-account-drive` adds a disabled-by-default Electron bridge
+- The merged Phase 30 backend adds a disabled-by-default Electron bridge
   for an optional read-only YouTube account connection. It uses a separate
   `youtube.readonly` consent grant and a separate encrypted credential file;
   it never changes the official player session.
 - The shared Google PKCE flow now accepts only the two explicitly supported
   scopes (`drive.file` and `youtube.readonly`) and revokes a new grant if
   secure token persistence fails.
-- Validation passes strict typecheck, all 283 tests across 25 files, the
+- Backend validation passed strict typecheck, all 283 tests across 25 files, the
   Discord Activity production build, and Windows Electron/NSIS packaging with
   publishing disabled.
+- The frontend now uses this bridge in Settings with real Connect/Disconnect,
+  connected-channel, capability-disabled, secure-storage, and retryable
+  loopback-timeout presentation. It remains separate from the iframe session.
 - Google Cloud and release-variable setup is documented in
   `GOOGLE_MEDIA_SETUP.md`. No credential values are committed.
+
+## Phase 30 guidance, Drive delivery, and profile presentation
+
+- `frontend/phase-30-onboarding-faq` adds a searchable, categorized FAQ and a
+  restartable first-run tour with real control highlighting, screen navigation,
+  keyboard progress, persistent skip/finish state, responsive positioning, and
+  reduced-motion handling.
+- Google Drive's safe public desktop configuration is now injected into the
+  Electron main bundle for local and Actions builds. Seven repository variables
+  are configured; tokens and the optional client secret are not embedded.
+- The Library now explains system-browser OAuth, Picker-only file grants,
+  `safeStorage`, per-participant authorization, and actionable disabled versus
+  incomplete configuration states without displaying credential values.
+- Profile is rebuilt as a full-width Steam-inspired showcase with a wide
+  atmosphere/artwork banner, profile level, real achievement highlight, activity
+  grid, community sidebar, responsive cosmetics, and no invented stats.
+- Appearance settings now accept a resized device-local JPEG/PNG/WebP background
+  for the app and/or Profile. Images are sanitized, size-capped, never uploaded,
+  and reset through the existing local settings store.
+- The Settings workspace uses more of the available viewport, denser adaptive
+  theme/backdrop grids, top-aligned cards, and a compact content pane so Appearance
+  no longer stretches smaller cards inside oversized rows.
+- Small-window breakpoints now collapse the Settings rail earlier, stack dense
+  panes, compact short-height windows, keep every mobile destination scrollable,
+  and expose a working Account-to-Library Drive shortcut.
+- The official-player source mark now uses an atmosphere-driven glowing action
+  treatment, and the Settings gear animates on hover/focus with reduced-motion
+  fallbacks.
+- Green locally: strict typecheck, 292 tests across 28 files, Discord Activity
+  build, and Windows Electron/NSIS packaging. The packaged main bundle contains
+  all three public Google identifiers and the enabled YouTube-account gate; the
+  Activity bundle contains none of the Google identifiers.
 
 ## Phase 29 authorized media (backend and initial frontend merged)
 
@@ -31,9 +66,8 @@ Last updated: 2026-07-16.
   `drive.file` only, `safeStorage`-encrypted refresh tokens with no plaintext
   fallback, a sandboxed non-persistent Picker whose metadata is revalidated in
   main, and per-participant Drive range streaming.
-- Drive still defaults off and requires the owner flag plus Google Cloud
-  configuration. Packaged Drive acceptance and two-client custom-media
-  synchronization remain outstanding.
+- Drive remains owner-gated and requires packaged OAuth acceptance plus
+  two-client custom-media synchronization before room playback is enabled.
 - Drive validation now passes strict typecheck, all 265 tests across 22 files,
   the Discord Activity build, and Windows Electron/NSIS packaging.
 - `frontend/phase-29-library-ui` adds capability-gated navigation, local/Drive

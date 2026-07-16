@@ -327,7 +327,7 @@ export function PlayerPanel({
 
       {presentation === 'full' && <>
       <div className="player-media-info">
-        <div className="player-source-mark" aria-label="Played with the official YouTube player"><Icon name="play" size={18} /></div>
+        <div className="player-source-mark" aria-label="Played with the official YouTube player"><Icon name="play-solid" size={18} /></div>
         <div className="player-media-copy">
           <span className="eyebrow">YouTube · official player</span>
           <h2>{mediaDetails?.title ?? videoTitle ?? (hasVideo ? 'Loading video details…' : 'Choose something to watch')}</h2>

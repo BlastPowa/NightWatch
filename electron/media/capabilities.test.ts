@@ -4,6 +4,7 @@ import {
   maxMediaSizeBytes,
   resolveCapabilities,
 } from './capabilities';
+import { drivePublicConfiguration } from './buildConfig';
 
 const FLAGS = [
   'NIGHTWATCH_ENABLE_LOCAL_FILES',
@@ -111,6 +112,17 @@ describe('drive gating', () => {
     const capabilities = resolveCapabilities();
     expect(capabilities.googleDrive).toBe(false);
     expect(capabilities.reasons.googleDrive).toBe('disabled-by-owner');
+  });
+
+  it('provides only the public Drive configuration to main', () => {
+    process.env['NIGHTWATCH_GOOGLE_CLIENT_ID'] = 'client.apps.googleusercontent.com';
+    process.env['NIGHTWATCH_GOOGLE_PICKER_API_KEY'] = 'restricted-picker-key';
+    process.env['NIGHTWATCH_GOOGLE_APP_ID'] = '123456789';
+    expect(drivePublicConfiguration()).toEqual({
+      clientId: 'client.apps.googleusercontent.com',
+      pickerApiKey: 'restricted-picker-key',
+      appId: '123456789',
+    });
   });
 });
 
