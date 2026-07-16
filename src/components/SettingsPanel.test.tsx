@@ -5,6 +5,23 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mediaFail, mediaOk } from '@shared/media';
 import type { YouTubeAccountBridge } from '@shared/mediaBridge';
+
+vi.mock('@/lib/auth', () => ({
+  signInWithDiscord: vi.fn(),
+  signOut: vi.fn(),
+}));
+
+vi.mock('@/lib/social/PresenceService', () => ({
+  getPresencePreferences: vi.fn(async () => ({
+    status: 'ok',
+    data: { shareOnline: false, shareActivity: false },
+  })),
+  setPresencePreferences: vi.fn(async () => ({
+    status: 'ok',
+    data: { shareOnline: false, shareActivity: false },
+  })),
+}));
+
 import { SettingsPanel } from './SettingsPanel';
 
 afterEach(cleanup);
