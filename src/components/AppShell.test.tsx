@@ -19,7 +19,13 @@ function renderShell(overrides: Partial<Parameters<typeof AppShell>[0]> = {}) {
     view: 'discover',
     onNavigate,
     isElectron: true,
-    capabilities: { friends: true, messaging: true, creatorClubs: true, notifications: false },
+    capabilities: {
+      friends: true,
+      messaging: true,
+      creatorClubs: true,
+      notifications: false,
+      library: true,
+    },
     room: { active: false, code: '', name: '', memberCount: 0 },
     identity: { name: 'Night Owl', avatarUrl: null, connected: true },
     runtime: { connectionStatus: 'connected', bridgeError: null, appInfo: null },
@@ -68,5 +74,49 @@ describe('AppShell', () => {
     expect(roomAction.textContent).toContain('Open room');
     await user.click(roomAction);
     expect(onNavigate).toHaveBeenCalledWith('main');
+  });
+
+  it('shows Library only when its desktop capability is live', () => {
+    const { rerender } = render(
+      <AppShell
+        children={<section>Current screen</section>}
+        view="discover"
+        onNavigate={vi.fn()}
+        isElectron
+        capabilities={{
+          friends: false,
+          messaging: false,
+          creatorClubs: false,
+          notifications: false,
+          library: false,
+        }}
+        room={{ active: false, code: '', name: '', memberCount: 0 }}
+        identity={{ name: 'Night Owl', avatarUrl: null, connected: true }}
+        runtime={{ connectionStatus: 'connected', bridgeError: null, appInfo: null }}
+        search={{ query: '', busy: false, onQueryChange: vi.fn(), onSubmit: vi.fn() }}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Library' })).toBeNull();
+
+    rerender(
+      <AppShell
+        children={<section>Current screen</section>}
+        view="discover"
+        onNavigate={vi.fn()}
+        isElectron
+        capabilities={{
+          friends: false,
+          messaging: false,
+          creatorClubs: false,
+          notifications: false,
+          library: true,
+        }}
+        room={{ active: false, code: '', name: '', memberCount: 0 }}
+        identity={{ name: 'Night Owl', avatarUrl: null, connected: true }}
+        runtime={{ connectionStatus: 'connected', bridgeError: null, appInfo: null }}
+        search={{ query: '', busy: false, onQueryChange: vi.fn(), onSubmit: vi.fn() }}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Library' })).toBeTruthy();
   });
 });

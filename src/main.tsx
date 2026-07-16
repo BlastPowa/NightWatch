@@ -8,6 +8,7 @@ import { setPlatformBridge, webBridge } from '@/platform/PlatformBridge';
 import '@/index.css';
 import '@/styles/phase28-controls.css';
 import '@/styles/phase28-player.css';
+import '@/styles/phase29-library.css';
 
 setPlatformBridge(typeof window.nightwatch !== 'undefined' ? electronBridge : webBridge);
 initCloudSync();
