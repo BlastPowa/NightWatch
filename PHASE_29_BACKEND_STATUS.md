@@ -90,17 +90,45 @@ session gating all exist and are tested. Nothing is registered on a room channel
 `MEDIA_V1_EVENTS` is deliberately absent from `ROOM_EVENTS`, and there is a test
 that fails if someone adds it. Wiring the SyncEngine is the next lane.
 
-### Google Cloud setup (owner, before enabling Drive)
+### Google Cloud setup — DONE (2026-07-16)
 
-1. Create a **Desktop app** OAuth client in Google Cloud Console; set
-   `NIGHTWATCH_GOOGLE_CLIENT_ID` (and `NIGHTWATCH_GOOGLE_CLIENT_SECRET` if the
-   client has one — it ships in the binary and is not treated as a secret).
-2. Configure the consent screen with only the `drive.file` scope.
-3. Enable the Google Picker API; create an API key restricted to it; set
-   `NIGHTWATCH_GOOGLE_PICKER_API_KEY` and `NIGHTWATCH_GOOGLE_APP_ID` (the
-   project number).
-4. No credentials are committed anywhere; all of these are environment
-   configuration at build/packaging time.
+The owner created the Google Cloud project, desktop OAuth client, and Picker
+API key. The values live in the repo-root `.env` (gitignored, never committed;
+`.env.example` documents the variable names), and `electron/main.ts` now loads
+`.env` into the main process in development — real environment variables always
+win, so CI/packaged builds are unaffected.
+
+Verified without user sign-in, all passing:
+
+- client id/secret accepted by Google's token endpoint (`invalid_grant` for a
+  bogus refresh token — i.e. the client itself is recognized);
+- the API key exists and the Drive API acknowledges it;
+- the authorization page renders for this client id;
+- with the real `.env` loaded, `resolveCapabilities()` reports local files and
+  Drive `available` end to end.
+
+Open items for the owner:
+
+- The API key answered `401 CREDENTIALS_MISSING` to a keyed Drive call, which
+  suggests it may not yet be restricted to the Picker API — confirm in
+  Credentials → the key → API restrictions → "Restrict key" → Google Picker
+  API only.
+- The consent screen is in Testing mode: only listed test users can connect,
+  and each connection shows the "unverified app" interstitial. That is correct
+  for now; Google verification is only needed before public distribution.
+- Interactive sign-in, Picker, and playback still need a human: run the app,
+  connect Drive, pick a file, play/seek/disconnect. This is part of the
+  packaged acceptance in the handoff checklist.
+
+### For Codex (frontend)
+
+Drive is now configured on the owner's machine: with the owner's `.env`,
+`getCapabilities()` reports `localFiles: true`, `googleDrive: true`,
+`htmlMedia: true`. On any machine without that `.env`, the same build reports
+everything off with typed reasons — the UI must key off capabilities at
+runtime, never assume Drive exists. `library` remains off until the owner sets
+`NIGHTWATCH_ENABLE_LIBRARY` (migration 0022 is deployed, so that is now purely
+the owner's switch).
 
 ## Supabase deployment steps (owner)
 

@@ -21,6 +21,7 @@ import {
   type WindowState,
 } from '@shared/ipc';
 import { parseJoinLink } from '@shared/room';
+import { loadDotEnv } from './dotenv';
 import { logger } from './logger';
 import { maxMediaSizeBytes } from './media/capabilities';
 import { DriveManager } from './media/driveManager';
@@ -28,6 +29,12 @@ import { MediaService, makeSenderValidator, registerMediaScheme } from './media/
 import { DriveTokenStore } from './media/tokenStore';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
+
+// Load the repo .env into the main process in development, so the Phase 29
+// NIGHTWATCH_* capability configuration works without exporting variables in
+// every shell. Real environment variables always take precedence, and a
+// packaged app simply has no .env next to it.
+loadDotEnv(path.join(__dirname, '..', '.env'));
 
 const DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
