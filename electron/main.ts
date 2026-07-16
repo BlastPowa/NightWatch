@@ -21,6 +21,7 @@ import {
 } from '@shared/ipc';
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
+import { MediaService, makeSenderValidator, registerMediaScheme } from './media/service';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
 
@@ -47,7 +48,21 @@ if (!DEV_SERVER_URL) {
   ]);
 }
 
+// The private media scheme (Phase 29) must also be registered before 'ready'.
+// It is registered in dev too, unlike app://, because local playback is
+// developed against the dev server.
+registerMediaScheme();
+
 let mainWindow: BrowserWindow | null = null;
+
+/**
+ * Windows we created ourselves. IPC from anything else is refused — a sender
+ * check against "is this a BrowserWindow" would happily accept a window some
+ * other code opened.
+ */
+const knownWindowIds = new Set<number>();
+
+let mediaService: MediaService | null = null;
 
 // nightwatch:// protocol for the OAuth callback (Phase 14, ADR-005).
 // Dev mode must pass the script path so Windows launches "electron ." .
@@ -236,7 +251,14 @@ function createMainWindow(): void {
     }
   });
 
+  knownWindowIds.add(mainWindow.webContents.id);
+
+  const closingWindowId = mainWindow.id;
+  const closingContentsId = mainWindow.webContents.id;
   mainWindow.on('closed', () => {
+    // Leases and in-flight hashing belong to the window that asked for them.
+    mediaService?.handleWindowDestroyed(closingWindowId);
+    knownWindowIds.delete(closingContentsId);
     mainWindow = null;
   });
 
@@ -328,7 +350,7 @@ if (!hasSingleInstanceLock) {
     logger.write('error', 'main', `Unhandled rejection: ${String(reason)}`);
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     logger.init();
     logger.write('info', 'main', `NightWatch ${app.getVersion()} starting (packaged=${app.isPackaged})`);
 
@@ -399,6 +421,15 @@ if (!hasSingleInstanceLock) {
     }
 
     registerIpcHandlers();
+
+    mediaService = new MediaService(
+      app.getPath('userData'),
+      makeSenderValidator((webContentsId) => knownWindowIds.has(webContentsId)),
+    );
+    // Register the private protocol and every media IPC handler before the
+    // renderer can issue its first capability request.
+    await mediaService.init();
+
     richPresence.start();
     updateManager.init();
     createMainWindow();
@@ -418,5 +449,8 @@ if (!hasSingleInstanceLock) {
 
   app.on('before-quit', () => {
     richPresence.stop();
+    // Every lease expires with the app. On the next launch the renderer must
+    // revalidate and ask for a new one.
+    mediaService?.shutdown();
   });
 }

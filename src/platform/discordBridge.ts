@@ -114,5 +114,9 @@ export async function createDiscordBridge(clientId: string): Promise<PlatformBri
     // The Activity is already inside Discord, and its iframe is sandboxed away
     // from the Notification API — the room is on screen, so this is a no-op.
     notify: () => {},
+    // The Activity stays YouTube-only (Phase 29). It advertises no custom-media
+    // protocol version, so a room containing one never starts a custom-media
+    // session and no participant is left behind silently.
+    media: null,
   };
 }

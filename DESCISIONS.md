@@ -220,3 +220,38 @@ Acknowledge Supabase's free-tier single-region Realtime hosting as an MVP limita
 Reason:
 
 There is no free multi-region low-latency option, so true global parity isn't achievable within the current zero-cost infrastructure constraint. The existing drift-correction tolerance already absorbs moderate latency; validating it against higher round-trip times (and considering an adaptive, per-client tolerance instead of a fixed constant) is a reasonable, low-cost mitigation. True multi-region support is documented as Future Expansion, contingent on moving to paid infrastructure.
+---
+
+## ADR-018
+
+Decision:
+
+Phase 29 custom media travels in its own versioned `media:v1:*` event namespace rather than by widening the existing `playback:*` / `sync:*` payloads, and those legacy events stay YouTube-only and byte-identical.
+
+Reason:
+
+A v0.1.x client binds `playback:load` expecting `{ videoId }`. Widening that payload to carry a local/Drive descriptor means an old client either misreads a fingerprint as a YouTube id or silently plays the wrong thing — a desync with no visible cause and no way for the old client to report it. A separate namespace makes an old client simply not hear the event, which is the correct behavior: it advertises no protocol version, so the host cannot start a custom-media session without first removing or notifying it. `ROOM_EVENTS` is asserted in tests to exclude `media:v1:*` so this cannot be undone by accident.
+
+---
+
+## ADR-019
+
+Decision:
+
+The renderer never receives a filesystem path or an OAuth token for custom media. It holds an opaque device-local handle and an opaque `nightwatch-media://stream/{leaseId}` URL; the main process alone maps those to real bytes, and the private scheme is registered without `bypassCSP`.
+
+Reason:
+
+The renderer is the part of the app that runs untrusted-ish content and is the realistic compromise target. A path in renderer state is a path in a crash report, a log line, or a room event the first time someone serializes application state without thinking about it — and the descriptor type is deliberately unable to express one, so that mistake will not typecheck. Leases live only in main-process memory and die with the process: a capability in a database is a capability someone else can use. `bypassCSP` is refused because the scheme needs exactly one privilege, `media-src`, and a general CSP escape reachable from renderer content is worth more to an attacker than the feature is to us.
+
+---
+
+## ADR-020
+
+Decision:
+
+Media identity is the SHA-256 fingerprint of the bytes plus the size. Never the filename, never the size alone. Local and Drive copies of identical bytes collapse to the same source key.
+
+Reason:
+
+Two participants each hold their own authorized copy of a file and will have renamed it differently; the filename is decoration. Matching on name or size would let a room play two different videos in lockstep and call it synchronized, which is worse than refusing to start, because it looks like it worked. Collapsing local and Drive to one key is what lets a Drive viewer and a local viewer sync without exchanging a single byte. A cached fingerprint is reused only when canonical path, size, and mtime all still match; anything else re-hashes.

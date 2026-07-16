@@ -2,13 +2,37 @@
 
 Last updated: 2026-07-16.
 
+## Phase 29 authorized media (backend, in review)
+
+- `backend/phase-29-media-library` holds the Phase 29 typed contracts, the Electron
+  local-media platform, and migration `0022`. It stops at the capability handoff
+  gate: every new capability defaults to off and no UI is wired. See
+  `PHASE_29_BACKEND_STATUS.md`.
+- Green here: `npm run typecheck`, `npm test` (197 tests / 18 files),
+  `npm run build:activity`, and `npm run build -- --publish never`. The Activity
+  bundle contains no local/Drive surface, and the Windows installer + blockmap
+  package successfully.
+- The owner reports migration `0022` and `phase29_media_library_test.sql` both
+  applied successfully in the configured Supabase environment. Capability flags
+  remain off until the matching UI and packaged playback acceptance are complete.
+- Still outstanding: packaged local-file playback/range/app-restart acceptance
+  and the future two-client custom-media synchronization phase.
+- Google Drive is deliberately not implemented: its surface returns typed
+  `capability-disabled` and reports `security-review-required`, per the Phase 29
+  rule that Drive work does not start until the contract and local-file security
+  tests are green.
+- Fixed on this branch: `main` could not typecheck or test at all, because Phase 28
+  added component tests importing React Testing Library / user-event / jsdom without
+  ever adding those dev dependencies to `package.json`.
+
 ## Release baseline
 
 - Current public release: `v0.1.22`.
 - Phase 24 frontend merged through PR #35, Phase 24 backend support merged through PR #34, and the complete Phase 25–28 frontend overhaul merged through PR #36.
 - Migration `0021`, privacy-safe media presence, canonical Discord avatars, deeper Browse paging, and `search-youtube` details mode are present on `main`; database/function deployment still requires the owner environment.
 - Releases remain intentional GitHub Actions runs after reviewed feature PRs; no direct push to `main`.
-- `frontend/phase-28-control-polish` contains the final control/settings pass and is ready for reviewed feature-PR delivery; `main` remains unchanged until that PR merges.
+- The Phase 28 control/settings completion pass merged through PR #38. Phase 29
+  backend/platform support is the only pending reviewed merge.
 
 ## Merged cinematic overhaul
 

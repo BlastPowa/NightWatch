@@ -3,6 +3,54 @@
 
 ## Unreleased
 
+### Phase 29 authorized media backend contracts (branch `backend/phase-29-media-library`)
+
+Backend/platform only. No React screens or shared CSS were touched, and every new
+capability ships disabled — this branch stops at the documented capability handoff
+gate so the contracts can be reviewed before any UI is enabled.
+
+- Added source-neutral media contracts (`shared/media.ts`): `MediaSourceDescriptor`
+  for YouTube/Drive/local, `MediaCapabilities` with typed reasons, `MediaResult`/
+  `MediaFailure`, and a single validation chokepoint that rejects unknown schema
+  versions without coercion, malformed fingerprints, unsafe titles, invalid sizes
+  and MIME types, and any extra untrusted field.
+- Added the playback abstraction and versioned room-event contracts
+  (`shared/mediaPlayback.ts`): `PlaybackAdapter`, `PlaybackSnapshotV1`, and the
+  `media:v1:*` namespace with validators. The legacy `playback:*`/`sync:*` events
+  are unchanged and remain YouTube-only, so old clients can never read a custom
+  descriptor as a YouTube id.
+- Added the typed IPC surface: one named channel per operation, no generic
+  `send`/`invoke`/`ipcRenderer` in preload, sender and argument validation in main.
+- Added the Electron local-media platform: native `openFile` selection, streaming
+  SHA-256 with bounded progress and cancellation, device-local handle→path mapping
+  under `userData` (never in the renderer, cloud, or logs), opaque 128-bit playback
+  leases, and the private `nightwatch-media://` scheme with single-range `206`/`416`
+  streaming. The scheme is registered without `bypassCSP`; the renderer CSP gains
+  only `media-src nightwatch-media:`.
+- Added `PlatformBridge.media`, nullable. Discord Activity and the web build are
+  `null` and advertise no protocol version, so they stay YouTube-only and a room
+  containing one never silently starts a custom-media session without them.
+- Hardened local playback leases so a same-size file replacement invalidates the
+  active lease instead of serving bytes that no longer match the agreed fingerprint.
+- Ensured media protocol and IPC initialization completes before the first renderer
+  window opens, removing a startup race where capability calls could arrive before
+  their handlers were registered.
+- Added migration `0022_media_library.sql`: owner-private `media_library_items`
+  with owner-only RLS on all four verbs, a unique owner/kind/source constraint,
+  typed save/progress/export/delete RPCs, and progress clamped to duration. Local
+  sources, paths, tokens, and leases are rejected by the schema itself.
+- Fixed a real bug caught by the new capability tests: `NIGHTWATCH_MAX_MEDIA_BYTES`
+  parsed `'1.5'` as `1`, which would have silently capped every file at one byte.
+- Restored the dev-only React Testing Library, user-event, and jsdom dependencies
+  that Phase 28 documented but never added to `package.json`. Without them
+  `npm run typecheck` and `npm test` were both failing on `main`.
+
+Google Drive is **not** implemented on this branch. Its contract surface exists and
+returns typed `capability-disabled`/`not-configured` failures, and the capability
+reports `security-review-required`, per the Phase 29 delivery order: Drive
+authorization does not begin until the contract and local-file security tests are
+green and reviewed.
+
 ### Phase 28 control, Browse, mini-player, and caption completion
 
 - Rebuilt the composite global search focus treatment so enhanced keyboard focus appears on the rounded search shell without drawing a second rectangle inside the text field.

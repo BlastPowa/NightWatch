@@ -233,3 +233,43 @@ From PRODUCT_REQUIREMENTS.md §11 ("Still Open"), to be resolved before or durin
 - Room access model: short code vs. link vs. both, and whether private/password-protected rooms are needed.
 - Room lifecycle edge case: any grace period before a room is considered "gone" when it hits zero Presence members, or strictly instantaneous.
 - Baseline chat/reaction moderation (e.g., basic profanity filtering) — deferred decision, not blocking architecture.
+
+---
+
+## 11. Authorized Media Layer (Phase 29)
+
+NightWatch synchronizes playback state only. Every participant obtains the selected media from a file they control or from Google Drive under their own authorization. No media byte is ever downloaded, cached, proxied, restreamed, or relayed between participants, and YouTube stays on the official iframe.
+
+### 11.1 Layers
+
+```
+shared/media.ts          source/capability/result contracts + validation (no Electron, no DOM)
+shared/mediaPlayback.ts  PlaybackAdapter, PlaybackSnapshotV1, media:v1:* events + validators
+shared/mediaBridge.ts    MediaPlatformBridge, SelectedMedia, PlaybackLease, lease/handle shapes
+shared/ipc.ts            one named IPC channel per operation
+electron/media/          capability gate, mapping store, leases, IPC + streaming service
+src/platform/            PlatformBridge.media (null off desktop)
+```
+
+The shared modules import neither Electron nor DOM globals, so main, preload, renderer, and the tests can all depend on them.
+
+### 11.2 Trust boundary
+
+The renderer is treated as hostile. Every IPC argument is re-validated in main regardless of what preload did, and the sender is checked against a window we actually created and an expected app origin — not merely against "is this a BrowserWindow". `parseMediaSourceDescriptor` is the single validation chokepoint: exact `schemaVersion`, no coercion, and unknown extra fields are rejected rather than dropped, so a caller cannot smuggle a path alongside a valid descriptor and rely on a later stage reading it.
+
+What crosses to the renderer is an opaque 128-bit `localHandle` and an opaque `nightwatch-media://stream/{leaseId}` URL. What never crosses: paths, OAuth/Picker/refresh tokens, provider responses, filesystem errors, stack traces. See ADR-019.
+
+### 11.3 Playback path
+
+1. The user selects a file through the native `openFile` dialog, owned by main. This is the only way a path enters the process.
+2. Main validates extension, MIME, size, and readability, then streams the file through SHA-256 (a read stream, never `readFile` — these are movies), reporting bounded progress and honoring cancellation.
+3. Main stores a device-local `handle -> path` mapping under `userData` (mode 0600 where the OS supports it, write-then-rename) and returns only the descriptor plus the handle.
+4. To play, the renderer asks for a lease. Main revalidates the file, mints 128 bits of entropy, and returns the opaque URL.
+5. The private scheme serves exactly one leased file: `GET`/`HEAD` only, one RFC byte range, `206`/`416`, `Accept-Ranges`, `no-store`, and a bounded `createReadStream(start, end)` so seeking into a 20 GB film reads megabytes, not gigabytes.
+6. Leases die on adapter destroy, window destruction, sign-out, app exit, or expiry. They are never logged and never persisted.
+
+### 11.4 Capability gating
+
+Every custom capability defaults to off and is driven by build-time environment flags, not a user-writable file — a capability a user can switch on locally is one an attacker who reaches their disk can switch on too. `MediaCapabilities.reasons` carries a typed reason per capability so the UI explains a disabled control instead of showing one that fails when pressed. A build with nothing enabled advertises no protocol version and is therefore never counted as a ready participant.
+
+Discord Activity and the web build set `PlatformBridge.media = null` and stay YouTube-only.
