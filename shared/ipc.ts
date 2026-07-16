@@ -4,6 +4,19 @@
  * channels defined here — no ad-hoc channel strings anywhere else.
  */
 
+import type {
+  HtmlMediaSourceDescriptor,
+  MediaCapabilities,
+  MediaResult,
+  MediaSourceDescriptor,
+} from './media';
+import type {
+  DriveConnectionState,
+  FingerprintProgress,
+  PlaybackLease,
+  SelectedMedia,
+} from './mediaBridge';
+
 export const IpcChannel = {
   GetAppInfo: 'app:get-info',
   PresenceUpdate: 'presence:update',
@@ -22,6 +35,22 @@ export const IpcChannel = {
   WindowGetState: 'window:get-state',
   /** Push channel (main → renderer) carrying WindowState on change. */
   WindowState: 'window:state',
+
+  // Phase 29 — authorized media. One named channel per operation: the preload
+  // never exposes a generic send/invoke, so the renderer cannot reach any main
+  // process capability that is not spelled out here.
+  MediaGetCapabilities: 'media:get-capabilities',
+  MediaPickLocalFile: 'media:pick-local-file',
+  MediaResolveLocalMatch: 'media:resolve-local-match',
+  MediaCancelFingerprint: 'media:cancel-fingerprint',
+  /** Push channel (main → renderer) carrying FingerprintProgress. */
+  MediaFingerprintProgress: 'media:fingerprint-progress',
+  MediaGetDriveConnection: 'media:get-drive-connection',
+  MediaConnectDrive: 'media:connect-drive',
+  MediaPickDriveFile: 'media:pick-drive-file',
+  MediaDisconnectDrive: 'media:disconnect-drive',
+  MediaCreateLease: 'media:create-lease',
+  MediaReleaseLease: 'media:release-lease',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -117,6 +146,46 @@ export interface IpcInvokeContract {
     args: [];
     result: WindowState;
   };
+  [IpcChannel.MediaGetCapabilities]: {
+    args: [];
+    result: MediaCapabilities;
+  };
+  [IpcChannel.MediaPickLocalFile]: {
+    args: [];
+    result: MediaResult<SelectedMedia>;
+  };
+  [IpcChannel.MediaResolveLocalMatch]: {
+    args: [Extract<MediaSourceDescriptor, { kind: 'local' }>];
+    result: MediaResult<SelectedMedia>;
+  };
+  [IpcChannel.MediaCancelFingerprint]: {
+    args: [string];
+    result: void;
+  };
+  [IpcChannel.MediaGetDriveConnection]: {
+    args: [];
+    result: DriveConnectionState;
+  };
+  [IpcChannel.MediaConnectDrive]: {
+    args: [];
+    result: MediaResult<DriveConnectionState>;
+  };
+  [IpcChannel.MediaPickDriveFile]: {
+    args: [];
+    result: MediaResult<SelectedMedia>;
+  };
+  [IpcChannel.MediaDisconnectDrive]: {
+    args: [];
+    result: MediaResult<void>;
+  };
+  [IpcChannel.MediaCreateLease]: {
+    args: [HtmlMediaSourceDescriptor];
+    result: MediaResult<PlaybackLease>;
+  };
+  [IpcChannel.MediaReleaseLease]: {
+    args: [string];
+    result: void;
+  };
 }
 
 /** A desktop notification raised by the renderer (Phase 19). */
@@ -153,4 +222,30 @@ export interface NightWatchBridge {
   getWindowState(): Promise<WindowState>;
   /** Subscribe to window state changes (maximize/restore). Returns unsubscribe. */
   onWindowState(callback: (state: WindowState) => void): () => void;
+  /** Phase 29 authorized-media surface. */
+  media: NightWatchMediaBridge;
+}
+
+/**
+ * The media half of the preload bridge.
+ *
+ * Every method maps to exactly one named channel. There is no path argument
+ * anywhere in this interface and no way to ask for one — the renderer selects
+ * files through the OS dialog the main process owns, and refers to the result
+ * only by opaque handle.
+ */
+export interface NightWatchMediaBridge {
+  getCapabilities(): Promise<MediaCapabilities>;
+  pickLocalFile(): Promise<MediaResult<SelectedMedia>>;
+  resolveLocalMatch(
+    descriptor: Extract<MediaSourceDescriptor, { kind: 'local' }>,
+  ): Promise<MediaResult<SelectedMedia>>;
+  cancelFingerprint(operationId: string): Promise<void>;
+  onFingerprintProgress(callback: (progress: FingerprintProgress) => void): () => void;
+  getDriveConnection(): Promise<DriveConnectionState>;
+  connectDrive(): Promise<MediaResult<DriveConnectionState>>;
+  pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
+  disconnectDrive(): Promise<MediaResult<void>>;
+  createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;
+  releasePlaybackLease(leaseId: string): Promise<void>;
 }

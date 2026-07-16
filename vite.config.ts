@@ -13,6 +13,10 @@ function productionCsp(): PluginOption {
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://www.google.com https://apis.google.com blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
+    // Phase 29: the <video> element plays authorized local/Drive media from the
+    // private nightwatch-media:// scheme. Narrowly media-src only — the scheme
+    // is registered without bypassCSP precisely so this is the whole allowance.
+    "media-src 'self' nightwatch-media: blob:; " +
     "img-src 'self' data: https://i.ytimg.com https://*.googleusercontent.com https://*.ggpht.com https://cdn.discordapp.com https://media.discordapp.net; " +
     "frame-src https://www.youtube.com https://www.youtube-nocookie.com; " +
     "child-src https://www.youtube.com blob:; " +

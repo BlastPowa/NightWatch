@@ -5,6 +5,8 @@ import type {
   PresenceState,
   WindowState,
 } from '@shared/ipc';
+import { mediaFail, unsupportedPlatformCapabilities } from '@shared/media';
+import { disconnectedDriveState, type MediaPlatformBridge } from '@shared/mediaBridge';
 
 /**
  * Platform adapter (§9, ADR-008): the renderer core talks to the host
@@ -43,7 +45,42 @@ export interface PlatformBridge {
   getWindowState(): Promise<WindowState | null>;
   /** Subscribe to window state changes. No-op (returns a no-op) off desktop. */
   onWindowState(callback: (state: WindowState) => void): () => void;
+  /**
+   * Authorized local/Drive media (Phase 29). Null on any platform without a
+   * media surface — the Discord Activity and the browser build are YouTube-only
+   * and stay that way. The renderer keys off null and renders no Library or
+   * file controls at all, rather than controls that fail when pressed.
+   */
+  readonly media: MediaPlatformBridge | null;
 }
+
+/**
+ * The explicit no-op media surface.
+ *
+ * Deliberately not `null`-by-omission: a platform that has the surface but
+ * cannot serve it (a future web build behind a flag) returns typed
+ * `unsupported-platform` failures so the renderer can say why. Discord and web
+ * use `media: null` today; this exists so "off" is always sayable.
+ */
+export const unsupportedMediaBridge: MediaPlatformBridge = {
+  getCapabilities: () => Promise.resolve(unsupportedPlatformCapabilities()),
+  pickLocalFile: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Local files are only available in the NightWatch desktop app.')),
+  resolveLocalMatch: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Local files are only available in the NightWatch desktop app.')),
+  getDriveConnection: () => Promise.resolve(disconnectedDriveState('not-configured')),
+  connectDrive: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
+  pickDriveFile: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
+  disconnectDrive: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
+  createPlaybackLease: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'This platform cannot play local or Drive media.')),
+  releasePlaybackLease: () => Promise.resolve(),
+  onFingerprintProgress: () => () => {},
+  cancelFingerprint: () => Promise.resolve(),
+};
 
 /** Safe default: plain browser (dev tab) — everything is a no-op. */
 export const webBridge: PlatformBridge = {
@@ -60,6 +97,9 @@ export const webBridge: PlatformBridge = {
   // A browser tab does not own its window chrome.
   getWindowState: () => Promise.resolve(null),
   onWindowState: () => () => {},
+  // A browser tab cannot read a local file the user has not handed it, cannot
+  // hold a refresh token safely, and cannot serve a private scheme. YouTube-only.
+  media: null,
   notify: (request) => {
     // Never prompt for permission on our own initiative; only use it if the
     // user has already granted it to this origin.

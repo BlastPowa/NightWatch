@@ -23,7 +23,7 @@ class Logger {
     }
   }
 
-  public write(level: LogLevel, source: 'main' | 'renderer', message: string): void {
+  public write(level: LogLevel, source: 'main' | 'renderer' | 'media', message: string): void {
     const line = `${new Date().toISOString()} [${level.toUpperCase()}] [${source}] ${message}\n`;
     if (level === 'error') {
       console.error(line.trimEnd());

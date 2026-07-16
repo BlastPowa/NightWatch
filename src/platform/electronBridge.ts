@@ -1,8 +1,29 @@
+import type { MediaPlatformBridge } from '@shared/mediaBridge';
 import type { PlatformBridge } from '@/platform/PlatformBridge';
+
+/**
+ * The desktop media surface. A thin pass-through: every decision — capability
+ * gating, validation, permission — is made in the main process, because that is
+ * the only side of the bridge whose code the user cannot reach.
+ */
+const media: MediaPlatformBridge = {
+  getCapabilities: () => window.nightwatch.media.getCapabilities(),
+  pickLocalFile: () => window.nightwatch.media.pickLocalFile(),
+  resolveLocalMatch: (descriptor) => window.nightwatch.media.resolveLocalMatch(descriptor),
+  getDriveConnection: () => window.nightwatch.media.getDriveConnection(),
+  connectDrive: () => window.nightwatch.media.connectDrive(),
+  pickDriveFile: () => window.nightwatch.media.pickDriveFile(),
+  disconnectDrive: () => window.nightwatch.media.disconnectDrive(),
+  createPlaybackLease: (descriptor) => window.nightwatch.media.createPlaybackLease(descriptor),
+  releasePlaybackLease: (leaseId) => window.nightwatch.media.releasePlaybackLease(leaseId),
+  onFingerprintProgress: (callback) => window.nightwatch.media.onFingerprintProgress(callback),
+  cancelFingerprint: (operationId) => window.nightwatch.media.cancelFingerprint(operationId),
+};
 
 /** Electron implementation: delegates to the preload bridge. */
 export const electronBridge: PlatformBridge = {
   kind: 'electron',
+  media,
   getAppInfo: async () => {
     try {
       return await window.nightwatch.getAppInfo();
