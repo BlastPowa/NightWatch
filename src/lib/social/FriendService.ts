@@ -82,6 +82,8 @@ export interface Relation {
   avatarUrl: string | null;
   /** Server-validated selected border (0020) — a forged selection returns null. */
   selectedBorderId: string | null;
+  /** Current room is an immediate shared context; history comes from SQL. */
+  context?: 'current-room';
 }
 
 export interface SocialGraph {

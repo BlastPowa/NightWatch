@@ -4,7 +4,11 @@ import {
   type EventPayload,
   type RealtimeEventName,
 } from '@shared/events';
-import { sanitizeAvatarUrl, type PresenceMeta, type RoomMember } from '@shared/room';
+import {
+  sanitizeAvatarUrl,
+  type PresenceMeta,
+  type RoomMember,
+} from '@shared/room';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';

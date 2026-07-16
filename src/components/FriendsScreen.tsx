@@ -9,6 +9,7 @@ import {
   type Relation,
   type SocialGraph,
 } from '@/lib/social/FriendService';
+import { listLiveRoomCoWatchers } from '@/lib/social/LiveRoomSocialService';
 import { BlockedUsersPanel } from '@/components/BlockedUsersPanel';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -26,7 +27,14 @@ function relationLabel(kind: Relation['kind']): string {
   return 'Watched together';
 }
 
+function relationContextLabel(person: Relation): string {
+  return person.context === 'current-room' ? 'In your room' : relationLabel(person.kind);
+}
+
 function presenceCopy(person: Relation, activity: FriendPresence | undefined): string {
+  if (person.context === 'current-room') {
+    return 'Signed in and watching with you';
+  }
   if (activity === undefined || activity.status === 'offline') {
     return person.kind === 'friend' ? 'Presence private or offline' : relationLabel(person.kind);
   }
@@ -35,7 +43,13 @@ function presenceCopy(person: Relation, activity: FriendPresence | undefined): s
   return 'Online';
 }
 
-export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }): JSX.Element {
+export function FriendsScreen({
+  onMessage,
+  currentRoomCode = null,
+}: {
+  onMessage(userId: string): void;
+  currentRoomCode?: string | null;
+}): JSX.Element {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [graph, setGraph] = useState<SocialGraph>(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -43,6 +57,7 @@ export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }
   const [message, setMessage] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [presence, setPresence] = useState<Map<string, FriendPresence>>(new Map());
+  const [roomSuggestions, setRoomSuggestions] = useState<Relation[]>([]);
 
   const refresh = useCallback(async (): Promise<void> => {
     const result = await getSocialGraph();
@@ -67,6 +82,48 @@ export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }
     return () => { active = false; window.clearInterval(timer); };
   }, []);
 
+  useEffect(() => {
+    if (currentRoomCode === null) {
+      setRoomSuggestions([]);
+      return;
+    }
+    let active = true;
+    const refreshRoom = (): void => {
+      void listLiveRoomCoWatchers(currentRoomCode).then((result) => {
+        if (!active || result.status !== 'ok') return;
+        setRoomSuggestions(
+          result.data.map((person) => ({
+            kind: 'suggestion',
+            userId: person.userId,
+            displayName: person.displayName,
+            requestId: null,
+            createdAt: new Date().toISOString(),
+            avatarUrl: person.avatarUrl,
+            selectedBorderId: person.selectedBorderId,
+            context: 'current-room',
+          })),
+        );
+      });
+    };
+    refreshRoom();
+    const timer = window.setInterval(refreshRoom, 60_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [currentRoomCode]);
+
+  const combinedSuggestions = useMemo(() => {
+    const existing = new Set(
+      [...graph.friends, ...graph.incoming, ...graph.outgoing, ...graph.suggestions]
+        .map((person) => person.userId),
+    );
+    return [
+      ...graph.suggestions,
+      ...roomSuggestions.filter((person) => !existing.has(person.userId)),
+    ];
+  }, [graph, roomSuggestions]);
+
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filtered = useMemo(() => {
     const select = (items: Relation[]): Relation[] => normalizedQuery === ''
@@ -76,9 +133,9 @@ export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }
       friends: select(graph.friends),
       incoming: select(graph.incoming),
       outgoing: select(graph.outgoing),
-      suggestions: select(graph.suggestions),
+      suggestions: select(combinedSuggestions),
     };
-  }, [graph, normalizedQuery]);
+  }, [combinedSuggestions, graph.friends, graph.incoming, graph.outgoing, normalizedQuery]);
 
   async function act(userId: string, action: () => Promise<{ status: string }>, success: string): Promise<void> {
     setBusyId(userId);
@@ -87,6 +144,7 @@ export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }
     setBusyId(null);
     if (result.status === 'ok') {
       setMessage(success);
+      setRoomSuggestions((current) => current.filter((person) => person.userId !== userId));
       await refresh();
     } else {
       setMessage(result.status === 'rate-limited' ? 'That action is being attempted too quickly.' : 'The friend action could not be completed.');
@@ -114,7 +172,7 @@ export function FriendsScreen({ onMessage }: { onMessage(userId: string): void }
         <div className="social-sections">
           {graph.incoming.length > 0 && <RelationSection title="Friend requests" subtitle="People waiting for your response" items={filtered.incoming} onOpen={setProfileId} empty={normalizedQuery === '' ? undefined : 'No requests match your search.'} renderActions={(person) => <><button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => acceptFriendRequest(person.userId), `${person.displayName} is now your friend.`)}>Accept</button><button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => declineFriendRequest(person.userId), 'Request declined.')}>Decline</button></>} />}
           <RelationSection title="Your friends" subtitle="Accepted NightWatch connections" items={filtered.friends} onOpen={setProfileId} presence={presence} empty={normalizedQuery === '' ? 'Watch together in persistent rooms to discover people you know.' : 'No friends match your search.'} renderActions={(person) => <><button className="button button-primary" onClick={() => onMessage(person.userId)}><Icon name="message" size={15} />Message</button><button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => removeFriend(person.userId), `${person.displayName} was removed.`)}>Remove</button></>} />
-          {graph.suggestions.length > 0 && <RelationSection title="People you watched with" subtitle="Suggestions are not friends until they accept" items={filtered.suggestions} onOpen={setProfileId} empty={normalizedQuery === '' ? undefined : 'No co-watchers match your search.'} renderActions={(person) => <button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => sendFriendRequest(person.userId), `Request sent to ${person.displayName}.`)}><Icon name="plus" size={15} />Add friend</button>} />}
+          {combinedSuggestions.length > 0 && <RelationSection title="People you watched with" subtitle="Current signed-in room members and previous co-watchers" items={filtered.suggestions} onOpen={setProfileId} empty={normalizedQuery === '' ? undefined : 'No co-watchers match your search.'} renderActions={(person) => <button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => sendFriendRequest(person.userId), `Request sent to ${person.displayName}.`)}><Icon name="plus" size={15} />Add friend</button>} />}
           {graph.outgoing.length > 0 && <RelationSection title="Sent requests" subtitle="Waiting for a response" items={filtered.outgoing} onOpen={setProfileId} empty={normalizedQuery === '' ? undefined : 'No sent requests match your search.'} renderActions={(person) => <button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => cancelFriendRequest(person.userId), 'Request cancelled.')}>Cancel request</button>} />}
           <section className="social-section blocked-section"><header><div><h2>Blocked</h2><p>Blocking is mutual and removes access to messages, presence, and friends-only moments.</p></div></header><BlockedUsersPanel /></section>
         </div>
@@ -148,7 +206,7 @@ function RelationSection({ title, subtitle, items, presence, empty, onOpen, rend
                   <ProfileAvatar name={person.displayName} src={person.avatarUrl} className={person.selectedBorderId !== null ? `person-avatar border-${person.selectedBorderId}` : 'person-avatar'} />
                   {activity !== undefined && activity.status !== 'offline' && <i className={`presence-dot presence-${activity.status}`} aria-hidden="true" />}
                 </button>
-                <span className="person-copy"><span className="relationship-label">{relationLabel(person.kind)}</span><strong>{person.displayName}</strong><small>{presenceCopy(person, activity)}</small></span>
+                <span className="person-copy"><span className="relationship-label">{relationContextLabel(person)}</span><strong>{person.displayName}</strong><small>{presenceCopy(person, activity)}</small></span>
                 <span className="person-actions">{renderActions(person)}</span>
               </li>
             );

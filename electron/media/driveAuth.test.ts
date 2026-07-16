@@ -179,6 +179,7 @@ describe('loopback listener', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error.code).toBe('auth-cancelled');
+      expect(result.error.message).toMatch(/testing audience/i);
     }
   });
 

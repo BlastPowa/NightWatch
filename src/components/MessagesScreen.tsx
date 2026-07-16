@@ -172,13 +172,15 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
   async function handleSend(event: FormEvent): Promise<void> {
     event.preventDefault();
     if (selectedId === null || draft.trim() === '' || sending) return;
+    const conversationId = selectedId;
     const body = prepareOutgoingMessage(draft, 2_000);
+    if (body === '') return;
     setSending(true);
     const result = editingMessageId === null
-      ? await sendMessage(selectedId, body)
+      ? await sendMessage(conversationId, body)
       : await editMessage(editingMessageId, body);
-    setSending(false);
     if (result.status !== 'ok') {
+      setSending(false);
       setStatus(failureCopy(result.status));
       return;
     }
@@ -190,6 +192,14 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
       setEditingMessageId(null);
     }
     setDraft('');
+    setStatus(null);
+
+    // Realtime is an enhancement, not the acknowledgement path. A successful
+    // RPC must become visible even when the websocket publication is delayed,
+    // reconnecting, or unavailable on the current network.
+    await refreshMessages(conversationId);
+    void refreshConversations();
+    setSending(false);
   }
 
   function beginEdit(message: Message): void {
@@ -237,7 +247,33 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
           <button type="button" className="conversation-new" onClick={() => setShowGroupComposer((value) => !value)} aria-label="Create a group conversation" aria-expanded={showGroupComposer}><Icon name={showGroupComposer ? 'close' : 'plus'} /></button>
         </header>
 
-        {showGroupComposer && <form className="new-group-form" onSubmit={(event) => void handleCreateGroup(event)}><label htmlFor="new-group-title">New group</label><div><input id="new-group-title" className="input" value={groupTitle} maxLength={60} autoFocus placeholder="Movie night crew" onChange={(event) => setGroupTitle(event.target.value)} /><button className="button button-primary" type="submit" disabled={groupTitle.trim() === ''}><Icon name="users" size={16} />Create</button></div><small>You can add up to 29 more accepted friends after creating it.</small></form>}
+        {showGroupComposer && (
+          <form className="new-group-form" onSubmit={(event) => void handleCreateGroup(event)}>
+            <div className="new-group-heading">
+              <span className="new-group-icon" aria-hidden="true"><Icon name="users" size={16} /></span>
+              <div>
+                <label htmlFor="new-group-title">New group</label>
+                <small>Start with a name, then invite accepted friends.</small>
+              </div>
+            </div>
+            <div className="new-group-controls">
+              <input
+                id="new-group-title"
+                className="input"
+                value={groupTitle}
+                maxLength={60}
+                autoFocus
+                placeholder="Movie night crew"
+                onChange={(event) => setGroupTitle(event.target.value)}
+              />
+              <button className="button button-primary" type="submit" disabled={groupTitle.trim() === ''}>
+                <Icon name="plus" size={16} />
+                Create
+              </button>
+            </div>
+            <small className="new-group-limit">Up to 30 people total. Add members after the group is created.</small>
+          </form>
+        )}
 
         <label className="conversation-search"><Icon name="search" size={17} /><input value={conversationQuery} placeholder="Search conversations" onChange={(event) => setConversationQuery(event.target.value)} aria-label="Search conversations" />{conversationQuery !== '' && <button type="button" onClick={() => setConversationQuery('')} aria-label="Clear conversation search"><Icon name="close" size={14} /></button>}</label>
 

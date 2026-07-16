@@ -89,6 +89,11 @@ const FAQS: readonly FaqItem[] = [
   },
   {
     category: 'Troubleshooting',
+    question: 'Why does Google show Error 403 or Access blocked?',
+    answer: 'The Google OAuth app is usually still in Testing and the selected account is not approved. The NightWatch owner must open Google Auth Platform, choose Audience, add that exact Google address under Test users, save, and retry. For general public access, the owner must complete Google verification where required and publish the OAuth app to Production. Changing NightWatch scopes or sharing credentials is not a fix.',
+  },
+  {
+    category: 'Troubleshooting',
     question: 'Why will a local or Drive video not play?',
     answer: 'The file may use an unsupported codec, exceed the owner size limit, no longer be accessible, or have a mismatched fingerprint. Start with MP4 H.264/AAC or WebM VP8/VP9/Opus and confirm every participant has access.',
   },

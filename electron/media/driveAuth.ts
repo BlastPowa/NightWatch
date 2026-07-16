@@ -227,7 +227,14 @@ export class LoopbackAuthListener {
 
         const error = url.searchParams.get('error');
         if (error !== null) {
-          finish(mediaFail('auth-cancelled', 'Google sign-in was cancelled.'));
+          finish(
+            error === 'access_denied'
+              ? mediaFail(
+                  'auth-cancelled',
+                  'Google did not grant access. If you did not cancel, this account may not be approved for the app testing audience.',
+                )
+              : mediaFail('auth-cancelled', 'Google sign-in was cancelled.'),
+          );
           return;
         }
 

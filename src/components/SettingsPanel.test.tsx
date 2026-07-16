@@ -71,6 +71,29 @@ describe('SettingsPanel YouTube account', () => {
     await user.click(await screen.findByRole('button', { name: 'Connect YouTube' }));
 
     expect((await screen.findByRole('alert')).textContent).toMatch(/browser, firewall, or VPN/i);
+    expect(
+      screen.getByRole('link', { name: 'Open Google Auth Audience' }).getAttribute('href'),
+    ).toBe('https://console.cloud.google.com/auth/audience');
+  });
+
+  it('explains Google testing-audience access denial without exposing provider details', async () => {
+    const youtubeAccount = bridge({
+      connect: vi.fn(async () =>
+        mediaFail(
+          'auth-cancelled',
+          'Google did not grant access. If you did not cancel, this account may not be approved for the app testing audience.',
+        )),
+    });
+    const user = userEvent.setup();
+    render(<SettingsPanel user={null} youtubeAccount={youtubeAccount} />);
+
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    await user.click(await screen.findByRole('button', { name: 'Connect YouTube' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toMatch(/Error 403|Access blocked/i);
+    expect(alert.textContent).toMatch(/Audience.*Test users/i);
+    expect(alert.textContent).toMatch(/verification.*Production/i);
   });
 
   it('does not show a dead connect button when the release capability is off', async () => {
