@@ -225,12 +225,20 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Grants. Signed-in users only; live_room_key_hash stays internal.
+--
+-- PUBLIC must be revoked explicitly: Postgres grants EXECUTE on every new
+-- function to PUBLIC by default, so revoking only anon/authenticated still
+-- leaves the function callable through the PUBLIC grant.
 -- ---------------------------------------------------------------------------
+
+revoke execute on function public.live_room_key_hash(text) from public, anon, authenticated;
+revoke execute on function public.heartbeat_live_room_social(text, text) from public, anon;
+revoke execute on function public.list_live_room_co_watchers(text) from public, anon;
+revoke execute on function public.leave_live_room_social(text) from public, anon;
 
 grant execute on function public.heartbeat_live_room_social(text, text) to authenticated;
 grant execute on function public.list_live_room_co_watchers(text) to authenticated;
 grant execute on function public.leave_live_room_social(text) to authenticated;
-revoke execute on function public.live_room_key_hash(text) from anon, authenticated;
 
 -- Rollback (manual):
 --   drop function if exists public.leave_live_room_social(text);

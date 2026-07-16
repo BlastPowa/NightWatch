@@ -1,6 +1,26 @@
 # Phase 31 backend status — social reliability diagnostic
 
-Last updated: 2026-07-16. Branch: `backend/phase-31-social-reliability`.
+Last updated: 2026-07-16 (second push). Branch: `backend/phase-31-social-reliability`.
+
+## Update: owner test-run fix + production privacy leak found
+
+The owner's first run of `phase31_live_room_social_test.sql` correctly failed on
+"the hash helper is not client-callable": Postgres grants EXECUTE on every new
+function to PUBLIC by default, and revoking only `anon, authenticated` left the
+PUBLIC grant standing. `0023` now revokes `public` too (it is safely
+re-runnable end to end).
+
+Investigating that default exposed a **pre-existing production leak**: no
+migration ever revoked PUBLIC on the internal helpers, so an anonymous
+PostgREST request could call `is_blocked(a, b)` and `are_friends(a, b)` for
+arbitrary user ids (verified live on 2026-07-16), exposing the block and
+friendship graphs, plus `under_limit_*()` rate state and `display_name_of()`.
+Migration `0025_internal_helper_grants.sql` revokes client execute on every
+internal helper while keeping the three membership helpers that RLS policies
+evaluate as the querying role (`is_active_member`, `is_club_member`,
+`is_club_staff`) callable by `authenticated`.
+`supabase/tests/phase31_helper_grants_test.sql` proves both directions: the
+predicates are denied to clients, and the policy/RPC surface still works.
 
 ## 1. Root cause per reported symptom
 
@@ -70,14 +90,25 @@ client.
 
 ## 4. Dashboard/owner actions
 
-1. Run `supabase/tests/phase31_live_room_social_test.sql` against a disposable
-   database (it creates throwaway users, asserts, and rolls back; any failure
-   names the case).
-2. Apply `0023_live_room_social.sql`, then `0024_social_diagnostics.sql` to
-   production. Both are additive; nothing existing is altered.
+1. Run `supabase/tests/phase31_live_room_social_test.sql` and
+   `supabase/tests/phase31_helper_grants_test.sql` against a disposable
+   database (each creates throwaway users, asserts, and rolls back; any
+   failure names the case). Note: `0023`, `0024`, and `0025` must be applied
+   to that database first — the tests exercise them.
+2. Apply `0023_live_room_social.sql`, `0024_social_diagnostics.sql`, then
+   `0025_internal_helper_grants.sql` to production. `0023`/`0024` are
+   additive; `0025` only removes grants no client feature uses. **Apply
+   `0025` promptly — the graph-enumeration leak is live in production.**
 3. Optionally confirm `REPLICA IDENTITY FULL` on `messages` and
    `friend_requests` (handoff query) — Realtime INSERT delivery already works.
 4. No new environment keys, no new dashboard toggles.
+5. Release capability flags: packaged releases read GitHub Actions repository
+   variables (`NIGHTWATCH_ENABLE_LOCAL_FILES`, `NIGHTWATCH_ENABLE_DRIVE`,
+   `NIGHTWATCH_ENABLE_LIBRARY`, `NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT`), which
+   cannot be inspected from this machine. The Library migration (`0022`) is
+   deployed and tested, so `NIGHTWATCH_ENABLE_LIBRARY=1` is safe to set when
+   desired; Drive additionally needs the Google values as Actions variables
+   per `GOOGLE_MEDIA_SETUP.md`.
 
 ## 5. Typed frontend contracts (stable to build against)
 
