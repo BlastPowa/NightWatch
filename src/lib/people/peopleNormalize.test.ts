@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// These tests exercise pure query/handle normalization. Keep the Supabase
+// client boundary inert so CI does not require application credentials merely
+// to import PeopleService.
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: vi.fn() } }));
+
 import { HANDLE_PATTERN, normalizeSearchQuery, SEARCH_MIN_CHARS } from './PeopleService';
 
 describe('normalizeSearchQuery', () => {
