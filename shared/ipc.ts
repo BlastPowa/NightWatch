@@ -64,6 +64,18 @@ export const IpcChannel = {
   // sees them, and the picker preload exposes nothing else.
   PickerInit: 'picker:init',
   PickerResult: 'picker:result',
+
+  // Phase 32: screen/window capture for live-share. The renderer lists
+  // sources (name + thumbnail only), the user picks one explicitly, and the
+  // main-process display-media handler serves exactly that source to the
+  // next getDisplayMedia call. No native handles cross the bridge.
+  CaptureListSources: 'capture:list-sources',
+  CaptureChooseSource: 'capture:choose-source',
+  CaptureClearSource: 'capture:clear-source',
+
+  // Phase 32: Google Drive shared workspace (handoff §2).
+  MediaEnsureDriveWorkspace: 'media:ensure-drive-workspace',
+  MediaGetDriveFileAccess: 'media:get-drive-file-access',
 } as const;
 
 export type IpcChannelName = (typeof IpcChannel)[keyof typeof IpcChannel];
@@ -249,6 +261,8 @@ export interface NightWatchBridge {
   onWindowState(callback: (state: WindowState) => void): () => void;
   /** Phase 29 authorized-media surface. */
   media: NightWatchMediaBridge;
+  /** Phase 32 screen/window capture surface (live-share). */
+  capture: NightWatchCaptureBridge;
   /** YouTube account connection (read-only scope; Settings → Account). */
   youtubeAccount: {
     getState(): Promise<YouTubeAccountState>;
@@ -279,4 +293,32 @@ export interface NightWatchMediaBridge {
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;
   releasePlaybackLease(leaseId: string): Promise<void>;
+  /** Phase 32: find-or-create the app-tagged "NightWatch Shared" folder. */
+  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
+  /** Phase 32: THIS viewer's access state for one Drive file id. */
+  getDriveFileAccess(fileId: string): Promise<DriveFileAccessState>;
+}
+
+/** Phase 32 Drive workspace surface (see electron/media/driveWorkspace.ts). */
+export interface DriveWorkspaceInfo {
+  folderId: string;
+  name: string;
+  webViewLink: string;
+}
+
+export type DriveFileAccessState =
+  | 'accessible'
+  | 'permission-required'
+  | 'revoked'
+  | 'not-found'
+  | 'offline';
+
+/** Phase 32 screen/window capture surface (renderer picks, main serves). */
+export interface NightWatchCaptureBridge {
+  listSources(): Promise<
+    Array<{ id: string; kind: 'screen' | 'window'; name: string; thumbnailDataUrl: string }>
+  >;
+  /** Register the user's explicit pick; valid for one capture, 30s. */
+  chooseSource(sourceId: string): Promise<boolean>;
+  clearSource(): Promise<void>;
 }

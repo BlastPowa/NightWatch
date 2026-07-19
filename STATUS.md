@@ -1,6 +1,23 @@
 # NightWatch current status
 
-Last updated: 2026-07-16.
+Last updated: 2026-07-17.
+
+## Phase 32 room media & comms (backend implemented, NOT validated)
+
+- Branch `backend/phase-32-room-media-comms` carries the full backend/platform
+  implementation: versioned room media modes, people discovery, room-people
+  actions, ephemeral WebRTC signaling, TURN credential minting, Electron
+  capture + Drive shared-workspace support, and unit/SQL tests.
+- Everything is capability-gated OFF. Enabling anything requires: migration
+  `0026` deployed, `supabase/tests/phase32_rls_test.sql` passing on a
+  disposable database, `turn-credentials` deployed with its secrets, and
+  packaged two-client verification.
+- Validation state: unit tests and the SQL test are **written but not
+  executed** (implementation session had no command sandbox). Codex owns
+  `npm ci` → typecheck → tests → Activity build → `--publish never` build,
+  review, commit, PR. Full detail: `PHASE_32_IMPLEMENTATION_REPORT.md`.
+- Also fixed in this branch: migration `0004` contained accidental stray text
+  ("ive ran") inside the `player_stats` DDL that would break fresh deploys.
 
 ## Phase 30 account/platform support
 
