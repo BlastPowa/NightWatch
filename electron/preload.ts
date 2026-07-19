@@ -2,8 +2,11 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   IpcChannel,
   type AppInfo,
+  type DriveFileAccessState,
+  type DriveWorkspaceInfo,
   type LogLevel,
   type NightWatchBridge,
+  type NightWatchCaptureBridge,
   type NightWatchMediaBridge,
   type NotificationRequest,
   type PresenceState,
@@ -82,6 +85,32 @@ const media: NightWatchMediaBridge = {
   releasePlaybackLease: (leaseId: string): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.MediaReleaseLease, leaseId) as Promise<void>;
   },
+  ensureDriveWorkspace: (): Promise<MediaResult<DriveWorkspaceInfo>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaEnsureDriveWorkspace) as Promise<
+      MediaResult<DriveWorkspaceInfo>
+    >;
+  },
+  getDriveFileAccess: (fileId: string): Promise<DriveFileAccessState> => {
+    return ipcRenderer.invoke(
+      IpcChannel.MediaGetDriveFileAccess,
+      fileId,
+    ) as Promise<DriveFileAccessState>;
+  },
+};
+
+/** Phase 32 capture surface: list → explicit pick → single-use capture. */
+const capture: NightWatchCaptureBridge = {
+  listSources: () => {
+    return ipcRenderer.invoke(IpcChannel.CaptureListSources) as ReturnType<
+      NightWatchCaptureBridge['listSources']
+    >;
+  },
+  chooseSource: (sourceId: string): Promise<boolean> => {
+    return ipcRenderer.invoke(IpcChannel.CaptureChooseSource, sourceId) as Promise<boolean>;
+  },
+  clearSource: (): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.CaptureClearSource) as Promise<void>;
+  },
 };
 
 /**
@@ -154,6 +183,7 @@ const bridge: NightWatchBridge = {
     };
   },
   media,
+  capture,
   youtubeAccount: {
     getState: (): Promise<YouTubeAccountState> => {
       return ipcRenderer.invoke(IpcChannel.YouTubeAccountGetState) as Promise<YouTubeAccountState>;

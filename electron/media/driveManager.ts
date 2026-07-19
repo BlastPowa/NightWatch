@@ -68,6 +68,29 @@ export class DriveManager {
     this.session = new DriveSession(deps.fetchFn, deps.config, deps.tokenStore);
   }
 
+  /**
+   * Phase 32: token access for the Drive workspace module, in its DI shape.
+   * Returns the token value only — never the session or the store.
+   */
+  async getWorkspaceToken(): Promise<
+    | { ok: true; token: string }
+    | { ok: false; reason: 'consent-required' | 'revoked' | 'offline' | 'not-configured' }
+  > {
+    const outcome = await this.session.getAccessToken();
+    switch (outcome.status) {
+      case 'ok':
+        return { ok: true, token: outcome.accessToken };
+      case 'auth-required':
+        return { ok: false, reason: 'consent-required' };
+      case 'auth-expired':
+        return { ok: false, reason: 'revoked' };
+      case 'offline':
+        return { ok: false, reason: 'offline' };
+      case 'token-store-unavailable':
+        return { ok: false, reason: 'not-configured' };
+    }
+  }
+
   async getConnectionState(): Promise<DriveConnectionState> {
     const stored = await this.deps.tokenStore.read();
     if (stored.status === 'unavailable') {

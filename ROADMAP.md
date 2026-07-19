@@ -1,5 +1,15 @@
 # NightWatch Development Roadmap
 
+## Phase 32 — Room media modes, people discovery, live share, and voice
+
+Status: **Backend/platform implemented on `backend/phase-32-room-media-comms`; validation, review, and delivery owned by Codex** (see `PHASE_32_IMPLEMENTATION_REPORT.md`).
+
+- Versioned room media mode envelope (`youtube` / `file-watch` / `live-share`) layered over the unchanged Phase 29 descriptors; explicit old-client rejection; typed file-watch readiness states.
+- Privacy-safe people discovery: opt-in `discoverable` flag, unique case-insensitive public handles, rate-limited `search_people`, membership-authorized `get_room_people` — blocks and opt-outs excluded everywhere; room codes never exposed.
+- Ephemeral WebRTC signaling (`rtc_signals`, RPC-only, 60 s expiry, block-enforced, rate-capped) plus a `turn-credentials` Edge Function minting short-lived HMAC TURN credentials; media flows only over WebRTC.
+- Electron capture: in-app source picking over `desktopCapturer`, single-use display-media grants, media/display-capture permission handling; Google Drive "NightWatch Shared" app-tagged workspace with per-viewer access probes.
+- Every Phase 32 capability defaults OFF until migrations `0026`, both Edge Function deployments, and packaged verification pass.
+
 ## Current delivery state (2026-07-16)
 
 `v0.1.25` is the public baseline. Phase 29's source-neutral contracts, secure local-file platform, owner-private Library migration `0022`, Google Drive PKCE/encrypted storage/Picker/range streaming, and the initial capability-gated Library frontend are merged. Phase 30 delivers public Drive configuration, searchable help, guided onboarding, a Steam-inspired profile showcase, device-local custom app/profile artwork, denser Settings presentation, and a separately consented read-only YouTube account connection. The merged release passes 292 tests plus Activity and Windows package builds. Room playback remains hidden until `media:v1:*` synchronization is implemented. NightWatch does not download YouTube, extract protected services, bypass DRM, relay participant media, or host a shared catalog. `STATUS.md`, `TASKS.md`, `PHASE_29_BACKEND_STATUS.md`, and `CODEX_HANDOFF.md` remain authoritative for active work.

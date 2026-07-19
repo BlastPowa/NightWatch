@@ -22,7 +22,10 @@ import {
 } from '@shared/ipc';
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
+import { registerCaptureSupport } from './comms/captureSources';
 import { maxMediaSizeBytes } from './media/capabilities';
+import { DriveWorkspace } from './media/driveWorkspace';
+import { mediaFail } from '@shared/media';
 import { drivePublicConfiguration } from './media/buildConfig';
 import { DriveManager } from './media/driveManager';
 import { MediaService, makeSenderValidator, registerMediaScheme } from './media/service';
@@ -477,6 +480,49 @@ if (!hasSingleInstanceLock) {
     // Register the private protocol and every media IPC handler before the
     // renderer can issue its first capability request.
     await mediaService.init();
+
+    // Phase 32: Google Drive shared workspace (handoff §2). Answers typed
+    // failures when Drive is unconfigured/disconnected; never bytes/tokens.
+    const driveWorkspace =
+      driveManager !== null
+        ? new DriveWorkspace({
+            getAccessToken: () => driveManager.getWorkspaceToken(),
+            fetchImpl: (url, init) => net.fetch(url as string, init as RequestInit),
+          })
+        : null;
+
+    ipcMain.handle(IpcChannel.MediaEnsureDriveWorkspace, async (event) => {
+      if (event.sender !== mainWindow?.webContents) {
+        return mediaFail('invalid-request', 'Unexpected sender.');
+      }
+      if (driveWorkspace === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      return driveWorkspace.ensureWorkspace();
+    });
+
+    ipcMain.handle(IpcChannel.MediaGetDriveFileAccess, async (event, fileId: unknown) => {
+      if (
+        event.sender !== mainWindow?.webContents ||
+        driveWorkspace === null ||
+        typeof fileId !== 'string'
+      ) {
+        return 'not-found';
+      }
+      return driveWorkspace.probeFileAccess(fileId);
+    });
+
+    // Phase 32: screen/window capture (live-share). Renderer lists sources,
+    // the user picks in-app, and the display-media handler serves exactly
+    // that pick, once, or denies. Microphone/media permission requests from
+    // our own window are allowed; everything else keeps Electron defaults.
+    registerCaptureSupport(() => mainWindow);
+    session.defaultSession.setPermissionRequestHandler(
+      (webContents, permission, callback) => {
+        const fromApp = webContents === mainWindow?.webContents;
+        callback(fromApp && (permission === 'media' || permission === 'display-capture'));
+      },
+    );
 
     richPresence.start();
     updateManager.init();

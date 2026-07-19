@@ -1,6 +1,18 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-16 for the v0.1.25 release.
+Last updated: 2026-07-17 (Phase 32 backend implementation).
+
+## Phase 32 backend lane (`backend/phase-32-room-media-comms`)
+
+- [x] Versioned room media mode contracts + file-watch readiness (`shared/roomComms.ts`, tests).
+- [x] WebRTC signaling/voice/capture/TURN contracts (`shared/rtc.ts`, tests).
+- [x] Migration `0026_room_media_comms.sql`: handles + discoverability, `search_people`, `get_room_people`, RPC-only `rtc_signals` with expiry/blocks/rate caps, service-role TURN authorization.
+- [x] `supabase/tests/phase32_rls_test.sql`: membership, blocks, opt-out, stale signaling, cross-room, direct-table denial, TURN gating.
+- [x] Edge Function `turn-credentials` (coturn-style HMAC, membership-gated, per-user caps).
+- [x] Services: `SignalingService`, `TurnService`, `VoiceSession`/`ShareSession` + pure `sessionCore` (tested), `PeopleService` (tested), `roomMediaCapabilities` probe (all flags default false).
+- [x] Electron: capture source listing + single-use display-media handler, media permission handler, `DriveWorkspace` (app-tagged shared folder + per-viewer access probe, tested), preload/IPC surfaces.
+- [ ] Codex: `npm ci` / typecheck / tests / Activity build / `--publish never` build, review, commit, PR (tests are written but NOT executed — Fable's sandbox was unavailable).
+- [ ] Owner: deploy `0026`, run the SQL test on a disposable DB, deploy `turn-credentials` with `TURN_SHARED_SECRET`/`TURN_URLS`, packaged two-client verification before enabling any flag.
 
 ## Phase 30 account/platform lane
 

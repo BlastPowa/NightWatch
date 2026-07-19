@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Phase 32 — room media modes, discovery, live share, voice (backend/platform)
+
+- Versioned room media mode envelope (`youtube` / `file-watch` / `live-share`)
+  over the unchanged Phase 29 descriptors, with typed file-watch readiness
+  states and explicit rejection of unsupported versions; all existing YouTube
+  room events preserved.
+- Privacy-safe people discovery: opt-in discoverability, unique public
+  handles, rate-limited `search_people`, and membership-authorized
+  `get_room_people` with block/opt-out exclusion (migration `0026`).
+- Ephemeral, RLS-locked WebRTC signaling (`rtc_signals`, RPC-only, 60 s
+  expiry, block-enforced, rate-capped) and a `turn-credentials` Edge Function
+  minting short-lived HMAC TURN credentials for fresh room members only.
+- Renderer services: signaling/TURN transports, mesh-capped voice session with
+  echoCancellation/noiseSuppression/autoGainControl, mute/deafen/speaking and
+  device-loss handling, screen-share sharer/viewer sessions — media over
+  WebRTC only; every operation returns a typed outcome.
+- Electron: in-app capture source picking with single-use display-media
+  grants, media permission handling, and a Google Drive "NightWatch Shared"
+  app-tagged workspace with per-viewer access probing (tokens stay in
+  safeStorage; Supabase never carries Drive tokens, paths, or media bytes).
+- All Phase 32 capabilities default OFF pending deployment + packaged
+  verification. Fixed stray text in migration `0004` that broke fresh deploys.
+
 ## 0.1.25 - 2026-07-16
 
 ### Google account platform contracts
