@@ -150,10 +150,10 @@ ALL of them, by default: `fileWatch`, `driveWorkspace`, `liveShare`,
 
 Codex executed strict TypeScript, all 364 Vitest tests (39 files), the Discord
 Activity production build, the Electron production build, and Windows NSIS
-packaging successfully on 2026-07-19. The SQL test still requires the owner's
-disposable Supabase database because this machine has no local `psql`, Docker,
-or Supabase CLI. Voice/live-share remain gated pending that SQL run and a
-packaged two-client check.
+packaging successfully on 2026-07-19. The owner deployed migrations `0026`
+and corrective `0027` and confirmed the complete SQL/RLS test passes.
+Voice/live-share remain gated pending TURN deployment and a packaged
+two-client check.
 
 ## 12. Validation commands
 
@@ -164,8 +164,8 @@ npm test
 npm run build:activity
 npm run build -- --publish never
 ```
-Plus the SQL test (§5) against a disposable DB. Do not enable Phase 32 UI until
-that SQL test and a packaged two-client RTC check both pass.
+The SQL test (§5) passed on 2026-07-19. Do not enable voice/live-share until a
+configured TURN deployment and packaged two-client RTC check both pass.
 
 ## 13. Known limitations / incomplete work
 

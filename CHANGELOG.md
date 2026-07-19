@@ -13,7 +13,8 @@
   `get_room_people` with block/opt-out exclusion (migration `0026`).
 - Ephemeral, RLS-locked WebRTC signaling (`rtc_signals`, RPC-only, 60 s
   expiry, block-enforced, rate-capped) and a `turn-credentials` Edge Function
-  minting short-lived HMAC TURN credentials for fresh room members only.
+  minting short-lived Cloudflare Realtime TURN or coturn credentials for fresh
+  room members only.
 - Renderer services: signaling/TURN transports, mesh-capped voice session with
   echoCancellation/noiseSuppression/autoGainControl, mute/deafen/speaking and
   device-loss handling, screen-share sharer/viewer sessions — media over
@@ -22,8 +23,9 @@
   grants, media permission handling, and a Google Drive "NightWatch Shared"
   app-tagged workspace with per-viewer access probing (tokens stay in
   safeStorage; Supabase never carries Drive tokens, paths, or media bytes).
-- All Phase 32 capabilities default OFF pending deployment + packaged
-  verification. Fixed stray text in migration `0004` that broke fresh deploys.
+- Migrations `0026`/`0027` and their SQL/RLS test are verified. Voice/share
+  remain gated pending TURN deployment and packaged verification. Fixed stray
+  text in migration `0004` that broke fresh deploys.
 
 ## 0.1.25 - 2026-07-16
 
