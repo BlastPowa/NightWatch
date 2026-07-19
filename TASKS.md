@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-17 (Phase 32 backend implementation).
+Last updated: 2026-07-19 (Phase 32 merged and SQL verified).
 
 ## Phase 32 backend lane (`backend/phase-32-room-media-comms`)
 
@@ -8,11 +8,12 @@ Last updated: 2026-07-17 (Phase 32 backend implementation).
 - [x] WebRTC signaling/voice/capture/TURN contracts (`shared/rtc.ts`, tests).
 - [x] Migration `0026_room_media_comms.sql`: handles + discoverability, `search_people`, `get_room_people`, RPC-only `rtc_signals` with expiry/blocks/rate caps, service-role TURN authorization.
 - [x] `supabase/tests/phase32_rls_test.sql`: membership, blocks, opt-out, stale signaling, cross-room, direct-table denial, TURN gating.
-- [x] Edge Function `turn-credentials` (coturn-style HMAC, membership-gated, per-user caps).
+- [x] Edge Function `turn-credentials` (Cloudflare Realtime TURN or coturn HMAC, membership-gated, per-user caps).
 - [x] Services: `SignalingService`, `TurnService`, `VoiceSession`/`ShareSession` + pure `sessionCore` (tested), `PeopleService` (tested), `roomMediaCapabilities` probe (all flags default false).
 - [x] Electron: capture source listing + single-use display-media handler, media permission handler, `DriveWorkspace` (app-tagged shared folder + per-viewer access probe, tested), preload/IPC surfaces.
-- [ ] Codex: `npm ci` / typecheck / tests / Activity build / `--publish never` build, review, commit, PR (tests are written but NOT executed — Fable's sandbox was unavailable).
-- [ ] Owner: deploy `0026`, run the SQL test on a disposable DB, deploy `turn-credentials` with `TURN_SHARED_SECRET`/`TURN_URLS`, packaged two-client verification before enabling any flag.
+- [x] Codex: strict typecheck, 364 tests, Activity build, Electron/NSIS build, review, PR #51, and merge.
+- [x] Owner: deploy `0026` + corrective `0027` and pass the Phase 32 SQL/RLS test.
+- [ ] Owner: configure and deploy `turn-credentials`, then complete packaged two-client voice/share verification before enabling those flags.
 
 ## Phase 30 account/platform lane
 

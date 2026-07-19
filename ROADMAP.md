@@ -2,13 +2,13 @@
 
 ## Phase 32 — Room media modes, people discovery, live share, and voice
 
-Status: **Backend/platform implemented on `backend/phase-32-room-media-comms`; validation, review, and delivery owned by Codex** (see `PHASE_32_IMPLEMENTATION_REPORT.md`).
+Status: **Backend/platform merged in PR #51; migrations `0026`/`0027` and SQL/RLS tests verified. Voice/share remain gated pending TURN and packaged two-client verification.**
 
 - Versioned room media mode envelope (`youtube` / `file-watch` / `live-share`) layered over the unchanged Phase 29 descriptors; explicit old-client rejection; typed file-watch readiness states.
 - Privacy-safe people discovery: opt-in `discoverable` flag, unique case-insensitive public handles, rate-limited `search_people`, membership-authorized `get_room_people` — blocks and opt-outs excluded everywhere; room codes never exposed.
-- Ephemeral WebRTC signaling (`rtc_signals`, RPC-only, 60 s expiry, block-enforced, rate-capped) plus a `turn-credentials` Edge Function minting short-lived HMAC TURN credentials; media flows only over WebRTC.
+- Ephemeral WebRTC signaling (`rtc_signals`, RPC-only, 60 s expiry, block-enforced, rate-capped) plus a `turn-credentials` Edge Function supporting Cloudflare Realtime TURN or coturn; media flows only over WebRTC.
 - Electron capture: in-app source picking over `desktopCapturer`, single-use display-media grants, media/display-capture permission handling; Google Drive "NightWatch Shared" app-tagged workspace with per-viewer access probes.
-- Every Phase 32 capability defaults OFF until migrations `0026`, both Edge Function deployments, and packaged verification pass.
+- Every Phase 32 capability defaults OFF until its server contract and platform prerequisites are verified; voice/share additionally require TURN and packaged verification.
 
 ## Current delivery state (2026-07-16)
 
