@@ -1,7 +1,7 @@
 # NightWatch — Remaining Features and Setup Handoff
 
-Updated: 2026-07-20  
-Repository: `C:\Users\Blast\source\repos\NightWatch-fable`  
+Updated: 2026-07-20
+Repository: `C:\Users\Blast\source\repos\NightWatch-fable`
 Baseline: `main` at `v0.1.26`; Phase 32 merged through PRs #51 and #52.
 
 ## Instructions for Claude/Fable
