@@ -12,7 +12,7 @@ import type {
 } from './media';
 import type {
   DriveConnectionState,
-  DriveWorkspaceState,
+  DriveWorkspaceInfo,
   FingerprintProgress,
   PlaybackLease,
   SelectedMedia,
@@ -78,7 +78,6 @@ export const IpcChannel = {
   CaptureClearSource: 'capture:clear-source',
 
   // Phase 32: Google Drive shared workspace (handoff §2).
-  MediaEnsureDriveWorkspace: 'media:ensure-drive-workspace',
   MediaGetDriveFileAccess: 'media:get-drive-file-access',
 } as const;
 
@@ -205,11 +204,11 @@ export interface IpcInvokeContract {
   };
   [IpcChannel.MediaEnsureDriveWorkspace]: {
     args: [];
-    result: MediaResult<DriveWorkspaceState>;
+    result: MediaResult<DriveWorkspaceInfo>;
   };
   [IpcChannel.MediaOpenDriveWorkspace]: {
     args: [];
-    result: MediaResult<DriveWorkspaceState>;
+    result: MediaResult<DriveWorkspaceInfo>;
   };
   [IpcChannel.MediaPickDriveFile]: {
     args: [];
@@ -306,25 +305,17 @@ export interface NightWatchMediaBridge {
   getDriveConnection(): Promise<DriveConnectionState>;
   connectDrive(): Promise<MediaResult<DriveConnectionState>>;
   cancelDriveConnect(): Promise<void>;
-  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
-  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
+  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
+  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;
   releasePlaybackLease(leaseId: string): Promise<void>;
-  /** Phase 32: find-or-create the app-tagged "NightWatch Shared" folder. */
-  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   /** Phase 32: THIS viewer's access state for one Drive file id. */
   getDriveFileAccess(fileId: string): Promise<DriveFileAccessState>;
 }
 
 /** Phase 32 Drive workspace surface (see electron/media/driveWorkspace.ts). */
-export interface DriveWorkspaceInfo {
-  folderId: string;
-  name: string;
-  webViewLink: string;
-}
-
 export type DriveFileAccessState =
   | 'accessible'
   | 'permission-required'

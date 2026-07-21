@@ -1,4 +1,5 @@
 import { mediaFail, mediaOk, type MediaResult } from '@shared/media';
+import type { DriveWorkspaceInfo } from '@shared/mediaBridge';
 
 /**
  * Phase 32 — Google Drive shared workspace (handoff §2).
@@ -15,13 +16,6 @@ import { mediaFail, mediaOk, type MediaResult } from '@shared/media';
  * without the network: the token provider is the Phase 29 DriveSession's
  * getAccessToken, and fetch is the global by default.
  */
-
-export interface DriveWorkspaceInfo {
-  folderId: string;
-  name: string;
-  /** Google Drive web link — opened in the SYSTEM browser for sharing. */
-  webViewLink: string;
-}
 
 export type DriveFileAccessState =
   | 'accessible'

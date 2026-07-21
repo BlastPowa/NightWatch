@@ -503,6 +503,20 @@ if (!hasSingleInstanceLock) {
       return driveWorkspace.ensureWorkspace();
     });
 
+    ipcMain.handle(IpcChannel.MediaOpenDriveWorkspace, async (event) => {
+      if (event.sender !== mainWindow?.webContents) {
+        return mediaFail('invalid-request', 'Unexpected sender.');
+      }
+      if (driveWorkspace === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      const workspace = await driveWorkspace.ensureWorkspace();
+      if (workspace.ok) {
+        await shell.openExternal(workspace.value.webViewLink);
+      }
+      return workspace;
+    });
+
     ipcMain.handle(IpcChannel.MediaGetDriveFileAccess, async (event, fileId: unknown) => {
       if (
         event.sender !== mainWindow?.webContents ||

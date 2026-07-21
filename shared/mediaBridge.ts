@@ -53,9 +53,9 @@ export interface DriveConnectionState {
 }
 
 /** App-created Drive folder used to organize media and native sharing. */
-export interface DriveWorkspaceState {
+export interface DriveWorkspaceInfo {
   folderId: string;
-  folderName: string;
+  name: string;
   webViewLink: string;
 }
 
@@ -111,8 +111,8 @@ export interface MediaPlatformBridge {
   getDriveConnection(): Promise<DriveConnectionState>;
   connectDrive(): Promise<MediaResult<DriveConnectionState>>;
   cancelDriveConnect(): Promise<void>;
-  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
-  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
+  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
+  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;

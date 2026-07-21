@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MediaCapabilities, MediaFailure } from '@shared/media';
 import type {
   DriveConnectionState,
-  DriveWorkspaceState,
+  DriveWorkspaceInfo,
   FingerprintProgress,
   MediaPlatformBridge,
   PlaybackLease,
@@ -24,7 +24,7 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
   const [active, setActive] = useState<ActiveMedia | null>(null);
   const activeRef = useRef<ActiveMedia | null>(null);
   const [drive, setDrive] = useState<DriveConnectionState | null>(null);
-  const [driveWorkspace, setDriveWorkspace] = useState<DriveWorkspaceState | null>(null);
+  const [driveWorkspace, setDriveWorkspace] = useState<DriveWorkspaceInfo | null>(null);
   const [busy, setBusy] = useState<'local' | 'drive-connect' | 'drive-pick' | null>(null);
   const [progress, setProgress] = useState<FingerprintProgress | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -309,7 +309,7 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
             {driveWorkspace !== null && <button type="button" className="button" onClick={() => void copyWorkspaceLink()}><Icon name="send" size={16} />Copy folder link</button>}
             <button type="button" className="button" disabled={busy !== null} onClick={() => void chooseDrive()}><Icon name="film" size={16} />Choose a Drive video</button>
           </div>
-          {driveWorkspace !== null && <p className="drive-workspace-link"><Icon name="lock" size={14} /><span>{driveWorkspace.folderName}</span><small>Google remains the permission authority; having the link alone never bypasses access.</small></p>}
+          {driveWorkspace !== null && <p className="drive-workspace-link"><Icon name="lock" size={14} /><span>{driveWorkspace.name}</span><small>Google remains the permission authority; having the link alone never bypasses access.</small></p>}
         </section>
       )}
 

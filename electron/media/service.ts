@@ -35,7 +35,6 @@ import {
   isLeaseId,
   parsePlaybackUrl,
   type DriveConnectionState,
-  type DriveWorkspaceState,
   type PlaybackLease,
   type SelectedMedia,
   type YouTubeAccountState,
@@ -279,28 +278,6 @@ export class MediaService {
       guard<[], void>(
         () => { this.drive?.abortAuth(); },
         () => undefined,
-      ),
-    );
-
-    ipcMain.handle(
-      IpcChannel.MediaEnsureDriveWorkspace,
-      guard<[], MediaResult<DriveWorkspaceState>>(
-        async () => {
-          const drive = driveReady();
-          return drive === null ? driveOff<DriveWorkspaceState>() : drive.ensureWorkspace();
-        },
-        () => driveOff<DriveWorkspaceState>(),
-      ),
-    );
-
-    ipcMain.handle(
-      IpcChannel.MediaOpenDriveWorkspace,
-      guard<[], MediaResult<DriveWorkspaceState>>(
-        async () => {
-          const drive = driveReady();
-          return drive === null ? driveOff<DriveWorkspaceState>() : drive.openWorkspace();
-        },
-        () => driveOff<DriveWorkspaceState>(),
       ),
     );
 
