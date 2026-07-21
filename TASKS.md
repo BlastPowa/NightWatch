@@ -1,6 +1,29 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-19 (Phase 32 merged and SQL verified).
+Last updated: 2026-07-20 (Phase 33 remaining-features lane).
+
+## Phase 33 backend lane (remaining-features handoff)
+
+- [x] P1 — secret-free TURN diagnostics: `{ action: 'diagnostics' }` in
+  `turn-credentials` + `getTurnDiagnostics()`; no URLs/secrets/credentials.
+- [x] P2 — frontend integration contracts documented
+  (`PHASE_33_FRONTEND_CONTRACTS.md`): media modes, revision conflict,
+  readiness, people actions, voice, share, and cleanup.
+- [x] P2 — `CommsLifecycle`: one teardown authority for room leave, sign-out,
+  page hide, window close, and host migration (share stops, voice survives).
+- [x] P3 — `DriveShareFlow` typed 6-step host journey + `probeViewerAccess`;
+  no silent grants; auth-expiry returns the host to connect.
+- [x] P4 — typed capability-disabled reasons
+  (`explainRoomMediaCapabilities`) so hidden controls state a cause.
+- [x] P5 — `ReadinessProbe` maps descriptors to the explicit file-watch roster
+  states with actionable detail text.
+- [x] P6 — packaged two-client acceptance checklist
+  (`PHASE_33_PACKAGED_ACCEPTANCE.md`).
+- [ ] Codex: branch from `origin/main`, run the five gates, review, commit,
+  push, PR, merge on green (tests written but NOT executed by Fable).
+- [ ] Owner: TURN credentials + redeploy `turn-credentials`; run the packaged
+  checklist before any of `fileWatch`/`driveWorkspace`/`voiceChat`/`liveShare`
+  is enabled; Google OAuth verification assets; SFU approval for >8 peers.
 
 ## Phase 32 backend lane (`backend/phase-32-room-media-comms`)
 

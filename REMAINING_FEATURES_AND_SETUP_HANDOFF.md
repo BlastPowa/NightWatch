@@ -188,3 +188,59 @@ When finished, update this file or create a report containing:
 Do not mark voice, screen sharing, or shared file playback complete merely
 because contracts compile. Completion requires deployment plus packaged
 two-client verification.
+
+---
+
+# Fable implementation response — 2026-07-20
+
+Shell and Git access were **unavailable** this session, so per the instruction
+above: files were modified only, and this is the exact changed-file list. No
+branch was created, nothing was committed, pushed, merged, or released, and
+**no command was executed** — every test below is written but not run. Full
+detail: `PHASE_33_COMPLETION_REPORT.md`.
+
+## Files created
+
+- `src/lib/media/DriveShareFlow.ts` — typed six-step Drive host flow plus
+  `probeViewerAccess` (Priority 3)
+- `src/lib/media/driveShareFlow.test.ts`
+- `src/lib/media/ReadinessProbe.ts` — descriptor → file-watch readiness with
+  actionable detail (Priorities 2/3/5)
+- `src/lib/media/readinessProbe.test.ts`
+- `src/lib/media/capabilityReasons.test.ts`
+- `src/lib/rtc/CommsLifecycle.ts` — single teardown authority (Priority 2)
+- `src/lib/rtc/commsLifecycle.test.ts`
+- `PHASE_33_FRONTEND_CONTRACTS.md` — Priority 2 deliverable for Codex
+- `PHASE_33_PACKAGED_ACCEPTANCE.md` — Priority 6 deliverable
+- `PHASE_33_COMPLETION_REPORT.md` — the completion report
+
+## Files modified
+
+- `supabase/functions/turn-credentials/index.ts` — authenticated, secret-free
+  `{ action: 'diagnostics' }` response (Priority 1)
+- `src/lib/rtc/TurnService.ts` — `getTurnDiagnostics()`
+- `src/lib/media/roomMediaCapabilities.ts` — `explainRoomMediaCapabilities()`
+  typed disabled reasons (Priority 4)
+- `STATUS.md`, `TASKS.md`, `CHANGELOG.md`, and this file
+
+Untouched: React components, shared visual CSS, `NightWatch-acceptance`, Git,
+and every already-merged Phase 32 contract.
+
+## SQL the owner must run
+
+None new. Re-run only if the database is rebuilt:
+`psql "$DISPOSABLE_DB_URL" -v ON_ERROR_STOP=1 -f supabase/tests/phase32_rls_test.sql`
+→ expected final row: `phase32 RLS test: all assertions passed`.
+
+## Edge Function redeploy
+
+`supabase functions deploy turn-credentials` (Verify JWT ON) to publish the
+diagnostics action. Secrets unchanged: Cloudflare (`CLOUDFLARE_TURN_KEY_ID`,
+`CLOUDFLARE_TURN_API_TOKEN`) or coturn (`TURN_SHARED_SECRET`, `TURN_URLS`).
+
+## Flags
+
+Still false everywhere. `publicUserSearch` and `roomPeopleActions` are ready to
+enable against the already-verified database; `voiceChat`, `liveShare`,
+`fileWatch`, and `driveWorkspace` require `PHASE_33_PACKAGED_ACCEPTANCE.md` to
+pass first.

@@ -1,6 +1,26 @@
 # NightWatch current status
 
-Last updated: 2026-07-19.
+Last updated: 2026-07-20.
+
+## Phase 33 remaining-features lane (backend implemented, NOT validated)
+
+- Answers `REMAINING_FEATURES_AND_SETUP_HANDOFF.md` Priorities 1–4 plus the
+  non-visual half of 5–6 on top of the merged `v0.1.26` Phase 32 baseline.
+- Added: secret-free TURN diagnostics (function + client), typed
+  capability-disabled reasons, the Google Drive shared-viewing host flow,
+  file-watch readiness evaluation, and a central voice/share teardown
+  authority for leave / sign-out / page-hide / window-close / host-migration.
+- Delivered as documents: `PHASE_33_FRONTEND_CONTRACTS.md` (Codex integration
+  guidance), `PHASE_33_PACKAGED_ACCEPTANCE.md` (two-client completion gate),
+  `PHASE_33_COMPLETION_REPORT.md` (full report).
+- No new migrations. `turn-credentials` must be redeployed for diagnostics.
+- Validation state: ~26 new tests **written but not executed** (no command
+  sandbox in the implementation session). Codex owns `npm ci` → typecheck →
+  tests → Activity build → `--publish never` build, review, branch, commit,
+  push, PR.
+- Voice, screen sharing, and shared file playback are **not complete** and
+  their flags stay false until TURN is deployed and the packaged two-client
+  checklist passes across different networks.
 
 ## Phase 32 room media & comms (merged; database verified; RTC gated)
 
