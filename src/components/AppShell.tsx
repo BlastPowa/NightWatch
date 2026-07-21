@@ -1,4 +1,4 @@
-import type { FormEvent, ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import type { AppInfo } from '@shared/ipc';
 import type { ConnectionStatus } from '@/lib/realtime/types';
 import { BrandMark } from '@/components/BrandMark';
@@ -7,6 +7,7 @@ import { NotificationCenter } from '@/components/NotificationCenter';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { TitleBar } from '@/components/TitleBar';
 import { OnboardingTour } from '@/components/OnboardingTour';
+import { FriendActivityDrawer } from '@/components/FriendActivityDrawer';
 
 export type AppView =
   | 'main'
@@ -82,17 +83,19 @@ export function AppShell({
   runtime,
   search,
 }: AppShellProps): JSX.Element {
+  const [friendActivityOpen, setFriendActivityOpen] = useState(false);
   const watchItems: NavItem[] = [
     { view: 'discover', label: 'Browse', icon: 'home', visible: true },
     { view: 'main', label: room.active ? 'Room' : 'Join', icon: 'play', visible: true },
     { view: 'rooms', label: 'Parties', icon: 'parties', visible: isElectron },
     { view: 'library', label: 'Library', icon: 'library', visible: capabilities.library },
-    { view: 'friends', label: 'Friends', icon: 'friends', visible: capabilities.friends },
-    { view: 'messages', label: 'Messages', icon: 'message', visible: capabilities.messaging },
-    { view: 'creator', label: 'Creator Club', icon: 'creator', visible: capabilities.creatorClubs },
+    // Keep account-backed destinations discoverable. Their screens explain
+    // whether Discord sign-in, deployment, or connectivity is required.
+    { view: 'friends', label: 'Friends', icon: 'friends', visible: true },
+    { view: 'messages', label: 'Messages', icon: 'message', visible: true },
+    { view: 'creator', label: 'Creator Club', icon: 'creator', visible: true },
   ];
   const userItems: NavItem[] = [
-    { view: 'card', label: 'Profile', icon: 'profile', visible: true },
     { view: 'settings', label: 'Settings', icon: 'settings', visible: true },
     { view: 'faq', label: 'FAQ', icon: 'help', visible: true },
     { view: 'about', label: 'About', icon: 'info', visible: true },
@@ -105,7 +108,7 @@ export function AppShell({
   }
 
   return (
-    <div className="app app-cinematic-shell">
+    <div className={`app app-cinematic-shell app-view-${view}`}>
       <TitleBar subtitle={room.active ? room.name : undefined} />
       <aside className="sidebar">
         <div className="brand">
@@ -125,12 +128,6 @@ export function AppShell({
             <span className="side-members">{room.memberCount} {room.memberCount === 1 ? 'person' : 'people'} watching</span>
           </button>
         )}
-
-        <button type="button" className="sidebar-profile" onClick={() => onNavigate('card')} aria-label="Open your NightWatch profile">
-          <ProfileAvatar src={identity.avatarUrl} name={identity.name} className="sidebar-profile-avatar" />
-          <span className="sidebar-profile-copy"><strong>{identity.name}</strong><small>{identity.connected ? 'Discord connected' : 'Local profile'}</small></span>
-          <Icon name="chevron-right" className="sidebar-profile-more" size={16} />
-        </button>
 
         <div className="side-footer">
           <span className={`status-indicator status-${runtime.connectionStatus}`}>
@@ -164,6 +161,18 @@ export function AppShell({
               <Icon name="play" size={16} />
               <span>{room.active ? 'Open room' : 'Watch room'}</span>
             </button>
+            {capabilities.friends && (
+              <button
+                type="button"
+                className={`topbar-icon friend-activity-trigger${friendActivityOpen ? ' friend-activity-trigger-active' : ''}`}
+                onClick={() => setFriendActivityOpen((open) => !open)}
+                aria-label="Friend activity"
+                aria-expanded={friendActivityOpen}
+                title="Friend activity"
+              >
+                <Icon name="friends" size={18} />
+              </button>
+            )}
             {capabilities.notifications && <NotificationCenter />}
             <button type="button" className="profile-chip" data-tour="profile" onClick={() => onNavigate('card')} aria-label="Open your profile">
               <ProfileAvatar src={identity.avatarUrl} name={identity.name} />
@@ -173,6 +182,13 @@ export function AppShell({
         </header>
         {children}
       </main>
+      {capabilities.friends && (
+        <FriendActivityDrawer
+          open={friendActivityOpen}
+          onClose={() => setFriendActivityOpen(false)}
+          onOpenFriends={() => { setFriendActivityOpen(false); onNavigate('friends'); }}
+        />
+      )}
       <OnboardingTour
         includeLibrary={capabilities.library}
         currentView={view}

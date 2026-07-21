@@ -12,6 +12,7 @@ import type {
 } from './media';
 import type {
   DriveConnectionState,
+  DriveWorkspaceState,
   FingerprintProgress,
   PlaybackLease,
   SelectedMedia,
@@ -48,6 +49,9 @@ export const IpcChannel = {
   MediaFingerprintProgress: 'media:fingerprint-progress',
   MediaGetDriveConnection: 'media:get-drive-connection',
   MediaConnectDrive: 'media:connect-drive',
+  MediaCancelDriveConnect: 'media:cancel-drive-connect',
+  MediaEnsureDriveWorkspace: 'media:ensure-drive-workspace',
+  MediaOpenDriveWorkspace: 'media:open-drive-workspace',
   MediaPickDriveFile: 'media:pick-drive-file',
   MediaDisconnectDrive: 'media:disconnect-drive',
   MediaCreateLease: 'media:create-lease',
@@ -195,6 +199,18 @@ export interface IpcInvokeContract {
     args: [];
     result: MediaResult<DriveConnectionState>;
   };
+  [IpcChannel.MediaCancelDriveConnect]: {
+    args: [];
+    result: void;
+  };
+  [IpcChannel.MediaEnsureDriveWorkspace]: {
+    args: [];
+    result: MediaResult<DriveWorkspaceState>;
+  };
+  [IpcChannel.MediaOpenDriveWorkspace]: {
+    args: [];
+    result: MediaResult<DriveWorkspaceState>;
+  };
   [IpcChannel.MediaPickDriveFile]: {
     args: [];
     result: MediaResult<SelectedMedia>;
@@ -289,6 +305,9 @@ export interface NightWatchMediaBridge {
   onFingerprintProgress(callback: (progress: FingerprintProgress) => void): () => void;
   getDriveConnection(): Promise<DriveConnectionState>;
   connectDrive(): Promise<MediaResult<DriveConnectionState>>;
+  cancelDriveConnect(): Promise<void>;
+  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
+  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;

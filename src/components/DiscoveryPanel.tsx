@@ -12,6 +12,7 @@ interface DiscoveryPanelProps {
   isHost: boolean;
   roomCode: string;
   searchRequest: { query: string; nonce: number } | null;
+  resetNonce?: number;
   friendMediaPresence: boolean;
   onSearchBusyChange?(busy: boolean): void;
   onPlayNow(videoId: string, title: string): void;
@@ -57,7 +58,7 @@ const OUTCOME_MESSAGE: Record<string, string> = {
   error: 'Videos could not be loaded. Check your connection and retry.',
 };
 
-export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, friendMediaPresence, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
+export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, resetNonce = 0, friendMediaPresence, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
   const [mode, setMode] = useState<BrowseMode>('trending');
   const [activeQuery, setActiveQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -253,6 +254,12 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, frie
   useEffect(() => {
     if (searchRequest !== null) void loadSearch(searchRequest.query);
   }, [searchRequest?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (resetNonce === 0) return;
+    setCategory('');
+    setActiveQuery('');
+    void Promise.all([loadTrending(''), loadHistory()]);
+  }, [resetNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Infinite scroll: when the sentinel near the end of the list scrolls into
   // view, pull the next page automatically. The button below stays as a

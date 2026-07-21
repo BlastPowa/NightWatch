@@ -21,6 +21,7 @@ import type {
 } from '@shared/media';
 import type {
   DriveConnectionState,
+  DriveWorkspaceState,
   FingerprintProgress,
   PlaybackLease,
   SelectedMedia,
@@ -68,6 +69,15 @@ const media: NightWatchMediaBridge = {
     return ipcRenderer.invoke(IpcChannel.MediaConnectDrive) as Promise<
       MediaResult<DriveConnectionState>
     >;
+  },
+  cancelDriveConnect: (): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.MediaCancelDriveConnect) as Promise<void>;
+  },
+  ensureDriveWorkspace: (): Promise<MediaResult<DriveWorkspaceState>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaEnsureDriveWorkspace) as Promise<MediaResult<DriveWorkspaceState>>;
+  },
+  openDriveWorkspace: (): Promise<MediaResult<DriveWorkspaceState>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaOpenDriveWorkspace) as Promise<MediaResult<DriveWorkspaceState>>;
   },
   pickDriveFile: (): Promise<MediaResult<SelectedMedia>> => {
     return ipcRenderer.invoke(IpcChannel.MediaPickDriveFile) as Promise<MediaResult<SelectedMedia>>;

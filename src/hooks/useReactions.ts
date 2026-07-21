@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactionEmoji, ReactionStamp } from '@shared/reactions';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
-import { ReactionService, type ReactionContext } from '@/lib/reactions/ReactionService';
+import { ReactionService, type ReactionContext, type ReactionSendResult } from '@/lib/reactions/ReactionService';
 import type { RoomService } from '@/lib/room/RoomService';
 
 /** A reaction currently animating over the player. */
@@ -16,7 +16,8 @@ export interface ReactionsBinding {
   bursts: readonly ReactionBurst[];
   /** Stamps for the given video, for timeline markers. */
   markers: readonly ReactionStamp[];
-  send(emoji: ReactionEmoji): void;
+  send(emoji: ReactionEmoji): Promise<ReactionSendResult>;
+  status: string | null;
   removeBurst(id: string): void;
 }
 
@@ -30,6 +31,7 @@ export function useReactions(
 ): ReactionsBinding {
   const [bursts, setBursts] = useState<readonly ReactionBurst[]>([]);
   const [stamps, setStamps] = useState<readonly ReactionStamp[]>([]);
+  const [status, setStatus] = useState<string | null>(null);
   const reactionsRef = useRef<ReactionService | null>(null);
   const getContextRef = useRef(getContext);
   getContextRef.current = getContext;
@@ -58,9 +60,21 @@ export function useReactions(
     };
   }, [service]);
 
-  const send = useCallback((emoji: ReactionEmoji): void => {
-    reactionsRef.current?.send(emoji);
-    achievementTracker.record('reaction-sent');
+  const send = useCallback(async (emoji: ReactionEmoji): Promise<ReactionSendResult> => {
+    const result = await (reactionsRef.current?.send(emoji) ?? Promise.resolve('disconnected' as const));
+    if (result === 'ok') {
+      setStatus(null);
+      achievementTracker.record('reaction-sent');
+    } else {
+      setStatus(result === 'no-video'
+        ? 'Load a video before reacting.'
+        : result === 'rate-limited'
+          ? 'Reacting too quickly—try again in a moment.'
+          : result === 'disconnected'
+            ? 'Reconnect to the room to send reactions.'
+            : 'Reaction delivery failed. Try again.');
+    }
+    return result;
   }, []);
 
   const removeBurst = useCallback((id: string): void => {
@@ -72,5 +86,5 @@ export function useReactions(
     [stamps, currentVideoId],
   );
 
-  return { bursts, markers, send, removeBurst };
+  return { bursts, markers, send, status, removeBurst };
 }

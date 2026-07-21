@@ -52,6 +52,13 @@ export interface DriveConnectionState {
   reason: 'not-configured' | 'token-store-unavailable' | 'auth-expired' | null;
 }
 
+/** App-created Drive folder used to organize media and native sharing. */
+export interface DriveWorkspaceState {
+  folderId: string;
+  folderName: string;
+  webViewLink: string;
+}
+
 /**
  * Whether this device has a connected YouTube account (Settings → Account).
  * Read-only scope; carries no token, and is wholly separate from both the
@@ -103,6 +110,9 @@ export interface MediaPlatformBridge {
   ): Promise<MediaResult<SelectedMedia>>;
   getDriveConnection(): Promise<DriveConnectionState>;
   connectDrive(): Promise<MediaResult<DriveConnectionState>>;
+  cancelDriveConnect(): Promise<void>;
+  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
+  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceState>>;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;

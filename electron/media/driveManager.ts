@@ -14,7 +14,12 @@ import {
   type HtmlMediaSourceDescriptor,
   type MediaResult,
 } from '@shared/media';
-import { disconnectedDriveState, type DriveConnectionState, type SelectedMedia } from '@shared/mediaBridge';
+import {
+  disconnectedDriveState,
+  type DriveConnectionState,
+  type DriveWorkspaceState,
+  type SelectedMedia,
+} from '@shared/mediaBridge';
 import {
   DRIVE_FILE_SCOPE,
   LoopbackAuthListener,
@@ -156,6 +161,55 @@ export class DriveManager {
     this.activeAuth = null;
   }
 
+  /** Find or create the app-owned folder used for organized sharing. */
+  async ensureWorkspace(): Promise<MediaResult<DriveWorkspaceState>> {
+    const token = await this.session.getAccessToken();
+    if (token.status !== 'ok') return authOutcomeToFailure(token);
+    const q = "mimeType='application/vnd.google-apps.folder' and trashed=false and appProperties has { key='nightwatchWorkspace' and value='v1' }";
+    try {
+      const found = await this.deps.fetchFn(
+        `https://www.googleapis.com/drive/v3/files?spaces=drive&pageSize=1&fields=files(id,name,webViewLink)&q=${encodeURIComponent(q)}`,
+        { method: 'GET', headers: { Authorization: `Bearer ${token.accessToken}` } },
+      );
+      if (!found.ok) return mediaFail('drive-file-unavailable', 'The NightWatch Drive folder could not be read.');
+      const payload = (await found.json()) as { files?: unknown };
+      const first = Array.isArray(payload.files) ? payload.files[0] : null;
+      const parsed = parseWorkspace(first);
+      if (parsed !== null) return mediaOk(parsed);
+
+      const created = await this.deps.fetchFn(
+        'https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: 'NightWatch Shared',
+            mimeType: 'application/vnd.google-apps.folder',
+            appProperties: { nightwatchWorkspace: 'v1' },
+          }),
+        },
+      );
+      if (!created.ok) return mediaFail('drive-file-unavailable', 'The NightWatch Drive folder could not be created.');
+      const workspace = parseWorkspace(await created.json());
+      return workspace === null
+        ? mediaFail('drive-file-unavailable', 'Google Drive returned an unusable folder.')
+        : mediaOk(workspace);
+    } catch {
+      return mediaFail('offline', 'Google Drive could not be reached.');
+    }
+  }
+
+  async openWorkspace(): Promise<MediaResult<DriveWorkspaceState>> {
+    const workspace = await this.ensureWorkspace();
+    if (!workspace.ok) return workspace;
+    const openExternal = this.deps.openExternal ?? ((url: string) => shell.openExternal(url));
+    await openExternal(workspace.value.webViewLink);
+    return workspace;
+  }
+
   /**
    * Best-effort revocation, then unconditional local cleanup. The user asked
    * to disconnect; being offline does not get to veto that.
@@ -277,4 +331,21 @@ export class DriveManager {
       return null;
     }
   }
+}
+
+function parseWorkspace(value: unknown): DriveWorkspaceState | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const row = value as Record<string, unknown>;
+  const id = row['id'];
+  const name = row['name'];
+  const rawLink = row['webViewLink'];
+  if (typeof id !== 'string' || !/^[A-Za-z0-9_-]{10,200}$/.test(id)) return null;
+  const link = typeof rawLink === 'string' && rawLink.startsWith('https://drive.google.com/')
+    ? rawLink
+    : `https://drive.google.com/drive/folders/${id}`;
+  return {
+    folderId: id,
+    folderName: typeof name === 'string' && name.length > 0 ? name.slice(0, 120) : 'NightWatch Shared',
+    webViewLink: link,
+  };
 }

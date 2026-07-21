@@ -289,6 +289,31 @@
   outline: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+  color: var(--nw-text) !important;
+  caret-color: var(--nw-accent) !important;
+  -webkit-text-fill-color: var(--nw-text) !important;
+  opacity: 1 !important;
+}
+
+.global-search input::placeholder {
+  color: color-mix(in srgb, var(--nw-text-muted) 88%, var(--nw-text)) !important;
+  -webkit-text-fill-color: color-mix(in srgb, var(--nw-text-muted) 88%, var(--nw-text)) !important;
+  opacity: 1;
+}
+
+.global-search input::selection {
+  background: color-mix(in srgb, var(--nw-accent) 38%, transparent);
+  color: var(--nw-text);
+}
+
+.global-search {
+  min-width: min(44vw, 620px);
+}
+
+.global-search-submit {
+  flex: 0 0 auto;
+  min-width: 92px;
+  white-space: nowrap;
 }
 
 .browse-view-tabs {

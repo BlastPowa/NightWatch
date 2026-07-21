@@ -81,6 +81,11 @@ export const unsupportedMediaBridge: MediaPlatformBridge = {
   getDriveConnection: () => Promise.resolve(disconnectedDriveState('not-configured')),
   connectDrive: () =>
     Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
+  cancelDriveConnect: () => Promise.resolve(),
+  ensureDriveWorkspace: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
+  openDriveWorkspace: () =>
+    Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
   pickDriveFile: () =>
     Promise.resolve(mediaFail('unsupported-platform', 'Google Drive is only available in the NightWatch desktop app.')),
   disconnectDrive: () =>

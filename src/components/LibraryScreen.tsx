@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { MediaCapabilities, MediaFailure } from '@shared/media';
 import type {
   DriveConnectionState,
+  DriveWorkspaceState,
   FingerprintProgress,
   MediaPlatformBridge,
   PlaybackLease,
@@ -23,27 +24,37 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
   const [active, setActive] = useState<ActiveMedia | null>(null);
   const activeRef = useRef<ActiveMedia | null>(null);
   const [drive, setDrive] = useState<DriveConnectionState | null>(null);
+  const [driveWorkspace, setDriveWorkspace] = useState<DriveWorkspaceState | null>(null);
   const [busy, setBusy] = useState<'local' | 'drive-connect' | 'drive-pick' | null>(null);
   const [progress, setProgress] = useState<FingerprintProgress | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const refreshDrive = useCallback(async (): Promise<void> => {
+    if (!capabilities.googleDrive) {
+      setDrive(null);
+      return;
+    }
+    const state = await bridge.getDriveConnection();
+    setDrive(state);
+  }, [bridge, capabilities.googleDrive]);
 
   useEffect(() => {
     activeRef.current = active;
   }, [active]);
 
   useEffect(() => {
-    if (!capabilities.googleDrive) {
-      setDrive(null);
-      return;
-    }
-    let cancelled = false;
-    void bridge.getDriveConnection().then((state) => {
-      if (!cancelled) setDrive(state);
-    });
-    return () => {
-      cancelled = true;
+    void refreshDrive();
+    const onFocus = (): void => { void refreshDrive(); };
+    const onVisibility = (): void => {
+      if (document.visibilityState === 'visible') void refreshDrive();
     };
-  }, [bridge, capabilities.googleDrive]);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [refreshDrive]);
 
   useEffect(() => {
     return bridge.onFingerprintProgress((next) => {
@@ -114,6 +125,9 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
         return;
       }
       setDrive(result.value);
+      setMessage(result.value.connected
+        ? `Google Drive connected${result.value.accountEmail ? ` as ${result.value.accountEmail}` : ''}.`
+        : 'Google authorization returned, but no Drive credential was stored. Try connecting again.');
     } finally {
       setBusy(null);
     }
@@ -132,6 +146,36 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
     } finally {
       setBusy(null);
     }
+  }
+
+  async function cancelDriveConnect(): Promise<void> {
+    await bridge.cancelDriveConnect();
+    setBusy(null);
+    setMessage('Google Drive connection cancelled.');
+  }
+
+  async function ensureDriveWorkspace(open = false): Promise<void> {
+    setBusy('drive-pick');
+    setMessage(null);
+    try {
+      const result = open ? await bridge.openDriveWorkspace() : await bridge.ensureDriveWorkspace();
+      if (!result.ok) {
+        setMessage(failureMessage(result.error));
+        return;
+      }
+      setDriveWorkspace(result.value);
+      setMessage(open
+        ? 'The NightWatch Shared folder opened in Google Drive. Use Drive sharing to invite viewers.'
+        : 'NightWatch Shared is ready. Open it to upload files and manage viewer permissions.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function copyWorkspaceLink(): Promise<void> {
+    if (driveWorkspace === null) return;
+    await navigator.clipboard.writeText(driveWorkspace.webViewLink);
+    setMessage('Drive folder link copied. Google Drive permission is still required for every viewer.');
   }
 
   async function disconnectDrive(): Promise<void> {
@@ -225,7 +269,9 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
                   </span>
                 </div>
               </div>
-            ) : drive?.connected ? (
+            ) : drive === null ? (
+              <div className="library-drive-status" role="status"><span className="loader-orbit" /><div><strong>Checking Google Drive</strong><span>Reading the encrypted connection state from this device…</span></div></div>
+            ) : drive.connected ? (
               <div className="library-drive-actions">
                 <span className="library-account"><Icon name="check" />{drive.accountEmail ?? 'Drive connected'}</span>
                 <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void chooseDrive()}>
@@ -238,14 +284,34 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
                 </button>
               </div>
             ) : (
-              <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void connectDrive()}>
-                <Icon name="cloud" />
-                {busy === 'drive-connect' ? 'Connecting…' : 'Connect Google Drive'}
+              <button type="button" className="button button-primary library-action" disabled={busy !== null && busy !== 'drive-connect'} onClick={() => void (busy === 'drive-connect' ? cancelDriveConnect() : connectDrive())}>
+                <Icon name={busy === 'drive-connect' ? 'close' : 'cloud'} />
+                {busy === 'drive-connect' ? 'Cancel connection' : 'Connect Google Drive'}
               </button>
             )}
           </article>
         )}
       </div>
+
+      {drive?.connected && (
+        <section className="drive-workspace card" aria-labelledby="drive-workspace-title">
+          <header>
+            <div><span className="eyebrow">Connected account</span><h2 id="drive-workspace-title">Drive movie workspace</h2><p>Create one NightWatch-owned folder, open it in Google Drive, upload authorized video files, and invite viewers with Drive's native sharing controls.</p></div>
+            <span className="library-account"><Icon name="check" />{drive.accountEmail ?? 'Drive connected'}</span>
+          </header>
+          <div className="drive-workspace-steps">
+            <span><b>1</b><small>Create or open the NightWatch Shared folder.</small></span>
+            <span><b>2</b><small>Upload a supported MP4/WebM and grant every viewer access.</small></span>
+            <span><b>3</b><small>Each viewer connects Drive and authorizes the same file before synchronized playback.</small></span>
+          </div>
+          <div className="drive-workspace-actions">
+            <button type="button" className="button button-primary" disabled={busy !== null} onClick={() => void ensureDriveWorkspace(true)}><Icon name="cloud" size={16} />{driveWorkspace === null ? 'Create shared folder' : 'Open shared folder'}</button>
+            {driveWorkspace !== null && <button type="button" className="button" onClick={() => void copyWorkspaceLink()}><Icon name="send" size={16} />Copy folder link</button>}
+            <button type="button" className="button" disabled={busy !== null} onClick={() => void chooseDrive()}><Icon name="film" size={16} />Choose a Drive video</button>
+          </div>
+          {driveWorkspace !== null && <p className="drive-workspace-link"><Icon name="lock" size={14} /><span>{driveWorkspace.folderName}</span><small>Google remains the permission authority; having the link alone never bypasses access.</small></p>}
+        </section>
+      )}
 
       <section className="library-player-card">
         {active === null ? (

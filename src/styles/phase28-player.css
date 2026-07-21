@@ -71,6 +71,45 @@
   align-items: center;
   gap: 0.65rem;
   padding: 0.35rem 0.2rem 0.05rem;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.mini-player-info:active { cursor: grabbing; }
+.mini-player-info button { cursor: pointer; user-select: auto; }
+
+.mini-player-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mini-player-collapse {
+  min-height: 38px;
+  padding: 0.58rem 0.7rem;
+  font-size: 0.66rem;
+}
+
+.room-view-mini-collapsed {
+  width: min(430px, calc(100vw - 2rem));
+}
+
+.room-view-mini-collapsed .player-frame {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.room-view-mini-collapsed .mini-player-info {
+  padding: 0.55rem;
+}
+
+.app-cinematic-shell:has(.room-view-mini-collapsed) .content {
+  padding-bottom: 7rem;
 }
 
 .mini-player-copy {
@@ -144,6 +183,14 @@
     min-width: 42px;
     width: 42px;
     padding: 0;
+  }
+
+  .mini-player-collapse span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
   }
 
   .mini-player-return span {
