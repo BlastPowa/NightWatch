@@ -15,7 +15,7 @@ export interface ChatEntry {
   at: number;
 }
 
-export type SendResult = 'ok' | 'empty' | 'rate-limited';
+export type SendResult = 'ok' | 'empty' | 'rate-limited' | 'disconnected' | 'failed';
 
 export type ChatChangeListener = (entries: readonly ChatEntry[]) => void;
 
@@ -65,7 +65,7 @@ export class ChatService {
   }
 
   /** Send a message. Own messages are appended locally (broadcast self=false). */
-  public send(text: string, senderName: string): SendResult {
+  public async send(text: string, senderName: string): Promise<SendResult> {
     const clean = prepareOutgoingMessage(text, MAX_MESSAGE_LENGTH);
     if (clean.length === 0) {
       return 'empty';
@@ -76,6 +76,13 @@ export class ChatService {
     }
     this.lastSentAt = now;
 
+    try {
+      await this.room.send('chat:message', { text: clean, senderName });
+    } catch (error) {
+      const disconnected = error instanceof Error && error.message.includes('Not connected');
+      this.pushSystem(disconnected ? 'Reconnect to send this message.' : 'Message could not be delivered. Try again.');
+      return disconnected ? 'disconnected' : 'failed';
+    }
     this.push({
       id: crypto.randomUUID(),
       kind: 'message',
@@ -83,9 +90,6 @@ export class ChatService {
       senderName,
       text: clean,
       at: now,
-    });
-    this.room.send('chat:message', { text: clean, senderName }).catch(() => {
-      this.pushSystem('Message could not be delivered.');
     });
     return 'ok';
   }

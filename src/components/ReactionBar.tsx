@@ -2,7 +2,7 @@ import { REACTION_EMOJIS, type ReactionEmoji } from '@shared/reactions';
 
 interface ReactionBarProps {
   disabled: boolean;
-  onReact(emoji: ReactionEmoji): void;
+  onReact(emoji: ReactionEmoji): void | Promise<unknown>;
 }
 
 export function ReactionBar({ disabled, onReact }: ReactionBarProps): JSX.Element {
@@ -15,7 +15,7 @@ export function ReactionBar({ disabled, onReact }: ReactionBarProps): JSX.Elemen
           className="reaction-button"
           disabled={disabled}
           title={disabled ? 'Load a video to react' : `React ${emoji}`}
-          onClick={() => onReact(emoji)}
+          onClick={() => { void onReact(emoji); }}
         >
           {emoji}
         </button>

@@ -1,8 +1,22 @@
 # NightWatch current status
 
-Last updated: 2026-07-20.
+Last updated: 2026-07-21.
 
-## Phase 33 remaining-features lane (backend implemented, NOT validated)
+## Runtime repair and Phase 33 integration
+
+- PR #53 merged the reviewed Phase 33 backend/platform contracts into `main`.
+- Strict typecheck, 389 tests, Activity production build, and Windows NSIS
+  packaging pass on the Phase 33 backend baseline.
+- The frontend runtime-repair lane restores explicit chat/reaction delivery
+  feedback, Drive connection/workspace controls, stale Browse reset and local
+  Previously watched fallback, group composer layout, friend activity, room
+  code copying, responsive shell/settings/room behavior, movable mini-player,
+  and the refreshed moon/play brand assets.
+- Phase 33 voice, screen share, and synchronized file-watch UI remains hidden:
+  TURN deployment and the packaged two-client acceptance checklist are still
+  required before those capability flags can be enabled.
+
+## Phase 33 remaining-features lane (backend implemented and validated)
 
 - Answers `REMAINING_FEATURES_AND_SETUP_HANDOFF.md` Priorities 1–4 plus the
   non-visual half of 5–6 on top of the merged `v0.1.26` Phase 32 baseline.
@@ -14,10 +28,8 @@ Last updated: 2026-07-20.
   guidance), `PHASE_33_PACKAGED_ACCEPTANCE.md` (two-client completion gate),
   `PHASE_33_COMPLETION_REPORT.md` (full report).
 - No new migrations. `turn-credentials` must be redeployed for diagnostics.
-- Validation state: ~26 new tests **written but not executed** (no command
-  sandbox in the implementation session). Codex owns `npm ci` → typecheck →
-  tests → Activity build → `--publish never` build, review, branch, commit,
-  push, PR.
+- Validation state: strict typecheck, 389 tests, Activity build, and Windows
+  Electron/NSIS packaging pass. PR #53 merged after green GitHub Actions.
 - Voice, screen sharing, and shared file playback are **not complete** and
   their flags stay false until TURN is deployed and the packaged two-client
   checklist passes across different networks.

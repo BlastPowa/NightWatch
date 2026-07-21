@@ -15,7 +15,7 @@ import { RoomInvitesPanel } from '@/components/RoomInvitesPanel';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoomMeta, type RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { RoomScreen } from '@/components/RoomScreen';
-import { SettingsPanel } from '@/components/SettingsPanel';
+import { SettingsPanel, type SettingsSection } from '@/components/SettingsPanel';
 import { UserCard } from '@/components/UserCard';
 import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
 import { recordParticipation } from '@/lib/social/FriendService';
@@ -40,6 +40,8 @@ import {
 import { getPlatformBridge } from '@/platform/PlatformBridge';
 import { canonicalDiscordAvatarUrl } from '@/lib/assets';
 import type { MediaCapabilities } from '@shared/media';
+import { diagnoseSocial, type SocialDiagnosis } from '@/lib/social/SocialDiagnosticsService';
+import { Icon } from '@/components/Icon';
 
 interface PendingVideo {
   videoId: string;
@@ -60,6 +62,7 @@ export function App(): JSX.Element {
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [browseSearchRequest, setBrowseSearchRequest] = useState<{ query: string; nonce: number } | null>(null);
   const [browseSearching, setBrowseSearching] = useState(false);
+  const [browseResetNonce, setBrowseResetNonce] = useState(0);
   const [roomHasVideo, setRoomHasVideo] = useState(false);
   const connectionStatus = useConnectionStatus();
   const authUser = useAuth();
@@ -68,6 +71,8 @@ export function App(): JSX.Element {
   const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [mediaCapabilities, setMediaCapabilities] = useState<MediaCapabilities | null>(null);
+  const [settingsInitialSection, setSettingsInitialSection] = useState<SettingsSection>('appearance');
+  const [socialDiagnosis, setSocialDiagnosis] = useState<SocialDiagnosis>({ status: 'account-required' });
 
   useEffect(() => {
     return achievementTracker.onUnlock((achievement) => {
@@ -162,6 +167,14 @@ export function App(): JSX.Element {
     );
   }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
+
+  useEffect(() => {
+    let active = true;
+    void diagnoseSocial().then((diagnosis) => {
+      if (active) setSocialDiagnosis(diagnosis);
+    });
+    return () => { active = false; };
+  }, [authUser]);
   const platformBridge = getPlatformBridge();
   const isElectron = platformBridge.kind === 'electron';
   const mediaBridge = platformBridge.media;
@@ -377,10 +390,21 @@ export function App(): JSX.Element {
     setBrowseSearchRequest((current) => ({ query: clean, nonce: (current?.nonce ?? 0) + 1 }));
   }, []);
 
+  const handleNavigate = useCallback((nextView: AppView): void => {
+    if (nextView === 'discover') {
+      setGlobalSearchQuery('');
+      setBrowseSearchRequest(null);
+      setBrowseSearching(false);
+      setBrowseResetNonce((current) => current + 1);
+    }
+    if (nextView === 'settings') setSettingsInitialSection('appearance');
+    setView(nextView);
+  }, []);
+
   return (
     <AppShell
       view={view}
-      onNavigate={setView}
+      onNavigate={handleNavigate}
       isElectron={isElectron}
       capabilities={{ ...socialCapabilities, library: libraryAvailable }}
       room={{ active: inRoom, code: inRoom ? session.state.code : '', name: roomMeta?.name ?? 'Watch room', memberCount: inRoom ? session.state.members.length : 0 }}
@@ -396,6 +420,7 @@ export function App(): JSX.Element {
                 isHost={inRoom ? selfIsHost : true}
                 roomCode={roomCode ?? ''}
                 searchRequest={browseSearchRequest}
+                resetNonce={browseResetNonce}
                 friendMediaPresence={socialCapabilities.friendMediaPresence}
                 onSearchBusyChange={setBrowseSearching}
                 onPlayNow={(videoId, title) => handleDiscoverPick(videoId, title, 'play')}
@@ -413,6 +438,7 @@ export function App(): JSX.Element {
             driveAvailable={mediaCapabilities?.googleDrive === true}
             youtubeAccount={platformBridge.youtubeAccount}
             onOpenLibrary={() => setView('library')}
+            initialSection={settingsInitialSection}
           />
         )}
         {view === 'rooms' && (
@@ -421,9 +447,9 @@ export function App(): JSX.Element {
             <MyRoomsScreen user={authUser} onJoinRoom={handleJoinPersistentRoom} onPlayHighlight={handlePlayHighlight} />
           </>
         )}
-        {view === 'friends' && socialCapabilities.friends && <FriendsScreen currentRoomCode={roomCode} onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} />}
-        {view === 'messages' && socialCapabilities.messaging && authUser !== null && <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} />}
-        {view === 'creator' && socialCapabilities.creatorClubs && <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} />}
+        {view === 'friends' && (socialCapabilities.friends ? <FriendsScreen currentRoomCode={roomCode} onMessage={(userId) => { void createDirectConversation(userId).then((result) => { if (result.status === 'ok') { setSelectedConversationId(result.data); setView('messages'); } }); }} /> : <SocialUnavailable feature="Friends" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
+        {view === 'messages' && (socialCapabilities.messaging && authUser !== null ? <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} /> : <SocialUnavailable feature="Messages and group chats" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
+        {view === 'creator' && (socialCapabilities.creatorClubs ? <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} /> : <SocialUnavailable feature="Creator Club" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
         {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (
           <LibraryScreen bridge={mediaBridge} capabilities={mediaCapabilities} />
         )}
@@ -472,5 +498,36 @@ export function App(): JSX.Element {
           </div>
         )}
     </AppShell>
+  );
+}
+
+function SocialUnavailable({
+  feature,
+  diagnosis,
+  onOpenAccount,
+}: {
+  feature: string;
+  diagnosis: SocialDiagnosis;
+  onOpenAccount(): void;
+}): JSX.Element {
+  const detail = diagnosis.status === 'account-required'
+    ? 'Connect Discord to your NightWatch account. Connecting YouTube or Google Drive does not sign you into social features.'
+    : diagnosis.status === 'deployment-missing'
+      ? `The server is missing: ${diagnosis.missing.join(', ')}.`
+      : diagnosis.status === 'offline'
+        ? 'NightWatch cannot reach the social service. Check the connection indicator and try again.'
+        : 'This feature is not ready in the current session. Reconnect and try again.';
+  return (
+    <section className="social-gate card fade-up" role="status">
+      <span className="social-gate-icon"><Icon name="friends" size={28} /></span>
+      <span className="eyebrow">Account-backed feature</span>
+      <h1>{feature}</h1>
+      <p>{detail}</p>
+      {diagnosis.status === 'account-required' && (
+        <button type="button" className="button button-primary" onClick={onOpenAccount}>
+          <Icon name="profile" size={16} /> Open Account settings
+        </button>
+      )}
+    </section>
   );
 }

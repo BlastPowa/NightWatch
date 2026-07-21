@@ -1,9 +1,8 @@
 import type { MediaResult, MediaSourceDescriptor } from '@shared/media';
 import type {
   DriveFileAccessState,
-  DriveWorkspaceInfo,
 } from '@shared/ipc';
-import type { DriveConnectionState, SelectedMedia } from '@shared/mediaBridge';
+import type { DriveConnectionState, DriveWorkspaceInfo, SelectedMedia } from '@shared/mediaBridge';
 
 /**
  * Remaining-features handoff, Priority 3 — the typed HOST flow for Google

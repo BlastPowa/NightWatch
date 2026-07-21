@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { extractVideoId } from '@shared/youtube';
 import { ReactionBar } from '@/components/ReactionBar';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
@@ -31,6 +31,9 @@ interface PlayerPanelProps {
   takeNextFromQueue: () => { videoId: string } | null;
   onMediaStateChange?(hasVideo: boolean): void;
   onReturnToRoom?(): void;
+  miniCollapsed?: boolean;
+  onMiniCollapsedChange?(collapsed: boolean): void;
+  onMiniDragStart?(event: ReactPointerEvent<HTMLDivElement>): void;
   /** Hands the parent a loader so other panels (queue) can start videos. */
   exposeLoadVideo?: (loader: (videoId: string, startSeconds?: number) => void) => void;
 }
@@ -50,6 +53,9 @@ export function PlayerPanel({
   takeNextFromQueue,
   onMediaStateChange,
   onReturnToRoom,
+  miniCollapsed = false,
+  onMiniCollapsedChange,
+  onMiniDragStart,
   exposeLoadVideo,
 }: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -77,7 +83,7 @@ export function PlayerPanel({
   const authUser = useAuth();
   const socialCapabilities = useSocialCapabilities(authUser !== null);
 
-  const { bursts, markers, send, removeBurst } = useReactions(
+  const { bursts, markers, send, status: reactionStatus, removeBurst } = useReactions(
     service,
     () => ({
       videoId: videoIdRef.current,
@@ -313,15 +319,20 @@ export function PlayerPanel({
       </div>
 
       {presentation === 'mini' && (
-        <div className="mini-player-info">
+        <div className="mini-player-info" onPointerDown={onMiniDragStart} aria-label="Movable mini-player controls">
           <div className="mini-player-copy">
             <span className="eyebrow">Now watching</span>
             <strong>{mediaDetails?.title ?? videoTitle ?? 'Playing in your room'}</strong>
             <small>{isHost ? 'Host controls' : 'Watching in sync'}{syncDelayMs === null ? '' : ` · ~${syncDelayMs}ms`}</small>
           </div>
-          <button type="button" className="button button-primary mini-player-return" onClick={onReturnToRoom}>
-            <Icon name="maximize" size={16} /><span>Return to room</span>
-          </button>
+          <div className="mini-player-actions">
+            <button type="button" className="button mini-player-collapse" onClick={() => onMiniCollapsedChange?.(!miniCollapsed)} aria-expanded={!miniCollapsed}>
+              <Icon name={miniCollapsed ? 'chevron-left' : 'close'} size={15} /><span>{miniCollapsed ? 'Expand' : 'Collapse'}</span>
+            </button>
+            <button type="button" className="button button-primary mini-player-return" onClick={onReturnToRoom}>
+              <Icon name="maximize" size={16} /><span>Return to room</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -393,6 +404,7 @@ export function PlayerPanel({
               <small>{markers.length > 0 ? `${markers.length} moment${markers.length === 1 ? '' : 's'} marked on the timeline` : 'Your reactions appear below the video, never over its controls.'}</small>
             </div>
             <ReactionBar disabled={!hasVideo} onReact={send} />
+            {reactionStatus !== null && <p className="reaction-status" role="status">{reactionStatus}</p>}
           </div>
         </div>
       </details>

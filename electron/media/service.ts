@@ -274,6 +274,14 @@ export class MediaService {
     );
 
     ipcMain.handle(
+      IpcChannel.MediaCancelDriveConnect,
+      guard<[], void>(
+        () => { this.drive?.abortAuth(); },
+        () => undefined,
+      ),
+    );
+
+    ipcMain.handle(
       IpcChannel.MediaPickDriveFile,
       guard<[], MediaResult<SelectedMedia>>(
         async (event) => {

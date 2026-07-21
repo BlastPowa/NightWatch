@@ -128,7 +128,7 @@ const CALLBACK_HTML =
   '<!doctype html><meta charset="utf-8"><title>NightWatch</title>' +
   '<body style="font-family:system-ui;background:#0b0e14;color:#e6e8ee;' +
   'display:grid;place-items:center;height:100vh;margin:0">' +
-  '<p>You can close this tab and return to NightWatch.</p>';
+  '<p>Authorization was received. Return to NightWatch and wait for the app to confirm that the encrypted Drive connection was stored.</p>';
 
 /**
  * One authorization attempt: listener, browser, exchange-ready code.

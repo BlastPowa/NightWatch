@@ -14,7 +14,11 @@ import {
   type HtmlMediaSourceDescriptor,
   type MediaResult,
 } from '@shared/media';
-import { disconnectedDriveState, type DriveConnectionState, type SelectedMedia } from '@shared/mediaBridge';
+import {
+  disconnectedDriveState,
+  type DriveConnectionState,
+  type SelectedMedia,
+} from '@shared/mediaBridge';
 import {
   DRIVE_FILE_SCOPE,
   LoopbackAuthListener,
@@ -278,3 +282,4 @@ export class DriveManager {
     }
   }
 }
+

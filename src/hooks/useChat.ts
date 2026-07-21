@@ -5,7 +5,7 @@ import type { RoomService } from '@/lib/room/RoomService';
 
 export interface ChatBinding {
   entries: readonly ChatEntry[];
-  send(text: string, senderName: string): SendResult;
+  send(text: string, senderName: string): Promise<SendResult>;
 }
 
 /** Binds a ChatService to React state for the lifetime of the room session. */
@@ -28,8 +28,8 @@ export function useChat(service: RoomService, members: readonly RoomMember[]): C
     chatRef.current?.handleMembers(members);
   }, [members]);
 
-  const send = useCallback((text: string, senderName: string): SendResult => {
-    return chatRef.current?.send(text, senderName) ?? 'empty';
+  const send = useCallback(async (text: string, senderName: string): Promise<SendResult> => {
+    return chatRef.current?.send(text, senderName) ?? 'disconnected';
   }, []);
 
   return { entries, send };

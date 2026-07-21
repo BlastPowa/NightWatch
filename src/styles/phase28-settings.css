@@ -152,11 +152,11 @@ body {
   background:
     radial-gradient(
       720px 420px at 82% 6%,
-      color-mix(in srgb, var(--nw-accent) 18%, transparent),
+      color-mix(in srgb, var(--nw-accent) 30%, transparent),
       transparent 67%
     ),
-    radial-gradient(650px 460px at 12% 92%, rgba(75, 92, 255, 0.15), transparent 70%),
-    radial-gradient(520px 360px at 54% 120%, rgba(38, 197, 255, 0.08), transparent 72%),
+    radial-gradient(650px 460px at 12% 92%, rgba(75, 92, 255, 0.25), transparent 70%),
+    radial-gradient(520px 360px at 54% 120%, rgba(38, 197, 255, 0.16), transparent 72%),
     var(--nw-bg);
   background-size: 118% 118%, 126% 126%, 114% 114%, auto;
   animation: nw-backdrop-midnight 22s ease-in-out infinite alternate;
@@ -166,11 +166,11 @@ body {
   background:
     radial-gradient(
       780px 500px at 84% -4%,
-      color-mix(in srgb, var(--nw-accent) 34%, transparent),
+      color-mix(in srgb, var(--nw-accent) 48%, transparent),
       transparent 66%
     ),
-    radial-gradient(720px 540px at 10% 92%, rgba(110, 78, 255, 0.25), transparent 70%),
-    radial-gradient(620px 440px at 55% 112%, rgba(33, 218, 214, 0.16), transparent 72%),
+    radial-gradient(720px 540px at 10% 92%, rgba(110, 78, 255, 0.38), transparent 70%),
+    radial-gradient(620px 440px at 55% 112%, rgba(33, 218, 214, 0.28), transparent 72%),
     var(--nw-bg);
   background-size: 126% 126%, 132% 132%, 124% 124%, auto;
   animation: nw-backdrop-aurora 17s ease-in-out infinite alternate;
@@ -275,9 +275,20 @@ body {
 
 .settings-workspace {
   width: min(1280px, 100%);
-  height: min(880px, calc(100dvh - var(--nw-titlebar-h, 0px) - 7.5rem));
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
 }
+
+.app-view-settings .content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  overflow: hidden;
+  padding-bottom: 1rem;
+}
+
+.app-view-settings .global-topbar { align-self: start; }
 
 .settings-rail {
   min-height: 0;
@@ -291,6 +302,7 @@ body {
   overscroll-behavior: contain;
   scrollbar-color: color-mix(in srgb, var(--nw-accent) 48%, var(--nw-bg-raised)) transparent;
   scrollbar-width: thin;
+  padding-bottom: max(2rem, env(safe-area-inset-bottom));
 }
 
 .settings-content::-webkit-scrollbar {
@@ -687,7 +699,7 @@ body {
   .settings-workspace {
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
-    height: calc(100dvh - var(--nw-titlebar-h, 0px) - 12rem);
+    height: 100%;
   }
 
   .settings-rail {

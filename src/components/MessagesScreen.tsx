@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   createGroupConversation,
+  addGroupMember,
   deleteMessage,
   editMessage,
   getMessages,
@@ -10,6 +11,7 @@ import {
   type Conversation,
   type Message,
 } from '@/lib/social/MessagingService';
+import { getSocialGraph, type Relation } from '@/lib/social/FriendService';
 import { subscribeToConversation } from '@/lib/social/SocialRealtime';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
@@ -59,6 +61,9 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [showGroupComposer, setShowGroupComposer] = useState(false);
   const [showGroupManagement, setShowGroupManagement] = useState(false);
+  const [groupFriends, setGroupFriends] = useState<Relation[]>([]);
+  const [selectedGroupFriends, setSelectedGroupFriends] = useState<Set<string>>(new Set());
+  const [groupFriendQuery, setGroupFriendQuery] = useState('');
   const [rosters, setRosters] = useState<Map<string, AuthorizedConversationMember[]>>(new Map());
   const logRef = useRef<HTMLDivElement | null>(null);
 
@@ -79,6 +84,22 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
       return title.toLocaleLowerCase().includes(query);
     });
   }, [conversationQuery, conversations, currentUserId, rosters]);
+
+  const visibleGroupFriends = useMemo(() => {
+    const query = groupFriendQuery.trim().toLocaleLowerCase();
+    return query === ''
+      ? groupFriends
+      : groupFriends.filter((friend) => friend.displayName.toLocaleLowerCase().includes(query));
+  }, [groupFriendQuery, groupFriends]);
+
+  useEffect(() => {
+    if (!showGroupComposer) return;
+    let active = true;
+    void getSocialGraph().then((result) => {
+      if (active && result.status === 'ok') setGroupFriends(result.data.friends);
+    });
+    return () => { active = false; };
+  }, [showGroupComposer]);
 
   async function refreshConversations(): Promise<void> {
     const result = await listConversations();
@@ -230,10 +251,17 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
     if (title === '') return;
     const result = await createGroupConversation(title);
     if (result.status === 'ok') {
+      const selectedFriends = [...selectedGroupFriends].slice(0, 29);
+      const additions = await Promise.all(selectedFriends.map((userId) => addGroupMember(result.data, userId)));
       setGroupTitle('');
+      setSelectedGroupFriends(new Set());
+      setGroupFriendQuery('');
       setShowGroupComposer(false);
       await refreshConversations();
       setSelectedId(result.data);
+      if (additions.some((addition) => addition.status !== 'ok')) {
+        setStatus('The group was created, but one or more friends could not be added. Open Members to retry.');
+      }
     } else {
       setStatus(failureCopy(result.status));
     }
@@ -271,7 +299,18 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
                 Create
               </button>
             </div>
-            <small className="new-group-limit">Up to 30 people total. Add members after the group is created.</small>
+            <label className="new-group-friend-search">
+              <Icon name="search" size={15} />
+              <input value={groupFriendQuery} placeholder="Find accepted friends" onChange={(event) => setGroupFriendQuery(event.target.value)} aria-label="Find accepted friends for this group" />
+            </label>
+            <div className="new-group-friend-grid" aria-label="Friends to add">
+              {visibleGroupFriends.map((friend) => {
+                const selected = selectedGroupFriends.has(friend.userId);
+                return <button key={friend.userId} type="button" className={`new-group-friend${selected ? ' new-group-friend-selected' : ''}`} aria-pressed={selected} onClick={() => setSelectedGroupFriends((current) => { const next = new Set(current); if (next.has(friend.userId)) next.delete(friend.userId); else if (next.size < 29) next.add(friend.userId); return next; })}><ProfileAvatar name={friend.displayName} src={friend.avatarUrl} /><span>{friend.displayName}</span>{selected && <Icon name="check" size={14} />}</button>;
+              })}
+              {groupFriends.length === 0 && <small className="new-group-no-friends">Accept friends first, then they will appear here.</small>}
+            </div>
+            <small className="new-group-limit">Up to 30 people total · {selectedGroupFriends.size} friend{selectedGroupFriends.size === 1 ? '' : 's'} selected.</small>
           </form>
         )}
 

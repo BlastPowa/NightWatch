@@ -179,6 +179,17 @@
 .friend-search button { display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--nw-text-muted); cursor: pointer; }
 .friend-search button:hover { background: color-mix(in srgb, var(--nw-text) 8%, transparent); color: var(--nw-text); }
 
+.new-group-friend-search { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: .5rem; min-height: 40px; padding: 0 .7rem; border: 1px solid var(--nw-border); border-radius: var(--nw-radius); background: var(--nw-bg-sunken); color: var(--nw-text-muted); }
+.new-group-friend-search:focus-within { border-color: color-mix(in srgb,var(--nw-accent) 60%,var(--nw-border)); box-shadow: 0 0 0 3px color-mix(in srgb,var(--nw-accent) 10%,transparent); }
+.new-group-friend-search input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--nw-text); }
+.new-group-friend-grid { display: grid; max-height: 176px; gap: .38rem; overflow-y: auto; }
+.new-group-friend { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: center; gap: .55rem; width: 100%; padding: .42rem .5rem; border: 1px solid var(--nw-border); border-radius: max(8px,calc(var(--nw-radius) - 2px)); background: color-mix(in srgb,var(--nw-bg-sunken) 84%,transparent); color: var(--nw-text); cursor: pointer; text-align: left; }
+.new-group-friend:hover,.new-group-friend-selected { border-color: color-mix(in srgb,var(--nw-accent) 58%,var(--nw-border)); background: color-mix(in srgb,var(--nw-accent) 12%,var(--nw-bg-sunken)); }
+.new-group-friend > :first-child { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+.new-group-friend span { overflow: hidden; font-size: .7rem; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+.new-group-friend-selected > svg { color: var(--nw-accent); }
+.new-group-no-friends { padding: .6rem; color: var(--nw-text-muted); text-align: center; }
+
 .phase26-relation-section { padding: 1rem; }
 .phase26-friend-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .phase26-person-card { grid-template-columns: 56px minmax(0, 1fr); align-items: start; padding: .9rem; background: linear-gradient(150deg, color-mix(in srgb, var(--nw-accent) 5%, var(--nw-bg-raised)), var(--nw-bg-sunken)); transition: border-color .18s var(--nw-ease), transform .18s var(--nw-ease), box-shadow .18s var(--nw-ease); }

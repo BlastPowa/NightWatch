@@ -18,8 +18,9 @@ interface IconProps {
 }
 
 /**
- * NightWatch's local, dependency-free outline icon system. Every icon shares
- * one optical weight and inherits the active theme/accent through currentColor.
+ * NightWatch's local, dependency-free Coolicons-derived outline system.
+ * Selected glyph paths are adapted under CC BY 4.0 (see THIRD_PARTY_NOTICES.md).
+ * Every icon shares one optical weight and inherits the active theme/accent.
  */
 export function Icon({ name, size = 18, className, style }: IconProps): JSX.Element {
   return (
@@ -32,13 +33,13 @@ export function Icon({ name, size = 18, className, style }: IconProps): JSX.Elem
 function glyph(name: IconName): JSX.Element {
   switch (name) {
     case 'home': return <><path d="m3 11 9-7 9 7" /><path d="M5.5 10v10h13V10" /><path d="M9.5 20v-6h5v6" /></>;
-    case 'play': return <><path d="M7 4.8v14.4L19 12 7 4.8Z" /><circle cx="12" cy="12" r="10" opacity=".35" /></>;
+    case 'play': return <><circle cx="12" cy="12" r="9" /><path d="M10 15V9l5 3-5 3Z" /></>;
     case 'play-solid': return <path d="M8 5.5v13l10.5-6.5L8 5.5Z" fill="currentColor" stroke="none" />;
     case 'parties': return <><rect x="4" y="5" width="14" height="14" rx="2" /><path d="M8 9h6M8 13h6M8 17h4" /><path d="M18 8h2v11a2 2 0 0 1-2 2H7v-2" /></>;
-    case 'friends': case 'users': return <><path d="M16 20v-1.7a3.3 3.3 0 0 0-3.3-3.3H6.3A3.3 3.3 0 0 0 3 18.3V20" /><circle cx="9.5" cy="8" r="3" /><path d="M16 11a3 3 0 1 0 0-6M18 20v-1.5a3 3 0 0 0-2-2.8" /></>;
-    case 'message': return <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.4A2.5 2.5 0 0 1 4 13.5v-8Z" /><path d="M8 8h8M8 12h5" /></>;
+    case 'friends': case 'users': return <path d="M17 20c0-1.66-2.24-3-5-3s-5 1.34-5 3M21 17c0-1.23-1.23-2.29-3-2.75M3 17c0-1.23 1.23-2.29 3-2.75M18 10.24A3 3 0 0 0 16 5c-.77 0-1.47.29-2 .76M6 10.24A3 3 0 0 1 8 5c.77 0 1.47.29 2 .76M12 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />;
+    case 'message': return <path d="m5.6 19.92 1.52-1.22c.32-.25.48-.39.67-.48.16-.08.33-.14.51-.18.2-.04.41-.04.82-.04h8.68c1.12 0 1.68 0 2.11-.22.38-.19.68-.5.87-.87.22-.43.22-.99.22-2.11V7.2c0-1.12 0-1.68-.22-2.11a2 2 0 0 0-.87-.87C19.48 4 18.92 4 17.8 4H6.2c-1.12 0-1.68 0-2.11.22-.38.19-.68.5-.87.87C3 5.52 3 6.08 3 7.2v11.47c0 1.07 0 1.6.22 1.87.19.24.48.38.78.38.35 0 .77-.33 1.6-1Z" />;
     case 'creator': return <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="3" /><path d="M12 2v3M22 12h-3M12 22v-3M2 12h3" /><path d="m17.7 6.3-2.1 2.1" /></>;
-    case 'profile': return <><circle cx="12" cy="8" r="4" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /><circle cx="12" cy="12" r="10" opacity=".35" /></>;
+    case 'profile': return <path d="M17.22 19.33A7 7 0 0 0 12 17a7 7 0 0 0-5.22 2.33M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-7a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />;
     case 'library': return <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 4v16M11 8h6M11 12h6M11 16h4" /></>;
     case 'settings': return <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.1A1.7 1.7 0 0 0 8.5 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.1A1.7 1.7 0 0 0 4.6 8.5a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.1A1.7 1.7 0 0 0 15.5 4.6a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.1.4.3.7.6 1 .3.2.7.4 1.1.4h.1v4h-.1A1.7 1.7 0 0 0 19.4 15Z" /></>;
     case 'info': return <><circle cx="12" cy="12" r="9" /><path d="M12 11v6M12 7.5h.01" /></>;
@@ -50,7 +51,7 @@ function glyph(name: IconName): JSX.Element {
     case 'compass': return <><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2.1 4.9-4.9 2.1 2.1-4.9 4.9-2.1Z" /></>;
     case 'search': return <><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.2 4.2" /></>;
     case 'close': return <path d="m6 6 12 12M18 6 6 18" />;
-    case 'bell': return <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>;
+    case 'bell': return <path d="M15 17v1a3 3 0 0 1-6 0v-1m6 0H5.41c-.38 0-.58 0-.73-.05a1 1 0 0 1-.63-.63C4 16.16 4 15.97 4 15.59c0-.17 0-.26.01-.34.03-.15.09-.3.18-.42.05-.07.11-.13.23-.25l.38-.38a.68.68 0 0 0 .2-.48V10a7 7 0 1 1 14 0v3.72c0 .18.07.35.2.48l.39.38c.12.12.18.18.22.25.09.12.15.27.18.42.01.08.01.17.01.34 0 .38 0 .57-.05.73a1 1 0 0 1-.63.63c-.15.05-.35.05-.73.05H15Z" />;
     case 'music': return <><path d="M9 18V5l10-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="16" cy="16" r="3" /></>;
     case 'gaming': return <><path d="M8 8h8a5 5 0 0 1 4.8 6.4l-1 3.3a2 2 0 0 1-3.3.9L14 16h-4l-2.5 2.6a2 2 0 0 1-3.3-.9l-1-3.3A5 5 0 0 1 8 8Z" /><path d="M7 12v4M5 14h4M16 13h.01M18 15h.01" /></>;
     case 'live': return <><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" /><path d="M7.8 7.8a6 6 0 0 0 0 8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.5 4.5a10.6 10.6 0 0 0 0 15M19.5 4.5a10.6 10.6 0 0 1 0 15" /></>;
@@ -70,7 +71,7 @@ function glyph(name: IconName): JSX.Element {
     case 'chevron-right': return <path d="m9 18 6-6-6-6" />;
     case 'plus': return <path d="M12 5v14M5 12h14" />;
     case 'check': return <path d="m5 12 4 4L19 6" />;
-    case 'send': return <><path d="m3 3 18 9-18 9 3-9-3-9Z" /><path d="M6 12h15" /></>;
+    case 'send': return <path d="m10.31 13.69 4.84-4.84M20.11 5.89l-4.09 13.29c-.37 1.19-.55 1.79-.87 1.99-.27.17-.61.2-.91.07-.34-.14-.62-.7-1.18-1.81l-2.59-5.18c-.09-.18-.13-.27-.19-.35a1.36 1.36 0 0 0-.51-.37l-5.2-2.59C3.46 10.38 2.9 10.1 2.76 9.76a1 1 0 0 1 .07-.91c.2-.32.8-.5 1.99-.87l13.29-4.09c.94-.29 1.41-.43 1.72-.32.28.1.5.32.6.6.11.31-.03.78-.32 1.72Z" />;
     case 'clock': return <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>;
     case 'lock': return <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>;
     case 'maximize': return <><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /><path d="m3 8 5-5M21 8l-5-5M3 16l5 5M21 16l-5 5" /></>;

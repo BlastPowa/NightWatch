@@ -181,8 +181,10 @@ function createMainWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
-    minWidth: 940,
-    minHeight: 600,
+    // NightWatch's cinematic shell is designed and accepted at 1280x800.
+    // Prevent smaller Electron canvases from clipping Settings and social UI.
+    minWidth: 1280,
+    minHeight: 800,
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0b0e14',
@@ -499,6 +501,20 @@ if (!hasSingleInstanceLock) {
         return mediaFail('capability-disabled', 'Google Drive is not configured.');
       }
       return driveWorkspace.ensureWorkspace();
+    });
+
+    ipcMain.handle(IpcChannel.MediaOpenDriveWorkspace, async (event) => {
+      if (event.sender !== mainWindow?.webContents) {
+        return mediaFail('invalid-request', 'Unexpected sender.');
+      }
+      if (driveWorkspace === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      const workspace = await driveWorkspace.ensureWorkspace();
+      if (workspace.ok) {
+        await shell.openExternal(workspace.value.webViewLink);
+      }
+      return workspace;
     });
 
     ipcMain.handle(IpcChannel.MediaGetDriveFileAccess, async (event, fileId: unknown) => {

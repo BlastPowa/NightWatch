@@ -9,6 +9,7 @@ export interface ReactionContext {
 }
 
 export type ReactionListener = (stamp: ReactionStamp) => void;
+export type ReactionSendResult = 'ok' | 'no-video' | 'rate-limited' | 'disconnected' | 'failed';
 
 const MIN_SEND_INTERVAL_MS = 250;
 
@@ -50,18 +51,25 @@ export class ReactionService {
   }
 
   /** React at the current playback moment. No-op without a loaded video. */
-  public send(emoji: ReactionEmoji): void {
+  public async send(emoji: ReactionEmoji): Promise<ReactionSendResult> {
     const now = Date.now();
     if (now - this.lastSentAt < MIN_SEND_INTERVAL_MS) {
-      return;
+      return 'rate-limited';
     }
     const { videoId, positionSeconds } = this.getContext();
     if (videoId === null) {
-      return;
+      return 'no-video';
     }
     this.lastSentAt = now;
 
-    // Show own reaction immediately (broadcast self=false).
+    try {
+      await this.room.send('reaction:stamp', { emoji, videoId, positionSeconds });
+    } catch (error) {
+      return error instanceof Error && error.message.includes('Not connected')
+        ? 'disconnected'
+        : 'failed';
+    }
+    // Show own reaction after the transport accepts it (broadcast self=false).
     this.onStamp({
       id: crypto.randomUUID(),
       emoji,
@@ -70,10 +78,8 @@ export class ReactionService {
       senderId: this.room.selfId,
       at: now,
     });
-    this.room.send('reaction:stamp', { emoji, videoId, positionSeconds }).catch(() => {
-      // Ephemeral fire-and-forget; a lost reaction is acceptable.
-    });
     // Opt-in insights (Phase 17): no-ops unless recording (host + enabled).
     sessionRecorder.reaction(positionSeconds);
+    return 'ok';
   }
 }

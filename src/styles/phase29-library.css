@@ -348,3 +348,24 @@
     transition: none;
   }
 }
+.drive-workspace { display: grid; gap: 1rem; margin-top: 1rem; padding: clamp(1rem,2vw,1.4rem); border-color: color-mix(in srgb,var(--nw-accent) 30%,var(--nw-border)); background: radial-gradient(circle at 88% 0,color-mix(in srgb,var(--nw-accent) 14%,transparent),transparent 38%),color-mix(in srgb,var(--nw-bg-raised) 92%,transparent); }
+.drive-workspace > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.drive-workspace h2 { margin: .2rem 0; }
+.drive-workspace p { margin: 0; color: var(--nw-text-muted); line-height: 1.5; }
+.drive-workspace-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; }
+.drive-workspace-steps > span { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: center; gap: .55rem; padding: .7rem; border: 1px solid var(--nw-border); border-radius: var(--nw-radius); background: color-mix(in srgb,var(--nw-bg-sunken) 78%,transparent); }
+.drive-workspace-steps b { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: color-mix(in srgb,var(--nw-accent) 18%,var(--nw-bg-raised)); color: var(--nw-accent); }
+.drive-workspace-steps small { color: var(--nw-text-muted); line-height: 1.4; }
+.drive-workspace-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
+.drive-workspace-actions .button { display: inline-flex; align-items: center; gap: .42rem; }
+.drive-workspace-link { display: grid; grid-template-columns: auto auto minmax(0,1fr); align-items: center; gap: .45rem; padding: .7rem; border: 1px dashed color-mix(in srgb,var(--nw-accent) 30%,var(--nw-border)); border-radius: var(--nw-radius); }
+.drive-workspace-link > svg { color: var(--nw-accent); }
+.drive-workspace-link span { color: var(--nw-text); font-weight: 760; }
+.library-drive-connect-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+@media (max-width: 760px) {
+  .drive-workspace > header { flex-direction: column; }
+  .drive-workspace-steps { grid-template-columns: 1fr; }
+  .drive-workspace-link { grid-template-columns: auto minmax(0,1fr); }
+  .drive-workspace-link small { grid-column: 1 / -1; }
+}

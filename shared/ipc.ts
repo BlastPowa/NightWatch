@@ -12,6 +12,7 @@ import type {
 } from './media';
 import type {
   DriveConnectionState,
+  DriveWorkspaceInfo,
   FingerprintProgress,
   PlaybackLease,
   SelectedMedia,
@@ -48,6 +49,9 @@ export const IpcChannel = {
   MediaFingerprintProgress: 'media:fingerprint-progress',
   MediaGetDriveConnection: 'media:get-drive-connection',
   MediaConnectDrive: 'media:connect-drive',
+  MediaCancelDriveConnect: 'media:cancel-drive-connect',
+  MediaEnsureDriveWorkspace: 'media:ensure-drive-workspace',
+  MediaOpenDriveWorkspace: 'media:open-drive-workspace',
   MediaPickDriveFile: 'media:pick-drive-file',
   MediaDisconnectDrive: 'media:disconnect-drive',
   MediaCreateLease: 'media:create-lease',
@@ -74,7 +78,6 @@ export const IpcChannel = {
   CaptureClearSource: 'capture:clear-source',
 
   // Phase 32: Google Drive shared workspace (handoff §2).
-  MediaEnsureDriveWorkspace: 'media:ensure-drive-workspace',
   MediaGetDriveFileAccess: 'media:get-drive-file-access',
 } as const;
 
@@ -195,6 +198,18 @@ export interface IpcInvokeContract {
     args: [];
     result: MediaResult<DriveConnectionState>;
   };
+  [IpcChannel.MediaCancelDriveConnect]: {
+    args: [];
+    result: void;
+  };
+  [IpcChannel.MediaEnsureDriveWorkspace]: {
+    args: [];
+    result: MediaResult<DriveWorkspaceInfo>;
+  };
+  [IpcChannel.MediaOpenDriveWorkspace]: {
+    args: [];
+    result: MediaResult<DriveWorkspaceInfo>;
+  };
   [IpcChannel.MediaPickDriveFile]: {
     args: [];
     result: MediaResult<SelectedMedia>;
@@ -289,23 +304,18 @@ export interface NightWatchMediaBridge {
   onFingerprintProgress(callback: (progress: FingerprintProgress) => void): () => void;
   getDriveConnection(): Promise<DriveConnectionState>;
   connectDrive(): Promise<MediaResult<DriveConnectionState>>;
+  cancelDriveConnect(): Promise<void>;
+  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
+  openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;
   releasePlaybackLease(leaseId: string): Promise<void>;
-  /** Phase 32: find-or-create the app-tagged "NightWatch Shared" folder. */
-  ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   /** Phase 32: THIS viewer's access state for one Drive file id. */
   getDriveFileAccess(fileId: string): Promise<DriveFileAccessState>;
 }
 
 /** Phase 32 Drive workspace surface (see electron/media/driveWorkspace.ts). */
-export interface DriveWorkspaceInfo {
-  folderId: string;
-  name: string;
-  webViewLink: string;
-}
-
 export type DriveFileAccessState =
   | 'accessible'
   | 'permission-required'

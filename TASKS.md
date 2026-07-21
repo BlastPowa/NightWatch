@@ -1,6 +1,19 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-20 (Phase 33 remaining-features lane).
+Last updated: 2026-07-21 (Phase 33 integration and runtime repair).
+
+## Runtime repair frontend lane
+
+- [x] Await room-chat delivery and surface disconnected/rate-limit failures.
+- [x] Await reaction delivery and expose no-video/disconnected/rate-limit states.
+- [x] Refresh Google Drive connection state after browser OAuth returns.
+- [x] Add create/open/copy flow for the app-owned NightWatch Shared folder.
+- [x] Reset stale Browse searches on navigation and retain local Previously watched history.
+- [x] Repair the group composer, social capability guidance, and conversation refresh.
+- [x] Add the friend-activity drawer and small-window responsive fixes.
+- [x] Make the mini-player movable/collapsible and repair room-code copying.
+- [x] Replace stale brand assets with the adaptive moon/play logo family.
+- [ ] Owner: complete packaged two-client manual acceptance before release.
 
 ## Phase 33 backend lane (remaining-features handoff)
 
@@ -19,8 +32,8 @@ Last updated: 2026-07-20 (Phase 33 remaining-features lane).
   states with actionable detail text.
 - [x] P6 — packaged two-client acceptance checklist
   (`PHASE_33_PACKAGED_ACCEPTANCE.md`).
-- [ ] Codex: branch from `origin/main`, run the five gates, review, commit,
-  push, PR, merge on green (tests written but NOT executed by Fable).
+- [x] Codex: reviewed the implementation, fixed lifecycle reason mapping, ran
+  all five gates, and merged PR #53 on green.
 - [ ] Owner: TURN credentials + redeploy `turn-credentials`; run the packaged
   checklist before any of `fileWatch`/`driveWorkspace`/`voiceChat`/`liveShare`
   is enabled; Google OAuth verification assets; SFU approval for >8 peers.

@@ -36,9 +36,10 @@ interface SettingsPanelProps {
   driveAvailable?: boolean;
   youtubeAccount?: YouTubeAccountBridge | null;
   onOpenLibrary?(): void;
+  initialSection?: SettingsSection;
 }
 
-type SettingsSection = 'appearance' | 'browsing' | 'playback' | 'social' | 'accessibility' | 'account' | 'data';
+export type SettingsSection = 'appearance' | 'browsing' | 'playback' | 'social' | 'accessibility' | 'account' | 'data';
 
 const SECTIONS: ReadonlyArray<{ id: SettingsSection; label: string; icon: IconName }> = [
   { id: 'appearance', label: 'Appearance', icon: 'sparkle' },
@@ -144,9 +145,11 @@ export function SettingsPanel({
   driveAvailable = false,
   youtubeAccount = null,
   onOpenLibrary,
+  initialSection = 'appearance',
 }: SettingsPanelProps): JSX.Element {
   const settings = useSettings();
-  const [section, setSection] = useState<SettingsSection>('appearance');
+  const [section, setSection] = useState<SettingsSection>(initialSection);
+  useEffect(() => setSection(initialSection), [initialSection]);
   const [backgroundState, setBackgroundState] = useState<'idle' | 'processing' | 'error'>('idle');
   const customPaletteStatus = getCustomPaletteStatus(settings.customAtmosphere);
   const previewStyle = {

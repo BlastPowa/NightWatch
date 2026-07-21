@@ -18,6 +18,8 @@ function formatTime(epochMs: number): string {
 export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.Element {
   const { entries, send } = useChat(service, members);
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
   const stickToBottomRef = useRef(true);
 
@@ -35,11 +37,19 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
     }
   }, [entries]);
 
-  function handleSend(event: FormEvent): void {
+  async function handleSend(event: FormEvent): Promise<void> {
     event.preventDefault();
-    if (send(draft, selfName) === 'ok') {
+    setSending(true);
+    setSendError(null);
+    const result = await send(draft, selfName);
+    setSending(false);
+    if (result === 'ok') {
       setDraft('');
       achievementTracker.record('chat-sent');
+    } else if (result === 'rate-limited') {
+      setSendError('Please wait a moment before sending again.');
+    } else if (result !== 'empty') {
+      setSendError(result === 'disconnected' ? 'Reconnect to the room to send messages.' : 'Message delivery failed. Try again.');
     }
   }
 
@@ -66,7 +76,8 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
         )}
       </div>
 
-      <form className="chat-form" onSubmit={handleSend}>
+      {sendError !== null && <p className="chat-send-error" role="alert">{sendError}</p>}
+      <form className="chat-form" onSubmit={(event) => void handleSend(event)}>
         <input
           className="input"
           value={draft}
@@ -75,8 +86,8 @@ export function ChatPanel({ service, members, selfName }: ChatPanelProps): JSX.E
           aria-label="Message the room"
           onChange={(e) => setDraft(e.target.value)}
         />
-        <button type="submit" className="button">
-          <Icon name="send" size={16} /><span className="send-label">Send</span>
+        <button type="submit" className="button" disabled={sending || draft.trim() === ''}>
+          <Icon name="send" size={16} /><span className="send-label">{sending ? 'Sending…' : 'Send'}</span>
         </button>
       </form>
     </div>

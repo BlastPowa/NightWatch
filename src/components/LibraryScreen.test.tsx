@@ -47,6 +47,9 @@ function makeBridge(): MediaPlatformBridge {
     resolveLocalMatch: vi.fn(),
     getDriveConnection: vi.fn(),
     connectDrive: vi.fn(),
+    cancelDriveConnect: vi.fn().mockResolvedValue(undefined),
+    ensureDriveWorkspace: vi.fn(),
+    openDriveWorkspace: vi.fn(),
     pickDriveFile: vi.fn(),
     disconnectDrive: vi.fn(),
     createPlaybackLease: vi.fn().mockResolvedValue({

@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Runtime reliability, Drive workspace, and responsive shell
+
+- Room chat and reactions now await transport delivery, keep failed content
+  visible, and show useful disconnected, failed, and rate-limit feedback.
+- Google Drive connection state refreshes after the browser returns. Connected
+  users can create/reuse and open the app-owned `NightWatch Shared` folder,
+  copy its link, open Google's sharing controls, and choose an authorized file.
+- Browse navigation clears stale search state, while local session history
+  supplies a reliable Previously watched fallback when persistent history is
+  unavailable.
+- Added an app-wide friend-activity drawer, clearer social capability/account
+  diagnostics, repaired group-chat controls, and more reliable conversation
+  refresh after sending.
+- Improved small-window shell/settings/room layouts, made the mini-player
+  movable/collapsible, repaired room-code copying, and refreshed the adaptive
+  moon/play brand assets used by the window, taskbar, and app surfaces.
+- Added source/license notices for the locally adapted icon artwork.
+
 ### Phase 33 — remaining-features completion (backend/platform)
 
 - Secret-free TURN diagnostics: the `turn-credentials` function answers an

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import { sessionRecorder } from '@/lib/analytics/SessionRecorder';
 import { ChatPanel } from '@/components/ChatPanel';
 import { PlayerPanel } from '@/components/PlayerPanel';
@@ -55,6 +55,9 @@ export function RoomScreen({
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const [dockTab, setDockTab] = useState<'queue' | 'chat' | 'people' | 'moments' | 'discovery'>('queue');
+  const [miniCollapsed, setMiniCollapsed] = useState(false);
+  const [miniPosition, setMiniPosition] = useState<{ left: number; top: number } | null>(null);
+  const roomViewRef = useRef<HTMLElement | null>(null);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
@@ -135,6 +138,19 @@ export function RoomScreen({
         window.setTimeout(() => setCopied(false), 1500);
       })
       .catch(() => {
+        const field = document.createElement('textarea');
+        field.value = room.code;
+        field.setAttribute('readonly', '');
+        field.style.position = 'fixed';
+        field.style.opacity = '0';
+        document.body.appendChild(field);
+        field.select();
+        const didCopy = document.execCommand('copy');
+        field.remove();
+        if (didCopy) {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 1500);
+        }
         // Clipboard unavailable (e.g. file:// context) — code stays visible.
       });
   }
@@ -148,9 +164,54 @@ export function RoomScreen({
     }
   }
 
+  function startMiniDrag(event: ReactPointerEvent<HTMLDivElement>): void {
+    if (presentation !== 'mini' || (event.target as HTMLElement).closest('button') !== null) return;
+    const panel = roomViewRef.current;
+    if (panel === null) return;
+    event.preventDefault();
+    const rect = panel.getBoundingClientRect();
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const startLeft = rect.left;
+    const startTop = rect.top;
+    const move = (nextEvent: PointerEvent): void => {
+      const maxLeft = Math.max(8, window.innerWidth - rect.width - 8);
+      const maxTop = Math.max(8, window.innerHeight - rect.height - 8);
+      setMiniPosition({
+        left: Math.min(maxLeft, Math.max(8, startLeft + nextEvent.clientX - startX)),
+        top: Math.min(maxTop, Math.max(8, startTop + nextEvent.clientY - startY)),
+      });
+    };
+    const stop = (): void => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+      window.removeEventListener('pointercancel', stop);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop, { once: true });
+    window.addEventListener('pointercancel', stop, { once: true });
+  }
+
+  useEffect(() => {
+    if (presentation !== 'mini' || miniPosition === null) return;
+    const clamp = (): void => {
+      const panel = roomViewRef.current;
+      if (panel === null) return;
+      const rect = panel.getBoundingClientRect();
+      setMiniPosition((current) => current === null ? null : ({
+        left: Math.min(Math.max(8, window.innerWidth - rect.width - 8), Math.max(8, current.left)),
+        top: Math.min(Math.max(8, window.innerHeight - rect.height - 8), Math.max(8, current.top)),
+      }));
+    };
+    window.addEventListener('resize', clamp);
+    return () => window.removeEventListener('resize', clamp);
+  }, [miniPosition, presentation]);
+
   return (
     <section
-      className={`room-view room-view-${presentation}${presentation === 'full' ? ' fade-up' : ''}`}
+      ref={roomViewRef}
+      className={`room-view room-view-${presentation}${presentation === 'mini' && miniCollapsed ? ' room-view-mini-collapsed' : ''}${presentation === 'full' ? ' fade-up' : ''}`}
+      style={presentation === 'mini' && miniPosition !== null ? ({ left: miniPosition.left, top: miniPosition.top, right: 'auto', bottom: 'auto' } as CSSProperties) : undefined}
       aria-hidden={presentation === 'hidden' ? true : undefined}
     >
       <header className="room-header card">
@@ -223,6 +284,9 @@ export function RoomScreen({
             takeNextFromQueue={queue.popNext}
             onMediaStateChange={onMediaStateChange}
             onReturnToRoom={onReturnToRoom}
+            miniCollapsed={miniCollapsed}
+            onMiniCollapsedChange={setMiniCollapsed}
+            onMiniDragStart={startMiniDrag}
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;
             }}
