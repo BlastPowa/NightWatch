@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/components/NotificationCenter', () => ({ NotificationCenter: () => null }));
+vi.mock('@/components/FriendActivityDrawer', () => ({ FriendActivityDrawer: () => null }));
 
 import { AppShell } from '@/components/AppShell';
 

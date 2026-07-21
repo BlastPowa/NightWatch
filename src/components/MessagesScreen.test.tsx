@@ -5,14 +5,18 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
+  addGroupMember,
   createGroupConversation,
+  getSocialGraph,
   getConversationMembers,
   getMessages,
   listConversations,
   markConversationRead,
   sendMessage,
 } = vi.hoisted(() => ({
+  addGroupMember: vi.fn(),
   createGroupConversation: vi.fn(),
+  getSocialGraph: vi.fn(),
   getConversationMembers: vi.fn(),
   getMessages: vi.fn(),
   listConversations: vi.fn(),
@@ -21,6 +25,7 @@ const {
 }));
 
 vi.mock('@/lib/social/MessagingService', () => ({
+  addGroupMember,
   createGroupConversation,
   deleteMessage: vi.fn(),
   editMessage: vi.fn(),
@@ -28,6 +33,10 @@ vi.mock('@/lib/social/MessagingService', () => ({
   listConversations,
   markConversationRead,
   sendMessage,
+}));
+
+vi.mock('@/lib/social/FriendService', () => ({
+  getSocialGraph,
 }));
 
 vi.mock('@/lib/social/SocialProfileService', () => ({
@@ -85,6 +94,11 @@ beforeEach(() => {
   markConversationRead.mockResolvedValue({ status: 'ok', data: undefined });
   sendMessage.mockResolvedValue({ status: 'ok', data: 'message-1' });
   createGroupConversation.mockResolvedValue({ status: 'ok', data: 'group-1' });
+  addGroupMember.mockResolvedValue({ status: 'ok', data: undefined });
+  getSocialGraph.mockResolvedValue({
+    status: 'ok',
+    data: { friends: [], incoming: [], outgoing: [], suggestions: [], blocked: [] },
+  });
 });
 
 describe('MessagesScreen', () => {
