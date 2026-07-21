@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+### Phase 33 — remaining-features completion (backend/platform)
+
+- Secret-free TURN diagnostics: the `turn-credentials` function answers an
+  authenticated `diagnostics` action with configured/provider/TTL only, and
+  `getTurnDiagnostics()` surfaces it. No relay URLs, key ids, tokens, or
+  credentials are ever exposed.
+- Typed capability-disabled reasons (`explainRoomMediaCapabilities`) so gated
+  controls can state a cause: signed-out, not-deployed, unsupported-platform,
+  or relay-not-configured.
+- Google Drive shared viewing: a typed six-step host flow (connect →
+  workspace → add file → share in Google's UI → pick → publish) with
+  per-viewer access probing. NightWatch never grants Drive access silently.
+- File-watch readiness evaluation mapping descriptors to explicit roster
+  states (ready, missing-file, permission-required, fingerprint-mismatch,
+  unsupported-codec, buffering, offline, rate-limited) with actionable text;
+  codec support is checked before any network call.
+- `CommsLifecycle`: a single teardown authority guaranteeing voice and screen
+  capture stop on room leave, sign-out, page hide, and window close; host
+  migration stops sharing while preserving the call.
+- Documentation: frontend integration contracts, a packaged two-client
+  acceptance checklist, and the Phase 33 completion report.
+- No new migrations. All Phase 32/33 capability flags remain false pending
+  TURN deployment and packaged verification.
+
 ### Phase 32 — room media modes, discovery, live share, voice (backend/platform)
 
 - Versioned room media mode envelope (`youtube` / `file-watch` / `live-share`)

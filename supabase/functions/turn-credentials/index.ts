@@ -166,12 +166,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ error: 'unauthorized' }, 401);
   }
 
-  let body: { roomCode?: unknown };
+  let body: { roomCode?: unknown; action?: unknown };
   try {
     body = await req.json();
   } catch {
     return json({ error: 'server-error' }, 400);
   }
+
+  // Safe diagnostics (remaining-features handoff, Priority 1): authenticated
+  // callers may confirm THAT a relay is configured and which provider model,
+  // without any secret material, URL list, or credential being revealed.
+  if (body.action === 'diagnostics') {
+    return json({
+      configured: true, // unreachable when unconfigured (503 above)
+      provider: cloudflareConfigured ? 'cloudflare' : 'coturn',
+      ttlSeconds: TTL_SECONDS,
+    });
+  }
+
   const roomCode =
     typeof body.roomCode === 'string' ? body.roomCode.toUpperCase().slice(0, 6) : '';
   if (roomCode.length !== 6) {

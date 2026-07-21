@@ -27,6 +27,8 @@ interface ServerCapabilities {
 const cache = new Map<string, RoomMediaCapabilities>();
 const pending = new Map<string, Promise<RoomMediaCapabilities>>();
 let turnDeployed = false;
+let lastServer: ServerCapabilities | null = null;
+let lastSignedIn = false;
 
 function parseServerCapabilities(value: unknown): ServerCapabilities | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -63,8 +65,10 @@ async function probeTurnFunction(): Promise<boolean> {
 
 async function detect(platform: PlatformMediaSupport): Promise<RoomMediaCapabilities> {
   const { data: sessionData } = await supabase.auth.getSession();
+  lastSignedIn = sessionData.session !== null;
   if (sessionData.session === null) {
     turnDeployed = false;
+    lastServer = null;
     return disabledRoomMediaCapabilities();
   }
 
@@ -74,9 +78,11 @@ async function detect(platform: PlatformMediaSupport): Promise<RoomMediaCapabili
   ]);
   turnDeployed = turn;
   if (error !== null) {
+    lastServer = null;
     return disabledRoomMediaCapabilities();
   }
   const server = parseServerCapabilities(data);
+  lastServer = server;
   if (server === null) {
     return disabledRoomMediaCapabilities();
   }
@@ -124,4 +130,63 @@ export function resetRoomMediaCapabilities(): void {
   cache.clear();
   pending.clear();
   turnDeployed = false;
+  lastServer = null;
+  lastSignedIn = false;
+}
+
+// ---------------------------------------------------------------------------
+// Disabled-control diagnostics (remaining-features handoff, Priority 4).
+// The frontend shows WHY a gated surface is off — an actionable reason, not
+// a silent absence. Reasons never include secrets or deployment internals
+// beyond "not deployed yet".
+// ---------------------------------------------------------------------------
+
+export type CapabilityDisabledReason =
+  | 'available'
+  | 'signed-out'
+  | 'not-deployed'
+  | 'unsupported-platform'
+  | 'relay-not-configured';
+
+export type RoomMediaCapabilityReasons = Record<
+  keyof RoomMediaCapabilities,
+  CapabilityDisabledReason
+>;
+
+/**
+ * Explain each flag using the most recent detection pass. Call AFTER
+ * getRoomMediaCapabilities (it performs the probe); this function is pure
+ * over that cached state and safe on render paths.
+ */
+export function explainRoomMediaCapabilities(
+  platform: PlatformMediaSupport,
+): RoomMediaCapabilityReasons {
+  const explain = (
+    deployed: boolean,
+    platformOk: boolean,
+    needsTurn: boolean,
+  ): CapabilityDisabledReason => {
+    if (!lastSignedIn) {
+      return 'signed-out';
+    }
+    if (lastServer === null || !deployed) {
+      return 'not-deployed';
+    }
+    if (!platformOk) {
+      return 'unsupported-platform';
+    }
+    if (needsTurn && !turnDeployed) {
+      return 'relay-not-configured';
+    }
+    return 'available';
+  };
+
+  return {
+    fileWatch: explain(lastServer?.roomMedia === true, platform.htmlMedia, false),
+    driveWorkspace: explain(lastServer?.roomMedia === true, platform.googleDrive, false),
+    liveShare: explain(lastServer?.signaling === true, true, true),
+    voiceChat: explain(lastServer?.signaling === true, true, true),
+    publicUserSearch: explain(lastServer?.peopleDiscovery === true, true, false),
+    roomPeopleActions: explain(lastServer?.roomPeople === true, true, false),
+  };
 }

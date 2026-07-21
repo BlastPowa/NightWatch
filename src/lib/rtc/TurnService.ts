@@ -15,6 +15,31 @@ import { supabase } from '@/lib/supabase';
 
 let cached: { roomCode: string; credentials: TurnCredentials } | null = null;
 
+/** Secret-free relay diagnostics (remaining-features handoff, Priority 1). */
+export interface TurnDiagnostics {
+  configured: boolean;
+  provider: 'cloudflare' | 'coturn' | null;
+}
+
+export async function getTurnDiagnostics(): Promise<TurnDiagnostics> {
+  try {
+    const { data, error } = await supabase.functions.invoke('turn-credentials', {
+      body: { action: 'diagnostics' },
+    });
+    if (error !== null) {
+      return { configured: false, provider: null };
+    }
+    const record = data as { configured?: unknown; provider?: unknown } | null;
+    const provider =
+      record?.provider === 'cloudflare' || record?.provider === 'coturn'
+        ? record.provider
+        : null;
+    return { configured: record?.configured === true && provider !== null, provider };
+  } catch {
+    return { configured: false, provider: null };
+  }
+}
+
 export async function getTurnCredentials(
   roomCode: string,
 ): Promise<CommsOutcome<TurnCredentials>> {
