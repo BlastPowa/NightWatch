@@ -1,6 +1,27 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-21 (Phase 33 integration and runtime repair).
+Last updated: 2026-07-25 (Phase 34 backend validation).
+
+## Phase 34 backend lane (`backend/phase-34-production-parity`)
+
+- [x] `runtime_capabilities_v2` manifest (migration `0028`) reporting exact
+  function signatures, server-derived auth, and an allowlisted realtime view;
+  `social_diagnostics()` retained for the compatibility cycle.
+- [x] SQL/RLS tests: manifest auth/signature/allowlist/helper-lockdown/old-client
+  (`phase34_runtime_capabilities_test.sql`) and deployed social contracts —
+  friends, DM friendship requirement, 30-member group cap, two-way blocking,
+  discovery consent, presence without room codes (`phase34_social_contract_test.sql`).
+- [x] Packaged session-restoration fix: detection waits for the initial restore
+  and re-runs on sign-in/out, token refresh, reconnect, and resume.
+- [x] Safe typed diagnostics with no free-text field (allowlisted feature
+  vocabulary; provider messages never copied into results).
+- [x] Drive workspace listing/folder/pagination/upload contracts for Phase 37
+  (`drive.file` only; contracts, no implementation).
+- [x] Release-candidate smoke report with deterministic exit code.
+- [x] Codex: review the lane, repair the session-settle test deadlock, and pass
+  strict typecheck, 439 tests, Activity build, and Windows packaging.
+- [ ] Codex: commit, push, and open the reviewed backend PR.
+- [ ] Owner: deploy migration `0028` and run both Phase 34 SQL tests.
 
 ## Runtime repair frontend lane
 
