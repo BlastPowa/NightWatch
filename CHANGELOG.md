@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Phase 34 — production parity (backend/platform)
+
+- Added `runtime_capabilities_v2` (migration `0028`): one authenticated,
+  non-destructive call reporting exact function signatures, server-derived
+  authentication state, an allowlisted Realtime table view, and a monotonic
+  schema generation. Replaces probing feature RPCs, which consumed quota and
+  could not distinguish "signed out" from "migration missing".
+  `social_diagnostics()` is retained for one compatibility cycle, and a Phase 34
+  client falls back to it against a pre-0028 database.
+- Fixed packaged session restoration: capability detection now waits for
+  Supabase's persisted-session restore instead of racing it, and re-runs on
+  sign-in, sign-out, token refresh, network reconnect, and app resume. This is
+  the cause of signed-in users seeing every social surface hidden after relaunch.
+- Added safe typed operation diagnostics with no free-text field — feature names
+  are allowlisted and provider error messages are never copied into results, so
+  tokens, room codes, message bodies, searches, Drive ids, filenames, and paths
+  have nowhere to leak.
+- Added SQL/RLS coverage for the deployed social contracts: friend lifecycle,
+  direct-message friendship requirement, 30-member group cap, two-way blocking,
+  discovery consent and minimum query length, and presence that carries no room
+  code.
+- Added the typed Google Drive workspace listing, folder, pagination, and
+  resumable-upload contracts required by Phase 37 (`drive.file` scope unchanged;
+  contracts only, no implementation).
+- Added release-candidate smoke support: a closed-vocabulary report over
+  configuration, session restoration, deployed contracts, and relay status with
+  a deterministic exit code, publishing nothing.
+- No capability flag changed state.
+
 ### Runtime reliability, Drive workspace, and responsive shell
 
 - Room chat and reactions now await transport delivery, keep failed content

@@ -1,6 +1,27 @@
 # NightWatch current status
 
-Last updated: 2026-07-21.
+Last updated: 2026-07-25.
+
+## Phase 34 production parity (backend reviewed and build-validated)
+
+- `backend/phase-34-production-parity` carries: migration `0028`
+  (`runtime_capabilities_v2` + two locked-down helpers), two SQL/RLS test
+  scripts, the safe-diagnostic and runtime-manifest contracts, the
+  session-settle capability service, the Phase 37 Drive workspace contracts,
+  and release-candidate smoke support.
+- Fixes the packaged auth bug at its cause: capability detection raced
+  Supabase's persisted-session restore, so signed-in users were reported as
+  signed out with no stated reason.
+- Codex fixed the service's pre-initialization session-settle deadlock and ran
+  the complete code gate: strict typecheck, 439 tests across 48 files, Activity
+  build, and Windows Electron/NSIS packaging all pass.
+- The two SQL scripts remain unexecuted on this machine because no Supabase CLI
+  or owner-approved database URL is available.
+- Owner database work: deploy `supabase/migrations/0028_runtime_capabilities_v2.sql`
+  (functions only — no table, RLS policy, or publication change), then run
+  `supabase/tests/phase34_runtime_capabilities_test.sql` and
+  `supabase/tests/phase34_social_contract_test.sql`.
+- Phase 34 enables **no** capability flag. Detail: `PHASE_34_COMPLETION_REPORT.md`.
 
 ## Runtime repair and Phase 33 integration
 
