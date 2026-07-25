@@ -148,41 +148,41 @@ body {
 
 /* Backdrop motion is intentionally slow and ambient. Reduced-motion settings
  * freeze the same layered backgrounds rather than removing their colour. */
-[data-background='midnight'] .content {
+[data-background='midnight'] body {
   background:
     radial-gradient(
       720px 420px at 82% 6%,
-      color-mix(in srgb, var(--nw-accent) 30%, transparent),
+      color-mix(in srgb, var(--nw-backdrop-primary, var(--nw-accent)) 30%, transparent),
       transparent 67%
     ),
-    radial-gradient(650px 460px at 12% 92%, rgba(75, 92, 255, 0.25), transparent 70%),
-    radial-gradient(520px 360px at 54% 120%, rgba(38, 197, 255, 0.16), transparent 72%),
+    radial-gradient(650px 460px at 12% 92%, color-mix(in srgb, var(--nw-backdrop-secondary, #6d5dfc) 25%, transparent), transparent 70%),
+    radial-gradient(520px 360px at 54% 120%, color-mix(in srgb, var(--nw-backdrop-primary, var(--nw-accent)) 16%, transparent), transparent 72%),
     var(--nw-bg);
   background-size: 118% 118%, 126% 126%, 114% 114%, auto;
   animation: nw-backdrop-midnight 22s ease-in-out infinite alternate;
 }
 
-[data-background='aurora'] .content {
+[data-background='aurora'] body {
   background:
     radial-gradient(
       780px 500px at 84% -4%,
-      color-mix(in srgb, var(--nw-accent) 48%, transparent),
+      color-mix(in srgb, var(--nw-backdrop-primary, var(--nw-accent)) 48%, transparent),
       transparent 66%
     ),
-    radial-gradient(720px 540px at 10% 92%, rgba(110, 78, 255, 0.38), transparent 70%),
-    radial-gradient(620px 440px at 55% 112%, rgba(33, 218, 214, 0.28), transparent 72%),
+    radial-gradient(720px 540px at 10% 92%, color-mix(in srgb, var(--nw-backdrop-secondary, #6d5dfc) 38%, transparent), transparent 70%),
+    radial-gradient(620px 440px at 55% 112%, color-mix(in srgb, var(--nw-backdrop-primary, var(--nw-accent)) 28%, transparent), transparent 72%),
     var(--nw-bg);
   background-size: 126% 126%, 132% 132%, 124% 124%, auto;
   animation: nw-backdrop-aurora 17s ease-in-out infinite alternate;
 }
 
-[data-background='nebula'] .content {
+[data-background='nebula'] body {
   background:
-    radial-gradient(680px 480px at 18% 8%, rgba(130, 50, 235, 0.25), transparent 68%),
-    radial-gradient(760px 520px at 86% 34%, rgba(45, 96, 255, 0.2), transparent 70%),
+    radial-gradient(680px 480px at 18% 8%, color-mix(in srgb, var(--nw-backdrop-secondary, #6d5dfc) 32%, transparent), transparent 68%),
+    radial-gradient(760px 520px at 86% 34%, color-mix(in srgb, var(--nw-backdrop-primary, var(--nw-accent)) 24%, transparent), transparent 70%),
     radial-gradient(
       620px 420px at 44% 110%,
-      color-mix(in srgb, var(--nw-accent) 18%, transparent),
+      color-mix(in srgb, var(--nw-backdrop-secondary, #6d5dfc) 18%, transparent),
       transparent 72%
     ),
     var(--nw-bg);
@@ -190,34 +190,38 @@ body {
   animation: nw-backdrop-aurora 24s ease-in-out infinite alternate-reverse;
 }
 
-[data-background='ember'] .content {
+[data-background='ember'] body {
   background:
-    radial-gradient(760px 520px at 50% 116%, rgba(255, 91, 31, 0.22), transparent 68%),
-    radial-gradient(520px 380px at 82% 8%, rgba(190, 29, 42, 0.14), transparent 70%),
+    radial-gradient(760px 520px at 50% 116%, color-mix(in srgb, var(--nw-backdrop-primary, #ff5b1f) 30%, transparent), transparent 68%),
+    radial-gradient(520px 380px at 82% 8%, color-mix(in srgb, var(--nw-backdrop-secondary, #be1d2a) 22%, transparent), transparent 70%),
     linear-gradient(170deg, color-mix(in srgb, var(--nw-bg) 94%, #1b0703), var(--nw-bg));
   background-size: 122% 122%, 118% 118%, auto;
   animation: nw-backdrop-midnight 20s ease-in-out infinite alternate;
 }
 
-[data-background='frost'] .content {
+[data-background='frost'] body {
   background:
-    radial-gradient(780px 520px at 76% 0, rgba(142, 221, 255, 0.2), transparent 66%),
-    radial-gradient(660px 460px at 12% 100%, rgba(74, 126, 255, 0.13), transparent 72%),
+    radial-gradient(780px 520px at 76% 0, color-mix(in srgb, var(--nw-backdrop-primary, #8eddff) 25%, transparent), transparent 66%),
+    radial-gradient(660px 460px at 12% 100%, color-mix(in srgb, var(--nw-backdrop-secondary, #4a7eff) 18%, transparent), transparent 72%),
     linear-gradient(160deg, color-mix(in srgb, var(--nw-bg) 96%, #dff7ff 4%), var(--nw-bg));
   background-size: 124% 124%, 120% 120%, auto;
   animation: nw-backdrop-midnight 25s ease-in-out infinite alternate-reverse;
 }
 
-[data-background='cinema'] .content {
+[data-background='cinema'] body {
   background:
-    radial-gradient(850px 540px at 50% 22%, rgba(255, 187, 96, 0.11), transparent 68%),
+    radial-gradient(850px 540px at 50% 22%, color-mix(in srgb, var(--nw-backdrop-primary, #ffbb60) 16%, transparent), transparent 68%),
     radial-gradient(1200px 760px at 50% 40%, transparent 32%, rgba(0, 0, 0, 0.34) 100%),
     var(--nw-bg);
 }
 
-[data-background='studio'] .content {
+[data-background='studio'] body {
   background: var(--nw-bg);
   animation: none;
+}
+
+[data-background] body {
+  background-attachment: fixed;
 }
 
 @keyframes nw-backdrop-midnight {
@@ -231,12 +235,12 @@ body {
   100% { background-position: 12% 2%, 74% 86%, 100% 58%, 0 0; }
 }
 
-[data-reduce-motion='true'] .content {
+[data-reduce-motion='true'] body {
   animation: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-background] .content {
+  [data-background] body {
     animation: none !important;
   }
 }

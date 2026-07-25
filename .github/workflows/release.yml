@@ -33,7 +33,22 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build:activity
+      - name: Build unpublished release candidate
+        run: npm run build -- --publish never
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_DISCORD_CLIENT_ID: ${{ vars.VITE_DISCORD_CLIENT_ID }}
+          NIGHTWATCH_ENABLE_LOCAL_FILES: ${{ vars.NIGHTWATCH_ENABLE_LOCAL_FILES }}
+          NIGHTWATCH_ENABLE_DRIVE: ${{ vars.NIGHTWATCH_ENABLE_DRIVE }}
+          NIGHTWATCH_ENABLE_LIBRARY: ${{ vars.NIGHTWATCH_ENABLE_LIBRARY }}
+          NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT: ${{ vars.NIGHTWATCH_ENABLE_YOUTUBE_ACCOUNT }}
+          NIGHTWATCH_GOOGLE_CLIENT_ID: ${{ vars.NIGHTWATCH_GOOGLE_CLIENT_ID }}
+          NIGHTWATCH_GOOGLE_PICKER_API_KEY: ${{ vars.NIGHTWATCH_GOOGLE_PICKER_API_KEY }}
+          NIGHTWATCH_GOOGLE_APP_ID: ${{ vars.NIGHTWATCH_GOOGLE_APP_ID }}
+      - run: npm run smoke:packaged
       - name: Create version commit and tag
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh

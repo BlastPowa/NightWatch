@@ -1,5 +1,22 @@
 # NightWatch Development Roadmap
 
+## Phase 34 — Production reliability and v0.1.28 recovery
+
+Status: **Code and build validated from public v0.1.27; owner acceptance remains.**
+
+- Versioned, read-only runtime capability manifest and packaged session
+  restoration diagnostics.
+- Exact people search/room people integration and messaging acknowledgement,
+  reconnect and failure recovery.
+- Centralized atmosphere/backdrop state with a five-color custom palette.
+- Full tests plus unpublished Windows package and packaged smoke before version
+  commit/tag creation.
+- Backend PR #55 is merged and the frontend lane has passed typecheck, all 443
+  tests, Activity build, Windows packaging, packaged smoke, and responsive
+  rendered checks. Completion remains gated on migration `0028` deployment,
+  both Phase 34 SQL scripts, and owner two-account packaged acceptance. Phases
+  35–43 remain separate follow-up branches.
+
 ## Phase 32 — Room media modes, people discovery, live share, and voice
 
 Status: **Backend/platform merged in PR #51; migrations `0026`/`0027` and SQL/RLS tests verified. Voice/share remain gated pending TURN and packaged two-client verification.**
@@ -10,9 +27,9 @@ Status: **Backend/platform merged in PR #51; migrations `0026`/`0027` and SQL/RL
 - Electron capture: in-app source picking over `desktopCapturer`, single-use display-media grants, media/display-capture permission handling; Google Drive "NightWatch Shared" app-tagged workspace with per-viewer access probes.
 - Every Phase 32 capability defaults OFF until its server contract and platform prerequisites are verified; voice/share additionally require TURN and packaged verification.
 
-## Current delivery state (2026-07-16)
+## Current delivery state (2026-07-25)
 
-`v0.1.25` is the public baseline. Phase 29's source-neutral contracts, secure local-file platform, owner-private Library migration `0022`, Google Drive PKCE/encrypted storage/Picker/range streaming, and the initial capability-gated Library frontend are merged. Phase 30 delivers public Drive configuration, searchable help, guided onboarding, a Steam-inspired profile showcase, device-local custom app/profile artwork, denser Settings presentation, and a separately consented read-only YouTube account connection. The merged release passes 292 tests plus Activity and Windows package builds. Room playback remains hidden until `media:v1:*` synchronization is implemented. NightWatch does not download YouTube, extract protected services, bypass DRM, relay participant media, or host a shared catalog. `STATUS.md`, `TASKS.md`, `PHASE_29_BACKEND_STATUS.md`, and `CODEX_HANDOFF.md` remain authoritative for active work.
+`v0.1.27` is the public baseline. Phase 29's source-neutral contracts, secure local-file platform, owner-private Library migration `0022`, Google Drive PKCE/encrypted storage/Picker/range streaming, Phase 32/33 media/comms contracts, and the capability-gated frontend are merged. Phase 34 is recovering packaged production parity before any further redesign. Room file playback, voice, and live share remain hidden until their packaged two-client gates pass. NightWatch does not download YouTube, extract protected services, bypass DRM, relay participant media, or host a shared catalog. `STATUS.md`, `TASKS.md`, `PHASE_33_PACKAGED_ACCEPTANCE.md`, and `CONTROL_INVENTORY.md` remain authoritative for active work.
 
 ## Phase 30 — Product guidance and identity presentation
 

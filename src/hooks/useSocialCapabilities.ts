@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { getSocialCapabilities, type SocialCapabilities } from '@/lib/social/capabilities';
+import {
+  getSocialCapabilities,
+  resetSocialCapabilities,
+  type SocialCapabilities,
+} from '@/lib/social/capabilities';
 
 const NONE: SocialCapabilities = {
   friends: false,
@@ -17,8 +21,23 @@ export function useSocialCapabilities(enabled: boolean): SocialCapabilities {
   useEffect(() => {
     let active = true;
     if (!enabled) { setCapabilities(NONE); return () => { active = false; }; }
-    void getSocialCapabilities().then((result) => { if (active) setCapabilities(result); });
-    return () => { active = false; };
+    const refresh = (): void => {
+      resetSocialCapabilities();
+      void getSocialCapabilities().then((result) => { if (active) setCapabilities(result); });
+    };
+    const resume = (): void => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    refresh();
+    window.addEventListener('online', refresh);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      active = false;
+      window.removeEventListener('online', refresh);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', resume);
+    };
   }, [enabled]);
   return capabilities;
 }

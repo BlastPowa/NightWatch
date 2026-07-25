@@ -16,6 +16,12 @@ import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { SocialProfileCard } from '@/components/SocialProfileCard';
 import { subscribeToFriendRequests } from '@/lib/social/SocialRealtime';
 import { getFriendPresence, type FriendPresence } from '@/lib/social/PresenceService';
+import {
+  getRoomPeople,
+  searchPeople,
+  SEARCH_MIN_CHARS,
+  type PublicPerson,
+} from '@/lib/people/PeopleService';
 import '@/styles/phase26-social.css';
 
 const EMPTY: SocialGraph = { friends: [], incoming: [], outgoing: [], suggestions: [] };
@@ -58,6 +64,9 @@ export function FriendsScreen({
   const [query, setQuery] = useState('');
   const [presence, setPresence] = useState<Map<string, FriendPresence>>(new Map());
   const [roomSuggestions, setRoomSuggestions] = useState<Relation[]>([]);
+  const [directoryResults, setDirectoryResults] = useState<PublicPerson[]>([]);
+  const [directoryLoading, setDirectoryLoading] = useState(false);
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
 
   const refresh = useCallback(async (): Promise<void> => {
     const result = await getSocialGraph();
@@ -89,20 +98,38 @@ export function FriendsScreen({
     }
     let active = true;
     const refreshRoom = (): void => {
-      void listLiveRoomCoWatchers(currentRoomCode).then((result) => {
-        if (!active || result.status !== 'ok') return;
-        setRoomSuggestions(
-          result.data.map((person) => ({
-            kind: 'suggestion',
-            userId: person.userId,
-            displayName: person.displayName,
-            requestId: null,
-            createdAt: new Date().toISOString(),
-            avatarUrl: person.avatarUrl,
-            selectedBorderId: person.selectedBorderId,
-            context: 'current-room',
-          })),
-        );
+      void getRoomPeople(currentRoomCode).then(async (people) => {
+        if (!active) return;
+        if (people.ok) {
+          setRoomSuggestions(
+            people.value
+              .filter((person) => person.relationship === 'none')
+              .map((person) => ({
+                kind: 'suggestion',
+                userId: person.userId,
+                displayName: person.displayName,
+                requestId: null,
+                createdAt: new Date().toISOString(),
+                avatarUrl: person.avatarUrl,
+                selectedBorderId: person.border,
+                context: 'current-room',
+              })),
+          );
+          return;
+        }
+        // v0.1.27 compatibility while the Phase 34 manifest rolls out.
+        const fallback = await listLiveRoomCoWatchers(currentRoomCode);
+        if (!active || fallback.status !== 'ok') return;
+        setRoomSuggestions(fallback.data.map((person) => ({
+          kind: 'suggestion',
+          userId: person.userId,
+          displayName: person.displayName,
+          requestId: null,
+          createdAt: new Date().toISOString(),
+          avatarUrl: person.avatarUrl,
+          selectedBorderId: person.selectedBorderId,
+          context: 'current-room',
+        })));
       });
     };
     refreshRoom();
@@ -112,6 +139,39 @@ export function FriendsScreen({
       window.clearInterval(timer);
     };
   }, [currentRoomCode]);
+
+  useEffect(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (normalized.length < SEARCH_MIN_CHARS) {
+      setDirectoryResults([]);
+      setDirectoryLoading(false);
+      setDirectoryError(null);
+      return;
+    }
+    let active = true;
+    setDirectoryLoading(true);
+    setDirectoryError(null);
+    const timer = window.setTimeout(() => {
+      void searchPeople(normalized).then((result) => {
+        if (!active) return;
+        setDirectoryLoading(false);
+        if (result.ok) {
+          setDirectoryResults(result.value);
+        } else {
+          setDirectoryResults([]);
+          setDirectoryError(result.code === 'offline'
+            ? 'People search is unavailable while offline.'
+            : result.code === 'not-supported'
+              ? 'People search needs the latest NightWatch server deployment.'
+              : result.message);
+        }
+      });
+    }, 320);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [query]);
 
   const combinedSuggestions = useMemo(() => {
     const existing = new Set(
@@ -166,10 +226,24 @@ export function FriendsScreen({
       </label>
 
       {message !== null && <p className="social-notice" role="status">{message}</p>}
+      {normalizedQuery.length > 0 && normalizedQuery.length < SEARCH_MIN_CHARS && (
+        <p className="social-notice" role="status">Type at least {SEARCH_MIN_CHARS} characters to find opted-in NightWatch users.</p>
+      )}
+      {directoryError !== null && <p className="social-notice" role="alert">{directoryError}</p>}
       {loading ? (
         <div className="social-loading"><div className="orbit-loader" aria-hidden="true"><span /><span /><span /></div><span>Loading your circle…</span></div>
       ) : (
         <div className="social-sections">
+          {normalizedQuery.length >= SEARCH_MIN_CHARS && (
+            <DirectorySection
+              items={directoryResults}
+              loading={directoryLoading}
+              busyId={busyId}
+              onOpen={setProfileId}
+              onMessage={onMessage}
+              onAct={act}
+            />
+          )}
           {graph.incoming.length > 0 && <RelationSection title="Friend requests" subtitle="People waiting for your response" items={filtered.incoming} onOpen={setProfileId} empty={normalizedQuery === '' ? undefined : 'No requests match your search.'} renderActions={(person) => <><button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => acceptFriendRequest(person.userId), `${person.displayName} is now your friend.`)}>Accept</button><button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => declineFriendRequest(person.userId), 'Request declined.')}>Decline</button></>} />}
           <RelationSection title="Your friends" subtitle="Accepted NightWatch connections" items={filtered.friends} onOpen={setProfileId} presence={presence} empty={normalizedQuery === '' ? 'Watch together in persistent rooms to discover people you know.' : 'No friends match your search.'} renderActions={(person) => <><button className="button button-primary" onClick={() => onMessage(person.userId)}><Icon name="message" size={15} />Message</button><button className="button" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => removeFriend(person.userId), `${person.displayName} was removed.`)}>Remove</button></>} />
           {combinedSuggestions.length > 0 && <RelationSection title="People you watched with" subtitle="Current signed-in room members and previous co-watchers" items={filtered.suggestions} onOpen={setProfileId} empty={normalizedQuery === '' ? undefined : 'No co-watchers match your search.'} renderActions={(person) => <button className="button button-primary" disabled={busyId === person.userId} onClick={() => void act(person.userId, () => sendFriendRequest(person.userId), `Request sent to ${person.displayName}.`)}><Icon name="plus" size={15} />Add friend</button>} />}
@@ -178,6 +252,55 @@ export function FriendsScreen({
         </div>
       )}
       {profileId !== null && <SocialProfileCard userId={profileId} onClose={() => setProfileId(null)} onMessage={(id) => { setProfileId(null); onMessage(id); }} />}
+    </section>
+  );
+}
+
+function DirectorySection({
+  items,
+  loading,
+  busyId,
+  onOpen,
+  onMessage,
+  onAct,
+}: {
+  items: readonly PublicPerson[];
+  loading: boolean;
+  busyId: string | null;
+  onOpen(userId: string): void;
+  onMessage(userId: string): void;
+  onAct(userId: string, action: () => Promise<{ status: string }>, success: string): Promise<void>;
+}): JSX.Element {
+  function actions(person: PublicPerson): JSX.Element | null {
+    if (person.relationship === 'friends') {
+      return <button className="button button-primary" onClick={() => onMessage(person.userId)}><Icon name="message" size={15} />Message</button>;
+    }
+    if (person.relationship === 'pending-incoming') {
+      return <button className="button button-primary" disabled={busyId === person.userId} onClick={() => void onAct(person.userId, () => acceptFriendRequest(person.userId), `${person.displayName} is now your friend.`)}>Accept</button>;
+    }
+    if (person.relationship === 'pending-outgoing') {
+      return <button className="button" disabled={busyId === person.userId} onClick={() => void onAct(person.userId, () => cancelFriendRequest(person.userId), 'Request cancelled.')}>Cancel request</button>;
+    }
+    if (person.relationship === 'self') return null;
+    return <button className="button button-primary" disabled={busyId === person.userId} onClick={() => void onAct(person.userId, () => sendFriendRequest(person.userId), `Request sent to ${person.displayName}.`)}><Icon name="plus" size={15} />Add friend</button>;
+  }
+
+  return (
+    <section className="social-section phase26-relation-section people-directory-section">
+      <header><div><h2>Find people</h2><p>Only users with a public handle and discovery enabled appear here.</p></div><span>{items.length}</span></header>
+      {loading ? <div className="social-loading"><span className="settings-mini-loader" aria-hidden="true" />Searching NightWatch...</div> : items.length === 0 ? <p className="social-empty">No opted-in users match that name or handle.</p> : (
+        <ul className="social-grid phase26-friend-grid">
+          {items.map((person) => (
+            <li key={person.userId} className="person-card phase26-person-card">
+              <button type="button" className="person-avatar-button" onClick={() => onOpen(person.userId)} aria-label={`View ${person.displayName}'s profile`}>
+                <ProfileAvatar name={person.displayName} src={person.avatarUrl} className={person.border === null ? 'person-avatar' : `person-avatar border-${person.border}`} />
+              </button>
+              <span className="person-copy"><span className="relationship-label">{person.relationship === 'none' ? 'NightWatch user' : person.relationship.replace('-', ' ')}</span><strong>{person.displayName}</strong><small>{person.handle === null ? 'Public profile' : `@${person.handle}`}</small></span>
+              <span className="person-actions">{actions(person)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

@@ -96,6 +96,14 @@ export function App(): JSX.Element {
     document.documentElement.dataset['enhancedFocus'] = String(settings.enhancedFocus);
     document.documentElement.style.setProperty('--nw-text-scale', String(settings.textScalePercent / 100));
     document.documentElement.style.setProperty('--nw-accent', settings.accent);
+    document.documentElement.style.setProperty(
+      '--nw-backdrop-primary',
+      settings.theme === 'custom' ? settings.customAtmosphere.primaryGlow : settings.accent,
+    );
+    document.documentElement.style.setProperty(
+      '--nw-backdrop-secondary',
+      settings.theme === 'custom' ? settings.customAtmosphere.secondaryGlow : '#6d5dfc',
+    );
     if (settings.theme === 'custom') {
       document.documentElement.style.setProperty('--nw-bg', settings.customAtmosphere.canvas);
       document.documentElement.style.setProperty('--nw-bg-raised', settings.customAtmosphere.surface);
@@ -170,10 +178,24 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     let active = true;
-    void diagnoseSocial().then((diagnosis) => {
-      if (active) setSocialDiagnosis(diagnosis);
-    });
-    return () => { active = false; };
+    const refresh = (): void => {
+      void diagnoseSocial().then((diagnosis) => {
+        if (active) setSocialDiagnosis(diagnosis);
+      });
+    };
+    const resume = (): void => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    refresh();
+    window.addEventListener('online', refresh);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', resume);
+    return () => {
+      active = false;
+      window.removeEventListener('online', refresh);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', resume);
+    };
   }, [authUser]);
   const platformBridge = getPlatformBridge();
   const isElectron = platformBridge.kind === 'electron';

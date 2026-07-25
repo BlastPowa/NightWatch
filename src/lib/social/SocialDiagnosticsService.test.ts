@@ -13,15 +13,21 @@ import { diagnoseSocial } from '@/lib/social/SocialDiagnosticsService';
 
 const signedIn = { data: { session: { user: { id: 'u-1' } } } };
 const signedOut = { data: { session: null } };
-
-const allDeployed = {
-  version: 1,
-  hasSession: true,
-  functions: {
-    get_social_graph: true,
-    send_message: true,
-    heartbeat_live_room_social: true,
-  },
+const requiredFunctions = {
+  get_social_graph: true,
+  send_friend_request: true,
+  search_people: true,
+  get_room_people: true,
+  list_conversations: true,
+  get_messages: true,
+  send_message: true,
+  create_direct_conversation: true,
+  create_group_conversation: true,
+};
+const manifest = {
+  schemaGeneration: 34,
+  authenticated: true,
+  functions: requiredFunctions,
   realtimeTables: ['friend_requests', 'messages'],
 };
 
@@ -31,30 +37,30 @@ beforeEach(() => {
 });
 
 describe('diagnoseSocial', () => {
-  it('is ready when signed in and fully deployed', async () => {
+  it('is ready when the session and exact manifest are ready', async () => {
     getSession.mockResolvedValue(signedIn);
-    rpc.mockResolvedValue({ data: allDeployed, error: null });
+    rpc.mockResolvedValue({ data: manifest, error: null });
     expect(await diagnoseSocial()).toEqual({ status: 'ready' });
   });
 
-  it('requires an account when there is no NightWatch session', async () => {
+  it('does not call the server when there is no NightWatch session', async () => {
     getSession.mockResolvedValue(signedOut);
-    rpc.mockResolvedValue({ data: { ...allDeployed, hasSession: false }, error: null });
     expect(await diagnoseSocial()).toEqual({ status: 'account-required' });
+    expect(rpc).not.toHaveBeenCalled();
   });
 
-  it('trusts the server over a stale local session', async () => {
+  it('trusts the server when a stale local session is no longer authenticated', async () => {
     getSession.mockResolvedValue(signedIn);
-    rpc.mockResolvedValue({ data: { ...allDeployed, hasSession: false }, error: null });
+    rpc.mockResolvedValue({ data: { ...manifest, authenticated: false }, error: null });
     expect(await diagnoseSocial()).toEqual({ status: 'account-required' });
   });
 
-  it('names missing functions when a migration was skipped', async () => {
+  it('names missing required functions', async () => {
     getSession.mockResolvedValue(signedIn);
     rpc.mockResolvedValue({
       data: {
-        ...allDeployed,
-        functions: { ...allDeployed.functions, send_message: false, get_social_graph: false },
+        ...manifest,
+        functions: { ...requiredFunctions, send_message: false, get_social_graph: false },
       },
       error: null,
     });
@@ -64,28 +70,22 @@ describe('diagnoseSocial', () => {
     });
   });
 
-  it('reports the diagnostics RPC itself missing on 42883', async () => {
+  it('reports a completely missing manifest deployment', async () => {
     getSession.mockResolvedValue(signedIn);
-    rpc.mockResolvedValue({
-      data: null,
-      error: { message: 'function does not exist', code: '42883', details: null, hint: null },
-    });
+    rpc.mockResolvedValue({ data: null, error: { message: 'missing', code: '42883' } });
     expect(await diagnoseSocial()).toEqual({
       status: 'deployment-missing',
-      missing: ['social_diagnostics'],
+      missing: ['runtime_capabilities_v2'],
     });
   });
 
-  it('reports offline when the request never reached Postgres', async () => {
+  it('reports offline when the request never reaches Postgres', async () => {
     getSession.mockResolvedValue(signedIn);
-    rpc.mockResolvedValue({
-      data: null,
-      error: { message: 'Failed to fetch', code: '', details: null, hint: null },
-    });
+    rpc.mockResolvedValue({ data: null, error: { message: 'Failed to fetch', code: '' } });
     expect(await diagnoseSocial()).toEqual({ status: 'offline' });
   });
 
-  it('treats a malformed payload as an error, never as ready', async () => {
+  it('treats malformed manifest data as an error', async () => {
     getSession.mockResolvedValue(signedIn);
     rpc.mockResolvedValue({ data: 'garbage', error: null });
     expect(await diagnoseSocial()).toEqual({ status: 'error' });

@@ -1,29 +1,13 @@
-import { supabase } from '@/lib/supabase';
+import { getRuntimeCapabilityManifest } from '@/lib/runtime/RuntimeCapabilityService';
 
-/**
- * Phase 20B delivery gate. The frontend HIDES navigation whose capability is
- * false — it never shows a disabled shell — so every flag defaults false and
- * only flips true once the backing migration is actually deployed and the
- * caller is signed in.
- *
- * Probing is what makes this honest: we ask Postgres whether the RPC exists
- * rather than hard-coding a flag that lies when a migration has not been run.
- */
 export interface SocialCapabilities {
   friends: boolean;
   messaging: boolean;
   momentNotes: boolean;
   creatorClubs: boolean;
-  /** Notification bell (0013). */
   notifications: boolean;
-  /** Public club directory (0015). Separate from creatorClubs on purpose: a
-   *  deployment can have clubs without the directory, and the directory is the
-   *  surface that carries moderation risk. */
   clubDiscovery: boolean;
-  /** Highlight reels (0016). Room owners only, and only where insights are on. */
   highlights: boolean;
-  /** Playable friend media presence (0021). Gates the Browse "watch with a
-   *  friend" shelf: false until the migration is deployed. */
   friendMediaPresence: boolean;
 }
 
@@ -38,68 +22,33 @@ const NONE: SocialCapabilities = {
   friendMediaPresence: false,
 };
 
-let cached: SocialCapabilities = NONE;
+let cached: SocialCapabilities | null = null;
 let inFlight: Promise<SocialCapabilities> | null = null;
 
-/** Does this RPC exist and accept us? 42883/42P01 = not deployed. */
-async function probe(fn: string, args: Record<string, unknown>): Promise<boolean> {
-  const { error } = await supabase.rpc(fn, args);
-  if (error === null) {
-    return true;
-  }
-  // 'unauthenticated' means the function exists — it ran and rejected us.
-  return error.code !== '42883' && error.code !== '42P01';
+function hasEvery(functions: Readonly<Record<string, boolean>>, names: readonly string[]): boolean {
+  return names.every((name) => functions[name] === true);
 }
 
+/** Detect from one read-only manifest. No feature RPC is executed as a probe. */
 async function detect(): Promise<SocialCapabilities> {
-  const { data } = await supabase.auth.getSession();
-  if (data.session === null) {
-    // Every social surface requires an account. Nothing to show a guest.
-    return NONE;
-  }
-
-  const [
-    friends,
-    messaging,
-    momentNotes,
-    creatorClubs,
-    notifications,
-    clubDiscovery,
-    highlights,
-    friendMediaPresence,
-  ] = await Promise.all([
-    probe('get_social_graph', {}),
-    probe('list_conversations', {}),
-    probe('list_moment_notes', { p_video_id: 'AAAAAAAAAAA' }),
-    probe('list_my_clubs', {}),
-    probe('count_unread_notifications', {}),
-    probe('search_clubs', { p_query: '', p_limit: 1 }),
-    // Probed with a nil session: the function rejects it, but a 'forbidden'
-    // proves it is deployed. Only 42883/42P01 mean not-ready.
-    probe('get_session_highlights', {
-      p_session: '00000000-0000-0000-0000-000000000000',
-      p_limit: 1,
-    }),
-    probe('get_friend_presence_v2', {}),
-  ]);
-
+  const result = await getRuntimeCapabilityManifest();
+  if (result.status !== 'ok' || !result.data.authenticated) return NONE;
+  const functions = result.data.functions;
   return {
-    friends,
-    messaging,
-    momentNotes,
-    creatorClubs,
-    notifications,
-    clubDiscovery,
-    highlights,
-    friendMediaPresence,
+    friends: hasEvery(functions, ['get_social_graph', 'send_friend_request']),
+    messaging: hasEvery(functions, ['list_conversations', 'get_messages', 'send_message']),
+    momentNotes: functions['list_moment_notes'] === true,
+    creatorClubs: functions['list_my_clubs'] === true,
+    notifications: functions['count_unread_notifications'] === true,
+    clubDiscovery: functions['search_clubs'] === true,
+    highlights: functions['get_session_highlights'] === true,
+    friendMediaPresence: functions['get_friend_presence_v2'] === true,
   };
 }
 
-/** Cached after the first successful probe; safe to call from render paths. */
+/** Cached until auth/network/application lifecycle asks for a fresh manifest. */
 export async function getSocialCapabilities(): Promise<SocialCapabilities> {
-  if (cached !== NONE) {
-    return cached;
-  }
+  if (cached !== null) return cached;
   inFlight ??= detect()
     .then((capabilities) => {
       cached = capabilities;
@@ -112,12 +61,11 @@ export async function getSocialCapabilities(): Promise<SocialCapabilities> {
   return inFlight;
 }
 
-/** Re-probe after sign-in/sign-out changes what the user can reach. */
 export function resetSocialCapabilities(): void {
-  cached = NONE;
+  cached = null;
   inFlight = null;
 }
 
 export function getCachedCapabilities(): SocialCapabilities {
-  return cached;
+  return cached ?? NONE;
 }

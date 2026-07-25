@@ -31,6 +31,31 @@
   a deterministic exit code, publishing nothing.
 - No capability flag changed state.
 
+### Phase 34 — production parity and release recovery
+
+- Replaced social feature RPC probing with a single read-only
+  `runtime_capabilities_v2` manifest, retaining `social_diagnostics` only as a
+  v0.1.27 rollout fallback. Capability state now refreshes after auth,
+  reconnect, focus, and application resume.
+- Friends search now calls the privacy-safe `search_people` service after three
+  characters and resolves authenticated current-room users through
+  `get_room_people`, instead of filtering only people already known locally.
+- Messaging keeps server acknowledgement as the source of truth, refreshes
+  after sending, falls back to timed/focus/online refresh when Realtime is
+  delayed, and exposes a working Retry action.
+- Added privacy-safe operation diagnostics containing an opaque ID, feature,
+  typed outcome, auth/network state, and schema generation—never message text,
+  searches, room codes, tokens, Drive identifiers, filenames, or paths.
+- Extended Custom Atmosphere with primary and secondary moving glow colors,
+  removed competing content-background selectors, and moved backdrop rendering
+  to one fixed application-body layer. The same live color state now drives the
+  app, preview, and device-local artwork treatment.
+- Release automation now runs all tests, builds an unpublished Windows
+  candidate, and smoke-boots the packaged executable before creating a version
+  commit or tag.
+- Added `CONTROL_INVENTORY.md` as the review map for every visible control and
+  its functional, gated, empty, or failure path.
+
 ### Runtime reliability, Drive workspace, and responsive shell
 
 - Room chat and reactions now await transport delivery, keep failed content

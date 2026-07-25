@@ -1,21 +1,5 @@
+import { getRuntimeCapabilityManifest } from '@/lib/runtime/RuntimeCapabilityService';
 import { supabase } from '@/lib/supabase';
-
-/**
- * Phase 31: one-call social deployment/authentication diagnosis (0024).
- *
- * v0.1.25 users who connected a YouTube account believed they were signed in;
- * every social control then looked uniformly broken because the capability
- * probe could not say WHY. This service returns a closed diagnosis the UI can
- * show verbatim:
- *
- *   * 'account-required' — no NightWatch (Supabase/Discord) session. YouTube
- *     OAuth never implies NightWatch authentication.
- *   * 'deployment-missing' — the diagnostics RPC itself, or one of the social
- *     RPCs, is not deployed (a migration was skipped).
- *   * 'offline' — the request never reached Postgres.
- *   * 'ready' — signed in and fully deployed; a failing button is a bug, not
- *     a state problem.
- */
 
 export type SocialDiagnosis =
   | { status: 'ready' }
@@ -24,57 +8,39 @@ export type SocialDiagnosis =
   | { status: 'offline' }
   | { status: 'error' };
 
-interface DiagnosticsPayload {
-  hasSession: boolean;
-  functions: Record<string, boolean>;
-}
+const REQUIRED_SOCIAL_FUNCTIONS = [
+  'get_social_graph',
+  'send_friend_request',
+  'search_people',
+  'get_room_people',
+  'list_conversations',
+  'get_messages',
+  'send_message',
+  'create_direct_conversation',
+  'create_group_conversation',
+] as const;
 
-function parsePayload(data: unknown): DiagnosticsPayload | null {
-  if (typeof data !== 'object' || data === null) {
-    return null;
-  }
-  const record = data as Record<string, unknown>;
-  const fns = record['functions'];
-  if (typeof fns !== 'object' || fns === null) {
-    return null;
-  }
-  const functions: Record<string, boolean> = {};
-  for (const [name, deployed] of Object.entries(fns as Record<string, unknown>)) {
-    functions[name] = deployed === true;
-  }
-  return { hasSession: record['hasSession'] === true, functions };
-}
-
+/**
+ * Explains packaged social failures without mutating user data. The Phase 34
+ * manifest supersedes the legacy per-feature probes; v0.1.27 servers remain
+ * supported through RuntimeCapabilityService's read-only fallback.
+ */
 export async function diagnoseSocial(): Promise<SocialDiagnosis> {
-  // The session check is local-first: without one, the answer is known before
-  // any network call, and it is the answer the affected users needed to see.
   const { data: auth } = await supabase.auth.getSession();
-  const hasLocalSession = auth.session !== null;
+  if (auth.session === null) return { status: 'account-required' };
 
-  const { data, error } = await supabase.rpc('social_diagnostics');
-  if (error !== null) {
-    if (error.code === '42883' || error.code === '42P01') {
-      return { status: 'deployment-missing', missing: ['social_diagnostics'] };
-    }
-    if (error.code === '' || error.code === undefined) {
-      return { status: 'offline' };
-    }
-    return { status: 'error' };
+  const result = await getRuntimeCapabilityManifest();
+  if (result.status === 'offline') return { status: 'offline' };
+  if (result.status === 'deployment-missing') {
+    return { status: 'deployment-missing', missing: ['runtime_capabilities_v2'] };
   }
+  if (result.status !== 'ok') return { status: 'error' };
+  if (!result.data.authenticated) return { status: 'account-required' };
 
-  const payload = parsePayload(data);
-  if (payload === null) {
-    return { status: 'error' };
-  }
-  if (!hasLocalSession || !payload.hasSession) {
-    return { status: 'account-required' };
-  }
-  const missing = Object.entries(payload.functions)
-    .filter(([, deployed]) => !deployed)
-    .map(([name]) => name)
+  const missing = REQUIRED_SOCIAL_FUNCTIONS
+    .filter((name) => result.data.functions[name] !== true)
     .sort();
-  if (missing.length > 0) {
-    return { status: 'deployment-missing', missing };
-  }
-  return { status: 'ready' };
+  return missing.length === 0
+    ? { status: 'ready' }
+    : { status: 'deployment-missing', missing };
 }

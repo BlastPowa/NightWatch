@@ -314,12 +314,6 @@ input {
   --nw-text: #f7f8ff; --nw-text-muted: #b0b4c2;
 }
 
-[data-background='aurora'] .content {
-  background: radial-gradient(900px 520px at 78% -5%, color-mix(in srgb, var(--nw-accent) 19%, transparent), transparent 64%), radial-gradient(700px 500px at 20% 100%, rgba(92, 114, 255, 0.11), transparent 70%), var(--nw-bg);
-}
-
-[data-background='studio'] .content { background: var(--nw-bg); }
-
 .eyebrow {
   color: var(--nw-accent);
   font-size: 0.7rem;
@@ -3807,9 +3801,9 @@ input {
   position: relative;
   overflow-x: hidden;
   padding: 0 clamp(1rem,2.4vw,2.5rem) 2.5rem;
-  background:
-    radial-gradient(850px 420px at 72% 0, color-mix(in srgb,var(--nw-accent) 10%,transparent), transparent 68%),
-    linear-gradient(160deg, color-mix(in srgb,var(--nw-bg-raised) 16%,var(--nw-bg)), var(--nw-bg) 35%);
+  /* The selected backdrop is painted once on the fixed document layer.
+   * Content stays transparent so a later shell rule cannot mask it. */
+  background: transparent;
 }
 
 .global-topbar {

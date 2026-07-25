@@ -35,6 +35,7 @@ jobs:
           NIGHTWATCH_GOOGLE_CLIENT_ID: ${{ vars.NIGHTWATCH_GOOGLE_CLIENT_ID }}
           NIGHTWATCH_GOOGLE_PICKER_API_KEY: ${{ vars.NIGHTWATCH_GOOGLE_PICKER_API_KEY }}
           NIGHTWATCH_GOOGLE_APP_ID: ${{ vars.NIGHTWATCH_GOOGLE_APP_ID }}
+      - run: npm run smoke:packaged
       - name: Create or update pull request
         uses: actions/github-script@v9
         with:

@@ -4,8 +4,10 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { getSocialGraph, listLiveRoomCoWatchers, sendFriendRequest } = vi.hoisted(() => ({
+const { getSocialGraph, getRoomPeople, searchPeople, listLiveRoomCoWatchers, sendFriendRequest } = vi.hoisted(() => ({
   getSocialGraph: vi.fn(),
+  getRoomPeople: vi.fn(),
+  searchPeople: vi.fn(),
   listLiveRoomCoWatchers: vi.fn(),
   sendFriendRequest: vi.fn(),
 }));
@@ -20,6 +22,11 @@ vi.mock('@/lib/social/FriendService', () => ({
 }));
 vi.mock('@/lib/social/LiveRoomSocialService', () => ({
   listLiveRoomCoWatchers,
+}));
+vi.mock('@/lib/people/PeopleService', () => ({
+  SEARCH_MIN_CHARS: 3,
+  getRoomPeople,
+  searchPeople,
 }));
 vi.mock('@/lib/social/SocialRealtime', () => ({
   subscribeToFriendRequests: () => () => {},
@@ -53,6 +60,18 @@ beforeEach(() => {
       selectedBorderId: null,
     }],
   });
+  getRoomPeople.mockResolvedValue({
+    ok: true,
+    value: [{
+      userId: '71ac88dd-ecab-46e7-909a-c3bd8f228115',
+      handle: 'boogie',
+      displayName: 'Boogie',
+      avatarUrl: null,
+      border: null,
+      relationship: 'none',
+    }],
+  });
+  searchPeople.mockResolvedValue({ ok: true, value: [] });
   sendFriendRequest.mockResolvedValue({ status: 'ok', data: undefined });
 });
 
@@ -99,5 +118,30 @@ describe('FriendsScreen current-room discovery', () => {
       'boog',
     );
     expect(screen.getByText('Boogie')).toBeTruthy();
+  });
+
+  it('searches the public people directory after three characters', async () => {
+    searchPeople.mockResolvedValue({
+      ok: true,
+      value: [{
+        userId: 'f0d970ef-f364-476e-b514-ec52e6d13b41',
+        handle: 'nightowl',
+        displayName: 'Night Owl',
+        avatarUrl: null,
+        border: null,
+        relationship: 'none',
+      }],
+    });
+    const user = userEvent.setup();
+    render(<FriendsScreen onMessage={vi.fn()} />);
+
+    await user.type(
+      screen.getByRole('searchbox', { name: 'Search friends and requests' }),
+      'night',
+    );
+
+    expect(await screen.findByText('Night Owl')).toBeTruthy();
+    expect(searchPeople).toHaveBeenCalledWith('night');
+    expect(screen.getByText('@nightowl')).toBeTruthy();
   });
 });
