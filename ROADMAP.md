@@ -13,7 +13,8 @@ Status: **Code and build validated from public v0.1.27; owner acceptance remains
   commit/tag creation.
 - Backend PR #55 is merged and the frontend lane has passed typecheck, all 443
   tests, Activity build, Windows packaging, packaged smoke, and responsive
-  rendered checks. Completion remains gated on migration `0028` deployment,
+  rendered checks; frontend PR #56 is merged. Release readiness remains gated
+  on migration `0028` deployment,
   both Phase 34 SQL scripts, and owner two-account packaged acceptance. Phases
   35–43 remain separate follow-up branches.
 

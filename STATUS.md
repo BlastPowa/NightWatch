@@ -25,6 +25,9 @@ Last updated: 2026-07-25.
 
 ## Phase 34 frontend (code/build validated from v0.1.27)
 
+- Frontend PR #56 is merged into `main` after the reviewed automerge workflow
+  passed install, typecheck, all tests, Activity build, Windows packaging, and
+  packaged smoke on the exact accepted commit.
 - Clean frontend/backend lanes now start at public `v0.1.27` (`944462f`);
   obsolete conflicting PRs #44 and #48 were closed as superseded by the
   evolved Drive and Phase 33 implementation in `main`.

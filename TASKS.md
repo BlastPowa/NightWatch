@@ -44,7 +44,8 @@ Last updated: 2026-07-25 (Phase 34 backend validation).
 - [x] Codex: rebase onto backend PR #55 and pass strict typecheck, all 443
   tests, Activity build, Windows package, packaged smoke, and responsive
   rendered-browser checks.
-- [ ] Codex: deliver and verify the reviewed frontend PR.
+- [x] Codex: deliver and verify reviewed frontend PR #56 after the complete
+  GitHub feature gate, including packaged smoke.
 - [ ] Owner: deploy migration `0028` and run both Phase 34 SQL scripts.
 - [ ] Owner: complete two-account packaged acceptance before any v0.1.28
   Release workflow run.
