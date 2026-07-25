@@ -80,7 +80,13 @@ export type CaptionMode = 'youtube-default' | 'always-on';
 export type CaptionLanguage = 'auto' | 'en' | 'es' | 'fr' | 'de' | 'pt' | 'ja' | 'ko';
 export type CaptionFontSize = -1 | 0 | 1 | 2 | 3;
 export type UiFont = 'system' | 'cinematic' | 'editorial' | 'modern' | 'classic' | 'comic' | 'mono';
-export interface CustomAtmosphere { canvas: string; surface: string; panel: string; }
+export interface CustomAtmosphere {
+  canvas: string;
+  surface: string;
+  panel: string;
+  primaryGlow: string;
+  secondaryGlow: string;
+}
 
 export interface Settings {
   theme: ThemeId;
@@ -131,7 +137,13 @@ export const DEFAULT_SETTINGS: Settings = {
   density: 'comfortable',
   backgroundStyle: 'midnight',
   cardStyle: 'glass',
-  customAtmosphere: { canvas: '#050507', surface: '#111217', panel: '#090a0e' },
+  customAtmosphere: {
+    canvas: '#050507',
+    surface: '#111217',
+    panel: '#090a0e',
+    primaryGlow: '#2dd4bf',
+    secondaryGlow: '#6d5dfc',
+  },
   reduceMotion: false,
   highContrast: false,
   textScalePercent: 100,
@@ -228,6 +240,8 @@ function sanitize(raw: unknown): Settings {
       canvas: safeColor(customAtmosphere.canvas, DEFAULT_SETTINGS.customAtmosphere.canvas),
       surface: safeColor(customAtmosphere.surface, DEFAULT_SETTINGS.customAtmosphere.surface),
       panel: safeColor(customAtmosphere.panel, DEFAULT_SETTINGS.customAtmosphere.panel),
+      primaryGlow: safeColor(customAtmosphere.primaryGlow, DEFAULT_SETTINGS.customAtmosphere.primaryGlow),
+      secondaryGlow: safeColor(customAtmosphere.secondaryGlow, DEFAULT_SETTINGS.customAtmosphere.secondaryGlow),
     },
     reduceMotion: typeof partial.reduceMotion === 'boolean' ? partial.reduceMotion : false,
     highContrast: typeof partial.highContrast === 'boolean' ? partial.highContrast : false,

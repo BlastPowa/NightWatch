@@ -20,8 +20,34 @@ Last updated: 2026-07-25 (Phase 34 backend validation).
 - [x] Release-candidate smoke report with deterministic exit code.
 - [x] Codex: review the lane, repair the session-settle test deadlock, and pass
   strict typecheck, 439 tests, Activity build, and Windows packaging.
-- [ ] Codex: commit, push, and open the reviewed backend PR.
+- [x] Codex: commit, push, validate, and merge reviewed backend PR #55.
 - [ ] Owner: deploy migration `0028` and run both Phase 34 SQL tests.
+
+## Phase 34 frontend production parity
+
+- [x] Create clean `frontend/phase-34-production-parity` and
+  `backend/phase-34-production-parity` branches from `v0.1.27`.
+- [x] Close stale conflicting PRs #44/#48 after confirming their runtime files
+  are represented and evolved in current `main`.
+- [x] Write `PHASE_34_TO_43_BACKEND_PLATFORM_HANDOFF.md` for Claude.
+- [x] Replace destructive capability probing with a versioned read-only
+  manifest and legacy diagnostic fallback.
+- [x] Recheck social capabilities/diagnosis after auth, online recovery, focus,
+  and app visibility resume.
+- [x] Connect Friends to `search_people` and `get_room_people`.
+- [x] Add message fallback refresh/retry and safe action diagnostics.
+- [x] Centralize backdrop CSS and extend Custom Atmosphere with two live glows.
+- [x] Add the enabled-control inventory and packaged smoke release gate.
+- [x] Claude/Codex: complete and review `runtime_capabilities_v2`, SQL/RLS test
+  scripts, packaged auth diagnostics, and `PHASE_34_COMPLETION_REPORT.md`; merge
+  backend PR #55 after green GitHub validation.
+- [x] Codex: rebase onto backend PR #55 and pass strict typecheck, all 443
+  tests, Activity build, Windows package, packaged smoke, and responsive
+  rendered-browser checks.
+- [ ] Codex: deliver and verify the reviewed frontend PR.
+- [ ] Owner: deploy migration `0028` and run both Phase 34 SQL scripts.
+- [ ] Owner: complete two-account packaged acceptance before any v0.1.28
+  Release workflow run.
 
 ## Runtime repair frontend lane
 

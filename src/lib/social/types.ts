@@ -1,4 +1,5 @@
 import type { PostgrestError } from '@supabase/supabase-js';
+import type { SafeActionOutcome } from '@/lib/runtime/SafeActionDiagnostics';
 
 /**
  * Phase 20B: the single result union every social service returns.
@@ -54,4 +55,15 @@ export function toFailure(error: PostgrestError | null): SocialFailure {
 
 export function ok<T>(data: T): SocialResult<T> {
   return { status: 'ok', data };
+}
+
+export function socialStatusToActionOutcome(status: SocialResult<unknown>['status']): SafeActionOutcome {
+  if (status === 'ok') return 'success';
+  if (status === 'unauthenticated') return 'signed-out';
+  if (status === 'not-ready') return 'deployment-missing';
+  if (status === 'forbidden') return 'forbidden';
+  if (status === 'blocked') return 'blocked';
+  if (status === 'rate-limited') return 'rate-limited';
+  if (status === 'offline') return 'offline';
+  return 'failed';
 }

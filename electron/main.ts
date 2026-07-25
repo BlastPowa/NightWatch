@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
@@ -39,6 +40,7 @@ const PRELOAD_PATH = path.join(__dirname, 'preload.js');
 const RENDERER_INDEX = path.join(__dirname, '..', 'dist', 'index.html');
 const DIST_DIR = path.join(__dirname, '..', 'dist');
 const DEV_ICON_PATH = path.join(__dirname, '..', 'build', 'icon.ico');
+const PACKAGED_SMOKE_TEST = process.argv.includes('--smoke-test');
 
 // Custom scheme for production: serves the renderer via app:// instead of
 // file:// so embedded YouTube iframes see a valid HTTP-like origin (fixes
@@ -364,6 +366,22 @@ if (!hasSingleInstanceLock) {
   app.whenReady().then(async () => {
     logger.init();
     logger.write('info', 'main', `NightWatch ${app.getVersion()} starting (packaged=${app.isPackaged})`);
+
+    // Release validation launches the actual packaged executable through this
+    // deterministic path. It proves Electron can boot the bundled main process
+    // and that the renderer/preload resources made it into app.asar, without
+    // opening a user window or contacting external services.
+    if (PACKAGED_SMOKE_TEST) {
+      const missing = [PRELOAD_PATH, RENDERER_INDEX].filter((file) => !fs.existsSync(file));
+      if (missing.length > 0) {
+        logger.write('error', 'main', `Smoke test missing packaged resources: ${missing.map((file) => path.basename(file)).join(', ')}`);
+        app.exit(1);
+        return;
+      }
+      logger.write('info', 'main', 'Packaged main, preload, and renderer resources verified');
+      app.exit(0);
+      return;
+    }
 
     // Register the app:// protocol handler that serves renderer files.
     if (!DEV_SERVER_URL) {

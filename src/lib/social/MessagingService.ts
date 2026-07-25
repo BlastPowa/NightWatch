@@ -1,6 +1,7 @@
 import { cacheDisplayName } from '@/lib/social/SocialRealtime';
 import { prepareOutgoingMessage } from '@/lib/chat/messageFilter';
-import { ok, toFailure, type SocialResult } from '@/lib/social/types';
+import { ok, socialStatusToActionOutcome, toFailure, type SocialResult } from '@/lib/social/types';
+import { beginSafeAction } from '@/lib/runtime/SafeActionDiagnostics';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -163,50 +164,72 @@ export async function getMessages(
 }
 
 export async function createDirectConversation(userId: string): Promise<SocialResult<string>> {
+  const diagnostic = beginSafeAction('messaging.create-direct');
   const { data, error } = await supabase.rpc('create_direct_conversation', { p_user: userId });
   if (error !== null) {
-    return toFailure(error);
+    const failure = toFailure(error);
+    diagnostic.complete(socialStatusToActionOutcome(failure.status));
+    return failure;
   }
-  return typeof data === 'string' ? ok(data) : { status: 'error' };
+  const result: SocialResult<string> = typeof data === 'string' ? ok(data) : { status: 'error' };
+  diagnostic.complete(socialStatusToActionOutcome(result.status));
+  return result;
 }
 
 export async function createGroupConversation(title: string): Promise<SocialResult<string>> {
+  const diagnostic = beginSafeAction('messaging.create-group');
   const { data, error } = await supabase.rpc('create_group_conversation', { p_title: title });
   if (error !== null) {
-    return toFailure(error);
+    const failure = toFailure(error);
+    diagnostic.complete(socialStatusToActionOutcome(failure.status));
+    return failure;
   }
-  return typeof data === 'string' ? ok(data) : { status: 'error' };
+  const result: SocialResult<string> = typeof data === 'string' ? ok(data) : { status: 'error' };
+  diagnostic.complete(socialStatusToActionOutcome(result.status));
+  return result;
 }
 
 export async function sendMessage(
   conversationId: string,
   body: string,
 ): Promise<SocialResult<string>> {
+  const diagnostic = beginSafeAction('messaging.send');
   const clean = prepareOutgoingMessage(body, 2_000);
   const { data, error } = await supabase.rpc('send_message', {
     p_conversation: conversationId,
     p_body: clean,
   });
   if (error !== null) {
-    return toFailure(error);
+    const failure = toFailure(error);
+    diagnostic.complete(socialStatusToActionOutcome(failure.status));
+    return failure;
   }
-  return typeof data === 'string' ? ok(data) : { status: 'error' };
+  const result: SocialResult<string> = typeof data === 'string' ? ok(data) : { status: 'error' };
+  diagnostic.complete(socialStatusToActionOutcome(result.status));
+  return result;
 }
 
-async function transition(fn: string, args: Record<string, unknown>): Promise<SocialResult<void>> {
+async function transition(
+  fn: string,
+  args: Record<string, unknown>,
+  diagnosticFeature: 'messaging.moderate' | 'messaging.read',
+): Promise<SocialResult<void>> {
+  const diagnostic = beginSafeAction(diagnosticFeature);
   const { error } = await supabase.rpc(fn, args);
-  return error === null ? ok(undefined) : toFailure(error);
+  const result: SocialResult<void> = error === null ? ok(undefined) : toFailure(error);
+  diagnostic.complete(socialStatusToActionOutcome(result.status));
+  return result;
 }
 
 export function editMessage(messageId: string, body: string): Promise<SocialResult<void>> {
   return transition('edit_message', {
     p_message: messageId,
     p_body: prepareOutgoingMessage(body, 2_000),
-  });
+  }, 'messaging.moderate');
 }
 
 export function deleteMessage(messageId: string): Promise<SocialResult<void>> {
-  return transition('delete_message', { p_message: messageId });
+  return transition('delete_message', { p_message: messageId }, 'messaging.moderate');
 }
 
 export function markConversationRead(
@@ -216,25 +239,37 @@ export function markConversationRead(
   return transition('mark_conversation_read', {
     p_conversation: conversationId,
     p_message: messageId,
-  });
+  }, 'messaging.read');
 }
 
 export function renameGroup(conversationId: string, title: string): Promise<SocialResult<void>> {
-  return transition('rename_group', { p_conversation: conversationId, p_title: title });
+  return transition(
+    'rename_group',
+    { p_conversation: conversationId, p_title: title },
+    'messaging.moderate',
+  );
 }
 
 export function addGroupMember(
   conversationId: string,
   userId: string,
 ): Promise<SocialResult<void>> {
-  return transition('add_group_member', { p_conversation: conversationId, p_user: userId });
+  return transition(
+    'add_group_member',
+    { p_conversation: conversationId, p_user: userId },
+    'messaging.moderate',
+  );
 }
 
 export function removeGroupMember(
   conversationId: string,
   userId: string,
 ): Promise<SocialResult<void>> {
-  return transition('remove_group_member', { p_conversation: conversationId, p_user: userId });
+  return transition(
+    'remove_group_member',
+    { p_conversation: conversationId, p_user: userId },
+    'messaging.moderate',
+  );
 }
 
 /**
@@ -251,12 +286,16 @@ export function setConversationRole(
     p_conversation: conversationId,
     p_user: userId,
     p_role: role,
-  });
+  }, 'messaging.moderate');
 }
 
 /** The owner cannot leave — transfer ownership first. */
 export function leaveConversation(conversationId: string): Promise<SocialResult<void>> {
-  return transition('leave_conversation', { p_conversation: conversationId });
+  return transition(
+    'leave_conversation',
+    { p_conversation: conversationId },
+    'messaging.moderate',
+  );
 }
 
 export function transferOwnership(
@@ -266,5 +305,5 @@ export function transferOwnership(
   return transition('transfer_conversation_ownership', {
     p_conversation: conversationId,
     p_user: userId,
-  });
+  }, 'messaging.moderate');
 }

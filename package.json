@@ -17,6 +17,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
     "test:watch": "vitest",
+    "smoke:packaged": "powershell -ExecutionPolicy Bypass -File scripts/smoke/run-packaged-smoke.ps1",
     "preview": "vite preview",
     "lanes": "powershell -ExecutionPolicy Bypass -File scripts/git/lane-status.ps1"
   },

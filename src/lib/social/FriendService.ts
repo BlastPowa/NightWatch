@@ -1,6 +1,7 @@
 import { getCloudSyncState, whenSyncReady } from '@/lib/engagement/CloudSync';
 import { cacheDisplayName } from '@/lib/social/SocialRealtime';
-import { ok, toFailure, type SocialResult } from '@/lib/social/types';
+import { ok, socialStatusToActionOutcome, toFailure, type SocialResult } from '@/lib/social/types';
+import { beginSafeAction } from '@/lib/runtime/SafeActionDiagnostics';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -158,37 +159,44 @@ export async function getSocialGraph(): Promise<SocialResult<SocialGraph>> {
   return ok(graph);
 }
 
-async function transition(fn: string, args: Record<string, unknown>): Promise<SocialResult<void>> {
+async function transition(
+  fn: string,
+  args: Record<string, unknown>,
+  diagnosticFeature: 'friends.request' | 'friends.respond' | 'friends.remove' | 'friends.block',
+): Promise<SocialResult<void>> {
+  const diagnostic = beginSafeAction(diagnosticFeature);
   const { error } = await supabase.rpc(fn, args);
-  return error === null ? ok(undefined) : toFailure(error);
+  const result: SocialResult<void> = error === null ? ok(undefined) : toFailure(error);
+  diagnostic.complete(socialStatusToActionOutcome(result.status));
+  return result;
 }
 
 export function sendFriendRequest(userId: string): Promise<SocialResult<void>> {
-  return transition('send_friend_request', { p_recipient: userId });
+  return transition('send_friend_request', { p_recipient: userId }, 'friends.request');
 }
 
 export function acceptFriendRequest(senderId: string): Promise<SocialResult<void>> {
-  return transition('accept_friend_request', { p_sender: senderId });
+  return transition('accept_friend_request', { p_sender: senderId }, 'friends.respond');
 }
 
 export function declineFriendRequest(senderId: string): Promise<SocialResult<void>> {
-  return transition('decline_friend_request', { p_sender: senderId });
+  return transition('decline_friend_request', { p_sender: senderId }, 'friends.respond');
 }
 
 export function cancelFriendRequest(recipientId: string): Promise<SocialResult<void>> {
-  return transition('cancel_friend_request', { p_recipient: recipientId });
+  return transition('cancel_friend_request', { p_recipient: recipientId }, 'friends.respond');
 }
 
 export function removeFriend(userId: string): Promise<SocialResult<void>> {
-  return transition('remove_friend', { p_user: userId });
+  return transition('remove_friend', { p_user: userId }, 'friends.remove');
 }
 
 /** Severs the friendship and any pending requests, in both directions. */
 export function blockUser(userId: string): Promise<SocialResult<void>> {
-  return transition('block_user', { p_user: userId });
+  return transition('block_user', { p_user: userId }, 'friends.block');
 }
 
 /** Unblocking does not restore the friendship — it must be re-requested. */
 export function unblockUser(userId: string): Promise<SocialResult<void>> {
-  return transition('unblock_user', { p_user: userId });
+  return transition('unblock_user', { p_user: userId }, 'friends.block');
 }

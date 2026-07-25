@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-25.
 
-## Phase 34 production parity (backend reviewed and build-validated)
+## Phase 34 backend (merged through PR #55)
 
 - `backend/phase-34-production-parity` carries: migration `0028`
   (`runtime_capabilities_v2` + two locked-down helpers), two SQL/RLS test
@@ -22,6 +22,39 @@ Last updated: 2026-07-25.
   `supabase/tests/phase34_runtime_capabilities_test.sql` and
   `supabase/tests/phase34_social_contract_test.sql`.
 - Phase 34 enables **no** capability flag. Detail: `PHASE_34_COMPLETION_REPORT.md`.
+
+## Phase 34 frontend (code/build validated from v0.1.27)
+
+- Clean frontend/backend lanes now start at public `v0.1.27` (`944462f`);
+  obsolete conflicting PRs #44 and #48 were closed as superseded by the
+  evolved Drive and Phase 33 implementation in `main`.
+- Backend PR #55 is merged: migration `0028`, the versioned capability
+  manifest, safe diagnostics, Drive workspace contracts, SQL/RLS verification
+  scripts, and release-smoke contracts passed GitHub's complete feature gate.
+  The owner still needs to deploy `0028` and execute both Phase 34 SQL scripts.
+- Frontend capability detection now consumes one read-only versioned manifest,
+  with the existing `social_diagnostics` RPC as a migration fallback. It no
+  longer executes feature operations as deployment probes and rechecks after
+  auth, reconnect, focus, and resume.
+- Friends now uses `search_people` for opted-in public discovery and
+  `get_room_people` for authenticated current-room members. Existing graph
+  filtering remains, and a v0.1.27 co-watcher fallback covers the rollout.
+- Messaging now has RPC acknowledgement, reload-after-send, periodic/focus/
+  online fallback refresh, retry controls, and privacy-safe action diagnostics.
+- Custom Atmosphere now persists canvas, surface, panel, primary glow, and
+  secondary glow. Duplicate backdrop selectors were removed and every backdrop
+  uses the same live root variables, including device-local artwork.
+- Release validation now runs all tests, builds an unpublished Windows
+  candidate, and boots the packaged main process in smoke mode before any
+  version commit or tag is created.
+- Frontend evidence on 2026-07-25 after rebasing onto PR #55: strict typecheck;
+  all 443 tests across 49 files; Activity build (333 modules); Windows
+  Electron/NSIS package (81.8 MB
+  installer); and packaged smoke all pass. Browser verification covered search
+  reset, signed-out Friends guidance, the live Aurora backdrop, 940x600 and
+  620px layouts without horizontal overflow, and zero console errors.
+- Owner two-account packaged acceptance and the Phase 34 database deployment/
+  SQL verification remain mandatory before a v0.1.28 Release workflow run.
 
 ## Runtime repair and Phase 33 integration
 

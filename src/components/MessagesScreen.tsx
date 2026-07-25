@@ -123,6 +123,7 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
     }
     const ordered = [...result.data].sort((a, b) => a.seq - b.seq);
     setMessages(ordered);
+    setStatus(null);
     setHasOlder(result.data.length === 50);
     const latest = ordered.at(-1);
     if (latest !== undefined) void markConversationRead(id, latest.id).then(() => void refreshConversations());
@@ -154,8 +155,9 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
     }
     setDraft('');
     setEditingMessageId(null);
-    void refreshMessages(selectedId);
-    return subscribeToConversation(selectedId, (change) => {
+    const refresh = (): void => { void refreshMessages(selectedId); };
+    refresh();
+    const unsubscribe = subscribeToConversation(selectedId, (change) => {
       const log = logRef.current;
       const nearBottom = log === null || log.scrollHeight - log.scrollTop - log.clientHeight < 120;
       setMessages((current) => {
@@ -165,6 +167,15 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
       void markConversationRead(selectedId, change.message.id);
       if (nearBottom) window.requestAnimationFrame(() => { if (log !== null) log.scrollTop = log.scrollHeight; });
     });
+    const timer = window.setInterval(refresh, 15_000);
+    window.addEventListener('online', refresh);
+    window.addEventListener('focus', refresh);
+    return () => {
+      unsubscribe();
+      window.clearInterval(timer);
+      window.removeEventListener('online', refresh);
+      window.removeEventListener('focus', refresh);
+    };
   }, [selectedId]);
 
   async function loadOlder(): Promise<void> {
@@ -351,7 +362,7 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
           {editingMessageId !== null && <div className="message-edit-notice"><span><Icon name="check" size={15} />Editing message</span><button type="button" onClick={() => { setEditingMessageId(null); setDraft(''); }}>Cancel</button></div>}
           <form className="message-composer" onSubmit={(event) => void handleSend(event)}><input className="input" value={draft} maxLength={2000} placeholder={editingMessageId === null ? `Message ${displayTitle(selected)}…` : 'Update your message…'} aria-label={editingMessageId === null ? 'Message' : 'Edit message'} onChange={(event) => setDraft(event.target.value)} /><span className="message-character-count">{draft.length > 1800 ? `${draft.length}/2000` : ''}</span><button type="submit" className="button button-primary" disabled={sending || draft.trim() === ''}><Icon name={editingMessageId === null ? 'send' : 'check'} size={17} />{sending ? 'Saving…' : editingMessageId === null ? 'Send' : 'Save'}</button></form>
         </>}
-        {status !== null && <p className="social-notice message-status message-status-error" role="alert"><Icon name="info" size={15} />{status}<button type="button" onClick={() => setStatus(null)} aria-label="Dismiss message"><Icon name="close" size={14} /></button></p>}
+        {status !== null && <p className="social-notice message-status message-status-error" role="alert"><Icon name="info" size={15} /><span>{status}</span><button type="button" onClick={() => { void refreshConversations(); if (selectedId !== null) void refreshMessages(selectedId); }}>Retry</button><button type="button" onClick={() => setStatus(null)} aria-label="Dismiss message"><Icon name="close" size={14} /></button></p>}
         {selected !== null && selected.kind === 'group' && showGroupManagement && <div className="group-management-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowGroupManagement(false); }}><GroupManagementPanel conversation={selected} currentUserId={currentUserId} onClose={() => setShowGroupManagement(false)} onChanged={refreshConversations} onLeft={() => { setSelectedId(null); setShowGroupManagement(false); void refreshConversations(); }} /></div>}
       </div>
     </section>

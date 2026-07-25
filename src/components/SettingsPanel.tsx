@@ -157,6 +157,8 @@ export function SettingsPanel({
     '--p27-preview-canvas': settings.theme === 'custom' ? settings.customAtmosphere.canvas : '#070914',
     '--p27-preview-surface': settings.theme === 'custom' ? settings.customAtmosphere.surface : '#171a2d',
     '--p27-preview-panel': settings.theme === 'custom' ? settings.customAtmosphere.panel : '#0d1020',
+    '--p27-preview-primary': settings.theme === 'custom' ? settings.customAtmosphere.primaryGlow : settings.accent,
+    '--p27-preview-secondary': settings.theme === 'custom' ? settings.customAtmosphere.secondaryGlow : '#6d5dfc',
     '--p27-preview-theme': THEME_PREVIEW[settings.theme],
   } as CSSProperties;
 
@@ -231,7 +233,7 @@ export function SettingsPanel({
                   ))}
                 </div>
               </div>
-              {settings.theme === 'custom' && <div className="card settings-card settings-card-wide custom-atmosphere-card p27-custom-atmosphere"><div className="p27-custom-copy"><span className="eyebrow">Palette studio</span><h2>Custom atmosphere</h2><p>Canvas sits behind the app, Surface holds cards, and Panel separates controls. Accent, glow, and accessibility settings remain independent.</p><div className={`p27-contrast-status${customPaletteStatus.safe ? ' p27-contrast-safe' : ' p27-contrast-warning'}`} role="status"><Icon name={customPaletteStatus.safe ? 'sparkle' : 'info'} /><span><strong>{customPaletteStatus.safe ? 'Balanced separation' : 'Contrast needs attention'}</strong><small>{customPaletteStatus.message}</small></span></div></div><div className="custom-atmosphere-grid">{([['canvas','Canvas'],['surface','Surface'],['panel','Panel']] as const).map(([key,label]) => <label key={key} className="atmosphere-color"><input type="color" value={settings.customAtmosphere[key]} aria-label={`${label} colour`} onChange={(event) => settingsStore.update({ customAtmosphere: { [key]: event.target.value } })} /><span><strong>{label}</strong><small>{settings.customAtmosphere[key]}</small></span></label>)}</div></div>}
+              {settings.theme === 'custom' && <div className="card settings-card settings-card-wide custom-atmosphere-card p27-custom-atmosphere"><div className="p27-custom-copy"><span className="eyebrow">Palette studio</span><h2>Custom atmosphere</h2><p>Canvas, Surface, and Panel define the workspace. Primary and Secondary Glow drive the moving backdrop so the custom palette changes the entire app, not only this preview.</p><div className={`p27-contrast-status${customPaletteStatus.safe ? ' p27-contrast-safe' : ' p27-contrast-warning'}`} role="status"><Icon name={customPaletteStatus.safe ? 'sparkle' : 'info'} /><span><strong>{customPaletteStatus.safe ? 'Balanced separation' : 'Contrast needs attention'}</strong><small>{customPaletteStatus.message}</small></span></div></div><div className="custom-atmosphere-grid">{([['canvas','Canvas'],['surface','Surface'],['panel','Panel'],['primaryGlow','Primary glow'],['secondaryGlow','Secondary glow']] as const).map(([key,label]) => <label key={key} className="atmosphere-color"><input type="color" value={settings.customAtmosphere[key]} aria-label={`${label} colour`} onChange={(event) => settingsStore.update({ customAtmosphere: { [key]: event.target.value } })} /><span><strong>{label}</strong><small>{settings.customAtmosphere[key]}</small></span></label>)}</div></div>}
               <div className="card settings-card">
                 <h2>Accent</h2>
                 <div className="swatch-row">

@@ -1,6 +1,8 @@
 html[data-custom-background='true'] .app-cinematic-shell .content {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--nw-bg) 72%, transparent), color-mix(in srgb, var(--nw-bg) 92%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--nw-bg) 68%, transparent), color-mix(in srgb, var(--nw-bg) 90%, transparent)),
+    radial-gradient(70% 60% at 82% 4%, color-mix(in srgb, var(--nw-backdrop-primary, var(--nw-accent)) 22%, transparent), transparent 72%),
+    radial-gradient(65% 55% at 8% 96%, color-mix(in srgb, var(--nw-backdrop-secondary, #6d5dfc) 20%, transparent), transparent 74%),
     var(--nw-custom-background-image) center / cover fixed;
 }
 
