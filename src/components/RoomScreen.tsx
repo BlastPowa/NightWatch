@@ -62,6 +62,23 @@ export function RoomScreen({
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
   const loadVideoRef = useRef<((videoId: string, startSeconds?: number) => void) | null>(null);
+  const knownMemberIdsRef = useRef<Set<string> | null>(null);
+  const [joinNotice, setJoinNotice] = useState<RoomState['members'][number] | null>(null);
+
+  useEffect(() => {
+    const currentIds = new Set(room.members.map((member) => member.id));
+    if (knownMemberIdsRef.current === null) {
+      knownMemberIdsRef.current = currentIds;
+      return;
+    }
+    const joined = room.members.find((member) => member.id !== selfId && !knownMemberIdsRef.current?.has(member.id));
+    for (const id of currentIds) knownMemberIdsRef.current.add(id);
+    if (joined === undefined) return;
+    setJoinNotice(joined);
+    playRoomJoinChime();
+    const timer = window.setTimeout(() => setJoinNotice((current) => current?.id === joined.id ? null : current), 4_800);
+    return () => window.clearTimeout(timer);
+  }, [room.members, selfId]);
 
   // Opt-in session insights (Phase 17, ADR-014): record only while this
   // client is host AND the room owner enabled insights.
@@ -357,8 +374,40 @@ export function RoomScreen({
           </button>
         </aside>
       </div>
+      {joinNotice !== null && (
+        <aside className="room-join-toast" role="status" aria-live="polite">
+          <ProfileAvatar src={memberAvatarUrl(joinNotice)} name={joinNotice.displayName} className="room-join-toast-avatar" />
+          <span><strong>{joinNotice.displayName}</strong><small>has joined the room</small></span>
+          <button type="button" onClick={() => setJoinNotice(null)} aria-label="Dismiss join notification"><Icon name="close" size={14} /></button>
+        </aside>
+      )}
     </section>
   );
+}
+
+function playRoomJoinChime(): void {
+  if (typeof window === 'undefined' || !('AudioContext' in window)) return;
+  try {
+    const AudioContextConstructor = window.AudioContext;
+    const context = new AudioContextConstructor();
+    const gain = context.createGain();
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.48);
+    gain.connect(context.destination);
+    [659.25, 880].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gain);
+      oscillator.start(context.currentTime + index * 0.11);
+      oscillator.stop(context.currentTime + 0.34 + index * 0.11);
+    });
+    window.setTimeout(() => void context.close(), 650);
+  } catch {
+    // Browser autoplay/audio policy can reject non-gesture audio. The visual
+    // notification remains the reliable contract.
+  }
 }
 
 type DockTabId = 'queue' | 'chat' | 'people' | 'moments' | 'discovery';

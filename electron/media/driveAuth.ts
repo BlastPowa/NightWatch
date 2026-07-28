@@ -315,6 +315,7 @@ function parseTokenResponse(payload: unknown): TokenResponse | null {
 export type TokenExchangeOutcome =
   | { status: 'ok'; tokens: TokenResponse }
   | { status: 'invalid-grant' }
+  | { status: 'configuration-error'; reason: 'invalid-client' | 'unauthorized-client' | 'redirect-uri' }
   | { status: 'offline' }
   | { status: 'failed' };
 
@@ -347,7 +348,11 @@ async function postTokenEndpoint(
         : null;
     // invalid_grant means the refresh token is dead (revoked, expired,
     // password change). The caller must clear it — retrying is pointless.
-    return error === 'invalid_grant' ? { status: 'invalid-grant' } : { status: 'failed' };
+    if (error === 'invalid_grant') return { status: 'invalid-grant' };
+    if (error === 'invalid_client') return { status: 'configuration-error', reason: 'invalid-client' };
+    if (error === 'unauthorized_client') return { status: 'configuration-error', reason: 'unauthorized-client' };
+    if (error === 'redirect_uri_mismatch') return { status: 'configuration-error', reason: 'redirect-uri' };
+    return { status: 'failed' };
   }
 
   const tokens = parseTokenResponse(payload);
@@ -456,8 +461,19 @@ export async function runInteractiveGoogleAuth(
       redirectUri,
     );
     if (exchanged.status !== 'ok') {
-      return exchanged.status === 'offline'
-        ? mediaFail('offline', 'Google could not be reached to finish signing in.')
+      if (exchanged.status === 'offline') {
+        return mediaFail('offline', 'Google could not be reached to finish signing in.');
+      }
+      if (exchanged.status === 'configuration-error') {
+        const message = exchanged.reason === 'redirect-uri'
+          ? 'Google rejected the local callback. NightWatch must use a Google OAuth Desktop app client.'
+          : exchanged.reason === 'unauthorized-client'
+            ? 'This Google OAuth client is not allowed to use the installed-app sign-in flow.'
+            : 'The Google OAuth client in this NightWatch build was rejected. Check that the Desktop client ID is from the intended project.';
+        return mediaFail('invalid-request', message);
+      }
+      return exchanged.status === 'invalid-grant'
+        ? mediaFail('auth-cancelled', 'Google rejected the one-time sign-in code. Try again after checking the computer clock and OAuth client configuration.')
         : mediaFail('auth-cancelled', 'Google sign-in could not be completed.');
     }
     if (exchanged.tokens.refreshToken === null) {

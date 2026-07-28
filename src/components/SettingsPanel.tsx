@@ -267,6 +267,7 @@ export function SettingsPanel({
               </div>
               <div className="card settings-card">
                 <h2>Backdrop</h2>
+                <p>Controls the lighting, vignette, and colour motion across NightWatch. With personal artwork enabled, the selected treatment is layered over the image instead of being replaced by it.</p>
                 <div className="backdrop-grid">
                   {BACKDROPS.map((backdrop) => <button key={backdrop.id} type="button" className={`backdrop-option${settings.backgroundStyle === backdrop.id ? ' backdrop-option-active' : ''}`} aria-pressed={settings.backgroundStyle === backdrop.id} onClick={() => settingsStore.update({ backgroundStyle: backdrop.id })}><span className={`backdrop-preview backdrop-preview-${backdrop.id}`} aria-hidden="true"><i /><b /></span><span><strong>{backdrop.label}{settings.backgroundStyle === backdrop.id && <em>Selected</em>}</strong><small>{backdrop.description}</small></span></button>)}
                 </div>
@@ -508,8 +509,8 @@ function YouTubeAccountCard({
         <h2>YouTube account</h2>
         <p>
           {connected
-            ? `Connected${account.channelTitle === null ? '' : ` as ${account.channelTitle}`}. Read-only account discovery stays separate from the official player.`
-            : 'Optionally connect with read-only YouTube access for account-owned discovery. This never signs into, customizes, or replaces the embedded player session.'}
+            ? `Connected${account.channelTitle === null ? '' : ` as ${account.channelTitle}`}. This verifies the read-only account connection; personalized account-feed shelves are not enabled yet and remain separate from the official player.`
+            : 'Optionally verify a read-only YouTube account connection for future account-owned discovery. This never signs into, customizes, or replaces the embedded player session.'}
         </p>
         {failure !== null && (
           <div className="account-integration-error" role="alert">
@@ -517,9 +518,9 @@ function YouTubeAccountCard({
               {failure.message}
               {failure.code === 'auth-timeout' && ' Check that your browser, firewall, or VPN allowed the local sign-in callback.'}
             </span>
-            {(failure.code === 'auth-cancelled' || failure.code === 'auth-timeout') && (
+            {(failure.code === 'auth-cancelled' || failure.code === 'auth-timeout' || failure.code === 'invalid-request') && (
               <span className="account-oauth-testing-help">
-                If Google showed Error 403 or “Access blocked”, the OAuth app is probably still in Testing and this Google account is not approved. The app owner must add the exact account under Google Auth Platform → Audience → Test users, or complete verification and publish the app to Production.
+                Enabling YouTube Data API does not approve an account for OAuth. If Google showed Error 403 or “Access blocked”, add this exact Gmail under Google Auth Platform → Audience → Test users. Otherwise complete verification and publish the app to Production. A callback/client error instead means this NightWatch build must use a Desktop app OAuth client from the same project.
                 {' '}
                 <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener noreferrer">
                   Open Google Auth Audience

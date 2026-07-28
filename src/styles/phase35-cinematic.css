@@ -1,0 +1,300 @@
+/* Phase 35: full-bleed discovery, player deck, startup-adjacent polish. */
+
+.app-view-settings .settings-workspace {
+  /* The application shell owns the viewport.  The workspace must not grow
+   * past it or the final Appearance cards end up below an inaccessible page
+   * scroll area on short Windows windows. */
+  height: 100% !important;
+  block-size: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  align-self: stretch;
+  overflow: hidden;
+}
+
+.app-view-settings .settings-content {
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+.app-view-settings .settings-content > :last-child,
+.app-view-settings .settings-grid > :last-child {
+  margin-bottom: 2rem;
+}
+
+/* Personal artwork and Backdrop are separate controls. The artwork is the
+ * fixed image layer; the selected backdrop remains a visible colour wash,
+ * vignette and motion layer above it. */
+html[data-custom-background='true'] .app-cinematic-shell {
+  position: relative;
+  isolation: isolate;
+  background: transparent;
+}
+
+html[data-custom-background='true'] .app-cinematic-shell::before,
+html[data-custom-background='true'] .app-cinematic-shell::after {
+  position: fixed;
+  inset: var(--nw-titlebar-h, 0px) 0 0;
+  z-index: -2;
+  pointer-events: none;
+  content: '';
+}
+
+html[data-custom-background='true'] .app-cinematic-shell::before {
+  background: var(--nw-custom-background-image) center / cover no-repeat;
+  filter: saturate(.94) contrast(1.03);
+}
+
+html[data-custom-background='true'] .app-cinematic-shell::after {
+  z-index: -1;
+  background:
+    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 30%,transparent), color-mix(in srgb,var(--nw-bg) 68%,transparent)),
+    radial-gradient(75% 68% at 82% 3%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 34%,transparent), transparent 70%),
+    radial-gradient(72% 66% at 8% 96%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 30%,transparent), transparent 72%);
+  background-size: auto, 122% 122%, 126% 126%;
+  animation: nw-artwork-backdrop 20s ease-in-out infinite alternate;
+}
+
+html[data-custom-background='true'][data-background='aurora'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 26%,transparent), color-mix(in srgb,var(--nw-bg) 74%,transparent)),
+    radial-gradient(82% 74% at 94% -4%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 56%,transparent), transparent 66%),
+    radial-gradient(78% 70% at 2% 105%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 48%,transparent), transparent 68%);
+  animation-duration: 14s;
+}
+
+html[data-custom-background='true'][data-background='studio'] .app-cinematic-shell::after {
+  background: linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 58%,transparent), color-mix(in srgb,var(--nw-bg) 88%,transparent));
+  animation: none;
+}
+
+html[data-custom-background='true'][data-background='nebula'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 34%,transparent), color-mix(in srgb,var(--nw-bg) 80%,transparent)),
+    radial-gradient(72% 76% at 12% 4%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 48%,transparent), transparent 68%),
+    radial-gradient(76% 68% at 90% 46%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 42%,transparent), transparent 70%);
+}
+
+html[data-custom-background='true'][data-background='ember'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,#160500 38%,transparent), color-mix(in srgb,var(--nw-bg) 84%,transparent)),
+    radial-gradient(84% 74% at 50% 108%, color-mix(in srgb,#ff5b1f 48%,transparent), transparent 68%);
+}
+
+html[data-custom-background='true'][data-background='frost'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,#dff7ff 9%,transparent), color-mix(in srgb,var(--nw-bg) 78%,transparent)),
+    radial-gradient(80% 72% at 78% 0, color-mix(in srgb,#8eddff 42%,transparent), transparent 68%);
+}
+
+html[data-custom-background='true'][data-background='cinema'] .app-cinematic-shell::after {
+  background:
+    radial-gradient(120% 96% at 50% 42%, transparent 20%, rgba(0,0,0,.62) 100%),
+    radial-gradient(72% 58% at 50% 14%, color-mix(in srgb,#ffbb60 22%,transparent), transparent 72%);
+  animation: none;
+}
+
+html[data-custom-background='true'] .app-cinematic-shell .content {
+  background: transparent !important;
+}
+
+@keyframes nw-artwork-backdrop {
+  from { background-position: 0 0, 100% 0, 0 100%; }
+  to { background-position: 0 0, 28% 12%, 76% 72%; }
+}
+
+[data-reduce-motion='true'][data-custom-background='true'] .app-cinematic-shell::after {
+  animation: none !important;
+}
+
+.browse-view-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .8rem;
+  margin-top: .9rem;
+}
+
+.browse-view-toolbar .browse-view-tabs { margin-top: 0; }
+
+.browse-refresh {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  gap: .45rem;
+  padding: .45rem .8rem;
+  border: 1px solid color-mix(in srgb,var(--nw-accent) 32%,var(--nw-border));
+  border-radius: 999px;
+  background: color-mix(in srgb,var(--nw-bg-raised) 68%,transparent);
+  color: var(--nw-text-muted);
+  cursor: pointer;
+  box-shadow: inset 0 1px color-mix(in srgb,white 5%,transparent);
+}
+
+.browse-refresh:hover:not(:disabled) { color: var(--nw-text); border-color: var(--nw-accent); box-shadow: 0 0 18px color-mix(in srgb,var(--nw-accent) 14%,transparent); }
+.browse-refresh:disabled { cursor: wait; opacity: .58; }
+.browse-refresh:disabled svg { animation: nw-refresh-spin .85s linear infinite; }
+@keyframes nw-refresh-spin { to { transform: rotate(360deg); } }
+
+.browse-feature-hero {
+  position: relative;
+  display: grid;
+  min-height: clamp(330px, 42vw, 560px);
+  align-items: end;
+  padding: clamp(1.4rem,4vw,4rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb,var(--nw-accent) 20%,var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 8px);
+  background:
+    linear-gradient(90deg, color-mix(in srgb,var(--nw-bg-sunken) 98%,transparent) 0%, color-mix(in srgb,var(--nw-bg-sunken) 82%,transparent) 34%, transparent 72%),
+    linear-gradient(0deg, var(--nw-bg-sunken), transparent 56%),
+    var(--browse-feature-image) center 35% / cover no-repeat;
+  box-shadow: 0 32px 90px rgba(0,0,0,.48), inset 0 1px color-mix(in srgb,white 6%,transparent);
+  isolation: isolate;
+}
+
+/* The activity panel is a real drawer: opening it should layer beside the
+ * page, not consume a flex column and squeeze Browse into a tiny canvas. */
+.friend-activity-drawer {
+  position: fixed;
+  top: var(--nw-titlebar-h, 0px);
+  right: 0;
+  bottom: 0;
+  z-index: 64;
+  width: clamp(284px, 23vw, 342px);
+  height: auto;
+  flex: 0 0 auto;
+  border-top: 1px solid color-mix(in srgb,var(--nw-accent) 18%,var(--nw-border));
+}
+
+.friend-activity-drawer::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -20px;
+  width: 20px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb,var(--nw-bg-sunken) 78%,transparent));
+  content: '';
+}
+
+/* Keep actions legible in compact desktop windows.  The title is allowed to
+ * disappear before the search box or room action can be truncated. */
+@media (max-width: 1180px) {
+  .global-topbar { grid-template-columns: minmax(0,1fr) minmax(360px,1.65fr) auto; }
+  .global-topbar-actions { gap: .4rem; }
+  .topbar-room-action { min-width: 116px; padding-inline: .72rem; }
+  .profile-chip { max-width: 132px; }
+}
+
+@media (max-height: 760px) and (min-width: 621px) {
+  .app-view-settings .settings-workspace { min-height: 0 !important; }
+  .settings-rail { overflow-y: auto; padding-block: .8rem; }
+  .settings-rail-heading { padding-bottom: .25rem; }
+  .settings-nav-item { min-height: 38px; padding-block: .45rem; }
+  .settings-local-note { margin-top: .6rem; }
+  .app-view-settings .settings-content { padding-top: .85rem; }
+}
+
+.browse-feature-hero::after { position: absolute; z-index: -1; inset: 0; background: radial-gradient(circle at 72% 42%, transparent 10%, color-mix(in srgb,var(--nw-bg-sunken) 18%,transparent) 58%, var(--nw-bg-sunken) 110%); content: ''; }
+.browse-feature-copy { display: grid; width: min(620px,75%); gap: .8rem; }
+.browse-feature-copy h1 { max-width: 13ch; margin: 0; font-size: clamp(2.2rem,6vw,5.6rem); line-height: .94; letter-spacing: -.065em; text-wrap: balance; }
+.browse-feature-channel { display: flex; align-items: center; gap: .65rem; }
+.browse-feature-channel > :first-child { width: 38px; height: 38px; border-radius: 50%; }
+.browse-feature-channel > span { display: grid; gap: .12rem; }
+.browse-feature-channel small { color: var(--nw-text-muted); }
+.browse-feature-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .25rem; }
+.browse-feature-index { position: absolute; top: 1.1rem; right: 1.25rem; display: flex; align-items: baseline; gap: .45rem; color: color-mix(in srgb,var(--nw-text) 62%,transparent); text-transform: uppercase; }
+.browse-feature-index span { font-size: .6rem; letter-spacing: .18em; }
+.browse-feature-index strong { font-size: 1.5rem; }
+.browse-feature-slides { position: absolute; right: 50%; bottom: 1.15rem; display: flex; align-items: center; gap: .55rem; padding: .32rem .45rem; border: 1px solid color-mix(in srgb,white 10%,transparent); border-radius: 999px; background: rgba(4,7,14,.58); backdrop-filter: blur(16px); transform: translateX(50%); }
+.browse-feature-dots { display: flex; align-items: center; gap: .32rem; }
+.browse-feature-dot { width: 18px; height: 4px; padding: 0; border: 0; border-radius: 999px; background: rgba(255,255,255,.28); cursor: pointer; transition: width .2s var(--nw-ease),background .2s var(--nw-ease),box-shadow .2s var(--nw-ease); }
+.browse-feature-dot-active { width: 30px; background: var(--nw-accent); box-shadow: 0 0 12px color-mix(in srgb,var(--nw-accent) 65%,transparent); }
+.browse-feature-arrow { display: grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: rgba(255,255,255,.72); cursor: pointer; }
+.browse-feature-arrow:hover { background: rgba(255,255,255,.09); color: white; }
+
+.cinema-dock {
+  position: fixed;
+  right: 50%;
+  bottom: 1rem;
+  z-index: 38;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .42rem;
+  border: 1px solid color-mix(in srgb,var(--nw-accent) 18%,var(--nw-border));
+  border-radius: 999px;
+  background: color-mix(in srgb,var(--nw-bg-sunken) 86%,transparent);
+  box-shadow: 0 22px 60px rgba(0,0,0,.48),inset 0 1px color-mix(in srgb,white 7%,transparent);
+  backdrop-filter: blur(24px) saturate(130%);
+  transform: translateX(50%);
+}
+.cinema-dock-button { display: grid; width: 38px; height: 38px; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--nw-text-muted); cursor: pointer; transition: transform .18s var(--nw-ease),color .18s var(--nw-ease),background .18s var(--nw-ease); }
+.cinema-dock-button:hover { color: var(--nw-text); background: color-mix(in srgb,var(--nw-accent) 10%,transparent); transform: translateY(-2px); }
+.cinema-dock-button-active { border-color: color-mix(in srgb,var(--nw-accent) 45%,white 10%); background: color-mix(in srgb,var(--nw-accent) 84%,white 12%); color: var(--nw-accent-contrast); box-shadow: 0 0 20px color-mix(in srgb,var(--nw-accent) 38%,transparent); }
+
+.player-panel-full .player-media-info,
+.player-panel-full .player-command-bar,
+.player-panel-full .player-community-module,
+.player-panel-full .player-moments-module {
+  border-color: color-mix(in srgb,var(--nw-accent) 22%,var(--nw-border));
+  background:
+    linear-gradient(135deg,color-mix(in srgb,var(--nw-accent) 8%,transparent),transparent 48%),
+    color-mix(in srgb,var(--nw-bg-raised) 76%,transparent);
+  backdrop-filter: blur(20px) saturate(125%);
+  box-shadow: inset 0 1px color-mix(in srgb,white 5%,transparent), 0 16px 42px rgba(0,0,0,.2);
+}
+
+.player-panel-full .player-media-info { margin-top: .85rem; padding: 1rem 1.1rem; border-radius: calc(var(--nw-radius-lg) + 3px) calc(var(--nw-radius-lg) + 3px) var(--nw-radius) var(--nw-radius); }
+.player-panel-full .player-source-mark { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(145deg,color-mix(in srgb,var(--nw-accent) 72%,#ff334a),color-mix(in srgb,var(--nw-accent) 42%,#e51c3a)); box-shadow: 0 12px 28px color-mix(in srgb,var(--nw-accent) 26%,transparent); }
+.player-panel-full .player-command-bar { margin-top: .45rem; padding: .7rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 18%,var(--nw-border)); border-radius: var(--nw-radius); }
+.player-panel-full .player-form { gap: .55rem; }
+.player-panel-full .player-form .input { min-height: 44px; border-color: color-mix(in srgb,var(--nw-accent) 20%,var(--nw-border)); background: color-mix(in srgb,var(--nw-bg-sunken) 82%,transparent); }
+.player-panel-full .player-community-module { margin-top: .7rem; border-radius: var(--nw-radius-lg); }
+.player-panel-full .player-community-bar { margin: 0; border: 0; background: transparent; box-shadow: none; }
+
+.room-join-toast {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 70;
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  width: min(360px,calc(100vw - 2rem));
+  align-items: center;
+  gap: .75rem;
+  padding: .8rem;
+  border: 1px solid color-mix(in srgb,var(--nw-accent) 50%,var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 4px);
+  background: linear-gradient(140deg,color-mix(in srgb,var(--nw-accent) 13%,var(--nw-bg-raised)),color-mix(in srgb,var(--nw-bg-sunken) 94%,transparent));
+  box-shadow: 0 28px 80px rgba(0,0,0,.56), 0 0 30px color-mix(in srgb,var(--nw-accent) 15%,transparent), inset 0 1px color-mix(in srgb,white 7%,transparent);
+  backdrop-filter: blur(24px) saturate(135%);
+  animation: room-join-in .32s cubic-bezier(.2,.85,.25,1.2) both;
+}
+.room-join-toast-avatar { width: 46px; height: 46px; border: 2px solid color-mix(in srgb,var(--nw-accent) 72%,white 10%); border-radius: 50%; box-shadow: 0 0 18px color-mix(in srgb,var(--nw-accent) 28%,transparent); }
+.room-join-toast > span { display: grid; min-width: 0; gap: .18rem; }
+.room-join-toast strong,.room-join-toast small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-join-toast small { color: var(--nw-text-muted); }
+.room-join-toast button { display: grid; width: 32px; height: 32px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--nw-text-muted); cursor: pointer; }
+.room-join-toast button:hover { background: color-mix(in srgb,var(--nw-text) 8%,transparent); color: var(--nw-text); }
+@keyframes room-join-in { from { opacity: 0; transform: translateY(24px) scale(.96); } }
+
+@media (max-width: 700px) {
+  .browse-view-toolbar { align-items: stretch; flex-direction: column; }
+  .browse-refresh { align-self: flex-end; }
+  .browse-feature-hero { min-height: 390px; padding: 1.25rem; background-position: 58% center; }
+  .browse-feature-copy { width: 100%; }
+  .browse-feature-copy h1 { max-width: 11ch; font-size: clamp(2rem,12vw,3.6rem); }
+  .room-join-toast { right: 1rem; bottom: calc(78px + env(safe-area-inset-bottom)); }
+  .cinema-dock { display: none; }
+  .friend-activity-drawer { width: min(88vw, 360px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .browse-refresh svg,.room-join-toast { animation: none !important; }
+}

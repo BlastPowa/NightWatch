@@ -1,0 +1,253 @@
+/*
+ * Phase 36 visual layer.  Imported by the application shell after the legacy
+ * social/library styles so it intentionally changes presentation only.  The
+ * underlying friend, message, and Drive actions remain the existing typed,
+ * capability-gated flows.
+ */
+
+.social-page,
+.messages-page,
+.library-page {
+  width: min(100%, 1480px);
+  margin-inline: auto;
+  padding: clamp(1rem, 2.4vw, 2.25rem);
+}
+
+.social-page::before,
+.messages-page::before,
+.library-page::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: auto -12vw 0 auto;
+  width: min(56vw, 760px);
+  height: min(46vw, 600px);
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--nw-accent) 13%, transparent), transparent 68%);
+  filter: blur(24px);
+}
+
+.phase26-social-hero,
+.library-hero {
+  position: relative;
+  overflow: clip;
+  min-height: 164px;
+  padding: clamp(1.25rem, 3.5vw, 2.5rem);
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 30%, var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 4px);
+  background:
+    linear-gradient(105deg, color-mix(in srgb, var(--nw-bg-raised) 95%, transparent) 0%, color-mix(in srgb, var(--nw-bg-raised) 74%, transparent) 52%, color-mix(in srgb, var(--nw-accent) 13%, transparent) 100%),
+    var(--nw-bg-raised);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 11%, transparent), 0 24px 55px rgba(0, 0, 0, .18);
+}
+
+.phase26-social-hero::after,
+.library-hero::after {
+  content: '';
+  position: absolute;
+  right: -8%;
+  top: -70%;
+  width: 48%;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 36%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 24px color-mix(in srgb, var(--nw-accent) 5%, transparent), 0 0 0 72px color-mix(in srgb, var(--nw-accent) 3%, transparent);
+  pointer-events: none;
+}
+
+.phase26-social-hero > *,
+.library-hero > * { position: relative; z-index: 1; }
+
+.phase26-social-hero p,
+.library-hero p { max-width: 58ch; }
+
+.friend-summary {
+  min-width: 116px;
+  padding: .75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 35%, var(--nw-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--nw-bg-sunken) 72%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.friend-search {
+  width: min(100%, 680px);
+  min-height: 52px;
+  margin: 1.25rem auto 1.75rem;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 38%, var(--nw-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nw-bg-sunken) 85%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 9%, transparent), 0 8px 28px rgba(0, 0, 0, .12);
+}
+
+.friend-search:focus-within {
+  border-color: var(--nw-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--nw-accent) 16%, transparent), 0 8px 28px rgba(0, 0, 0, .16);
+}
+
+.social-sections { display: grid; gap: 1.1rem; }
+
+.social-section,
+.drive-workspace,
+.library-player-card {
+  overflow: clip;
+  border-color: color-mix(in srgb, var(--nw-accent) 21%, var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 2px);
+  background: color-mix(in srgb, var(--nw-bg-raised) 78%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 7%, transparent), 0 14px 38px rgba(0, 0, 0, .11);
+  backdrop-filter: blur(16px);
+}
+
+.social-section > header,
+.drive-workspace > header {
+  min-height: 62px;
+  padding-bottom: .9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--nw-border) 78%, transparent);
+}
+
+.social-section > header > span {
+  display: grid;
+  min-width: 34px;
+  min-height: 28px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 30%, var(--nw-border));
+  border-radius: 999px;
+  color: var(--nw-accent);
+  font-size: .72rem;
+  font-weight: 800;
+}
+
+.phase26-friend-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: .8rem;
+  padding-top: 1rem;
+}
+
+.phase26-person-card {
+  position: relative;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: .7rem;
+  min-height: 142px;
+  padding: .9rem;
+  border-color: color-mix(in srgb, var(--nw-border) 84%, transparent);
+  border-radius: 16px;
+  background: linear-gradient(145deg, color-mix(in srgb, white 4%, var(--nw-bg-sunken)), color-mix(in srgb, var(--nw-bg-sunken) 82%, transparent));
+}
+
+.phase26-person-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(125deg, color-mix(in srgb, white 8%, transparent), transparent 34%);
+}
+
+.phase26-person-card:hover,
+.phase26-person-card:focus-within {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--nw-accent) 46%, var(--nw-border));
+  box-shadow: 0 15px 32px rgba(0, 0, 0, .2), 0 0 24px color-mix(in srgb, var(--nw-accent) 9%, transparent);
+}
+
+.phase26-person-card .person-copy { z-index: 1; }
+.phase26-person-card .person-actions { z-index: 1; display: flex; gap: .45rem; }
+.phase26-person-card .person-actions .button { min-width: 0; }
+
+.messages-page {
+  display: grid;
+  grid-template-columns: minmax(248px, 320px) minmax(0, 1fr);
+  min-height: min(750px, calc(100dvh - 162px));
+  padding: clamp(.75rem, 1.5vw, 1.35rem);
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 23%, var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 4px);
+  background: color-mix(in srgb, var(--nw-bg-raised) 75%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent), 0 22px 50px rgba(0, 0, 0, .15);
+  backdrop-filter: blur(18px);
+}
+
+.messages-page .conversation-rail {
+  padding: .7rem;
+  border: 1px solid color-mix(in srgb, var(--nw-border) 84%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--nw-bg-sunken) 71%, transparent);
+}
+
+.conversation-item {
+  margin-block: .2rem;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  transition: background .18s var(--nw-ease), border-color .18s var(--nw-ease), transform .18s var(--nw-ease);
+}
+
+.conversation-item:hover,
+.conversation-item:focus-visible { border-color: color-mix(in srgb, var(--nw-accent) 28%, var(--nw-border)); background: color-mix(in srgb, var(--nw-accent) 9%, var(--nw-bg-raised)); }
+.conversation-item-active { background: linear-gradient(105deg, color-mix(in srgb, var(--nw-accent) 19%, var(--nw-bg-raised)), color-mix(in srgb, var(--nw-bg-raised) 88%, transparent)); }
+
+.message-stage {
+  margin-left: clamp(.75rem, 1.5vw, 1.35rem);
+  border: 1px solid color-mix(in srgb, var(--nw-border) 84%, transparent);
+  border-radius: 16px;
+  background: linear-gradient(150deg, color-mix(in srgb, white 3%, var(--nw-bg-raised)), color-mix(in srgb, var(--nw-bg-sunken) 65%, transparent));
+  overflow: hidden;
+}
+
+.message-stage-header { border-bottom-color: color-mix(in srgb, var(--nw-border) 78%, transparent); background: color-mix(in srgb, var(--nw-bg-raised) 74%, transparent); }
+.message-log { background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--nw-bg-sunken) 26%, transparent)); }
+
+.message-entry { border-radius: 15px; }
+.message-entry-own { border-color: color-mix(in srgb, var(--nw-accent) 33%, var(--nw-border)); background: color-mix(in srgb, var(--nw-accent) 11%, var(--nw-bg-raised)); }
+.message-composer { min-height: 58px; border-radius: 15px; background: color-mix(in srgb, var(--nw-bg-sunken) 89%, transparent); }
+.message-composer .button { min-height: 42px; border-radius: 11px; }
+
+.library-source-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.library-source-card { min-height: 320px; border-radius: calc(var(--nw-radius-lg) + 2px); background: linear-gradient(145deg, color-mix(in srgb, white 5%, var(--nw-bg-raised)), color-mix(in srgb, var(--nw-bg-sunken) 78%, transparent)); box-shadow: inset 0 1px 0 color-mix(in srgb, white 8%, transparent), 0 14px 34px rgba(0, 0, 0, .1); }
+.library-source-card:hover { border-color: color-mix(in srgb, var(--nw-accent) 47%, var(--nw-border)); transform: translateY(-3px); }
+.library-source-icon { box-shadow: 0 0 0 8px color-mix(in srgb, var(--nw-accent) 7%, transparent), 0 0 24px color-mix(in srgb, var(--nw-accent) 18%, transparent); }
+.drive-workspace { margin-top: 1.2rem; }
+.library-player-card { margin-top: 1.2rem; }
+.library-player-stage { overflow: hidden; border-radius: 14px; background: #050609; }
+.library-now-playing { padding: 1rem clamp(1rem, 2vw, 1.4rem); }
+
+@media (max-width: 980px) {
+  .messages-page { grid-template-columns: minmax(220px, 270px) minmax(0, 1fr); }
+  .messages-page .message-stage { margin-left: .75rem; }
+  .phase26-friend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .library-source-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .social-page,
+  .messages-page,
+  .library-page { padding: .8rem; }
+  .phase26-social-hero,
+  .library-hero { min-height: 0; }
+  .friend-summary { min-width: 88px; }
+  .messages-page { display: flex; min-height: calc(100dvh - 126px); flex-direction: column; gap: .75rem; }
+  .messages-page .conversation-rail { max-height: 42dvh; }
+  .messages-page .message-stage { min-height: 60dvh; margin-left: 0; }
+  .phase26-friend-grid { grid-template-columns: 1fr; }
+  .drive-workspace > header { display: grid; }
+  .drive-workspace-steps { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 460px) {
+  .phase26-social-hero,
+  .library-hero { display: grid; gap: .8rem; }
+  .phase26-social-hero h1,
+  .library-hero h1 { font-size: 2rem; }
+  .friend-search { margin-block: .9rem 1.1rem; }
+  .friend-summary { width: fit-content; }
+  .phase26-person-card .person-actions { flex-wrap: wrap; }
+  .phase26-person-card .person-actions .button { flex: 1 1 130px; }
+  .library-source-card { min-height: 0; }
+  .drive-workspace-actions .button { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phase26-person-card,
+  .library-source-card,
+  .conversation-item { transition: none; }
+  .phase26-person-card:hover,
+  .library-source-card:hover { transform: none; }
+}

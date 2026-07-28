@@ -307,11 +307,12 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
         <button type="button" className="category-scroll category-scroll-right" disabled={!categoryEdges.right} onClick={() => moveCategories(1)} aria-label="Scroll video categories right"><Icon name="chevron-right" /></button>
       </div>
 
-      <div
-        className="browse-view-tabs"
-        role="tablist"
-        aria-label="Browse views"
-        onKeyDown={(event) => {
+      <div className="browse-view-toolbar">
+        <div
+          className="browse-view-tabs"
+          role="tablist"
+          aria-label="Browse views"
+          onKeyDown={(event) => {
           if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
           const tabs = Array.from(
             event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
@@ -323,11 +324,18 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
           const next = tabs[(currentIndex + direction + tabs.length) % tabs.length];
           next?.focus();
           next?.click();
-        }}
-      >
-        <button type="button" role="tab" aria-selected={mode === 'trending' || mode === 'search'} className={mode === 'trending' || mode === 'search' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
-        {friendMediaPresence && <button type="button" role="tab" aria-selected={mode === 'friends'} className={mode === 'friends' ? 'browse-view-active' : ''} onClick={showFriends}>Friends watching</button>}
-        <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={showHistory}>Previously watched</button>
+          }}
+        >
+          <button type="button" role="tab" aria-selected={mode === 'trending' || mode === 'search'} className={mode === 'trending' || mode === 'search' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
+          {friendMediaPresence && <button type="button" role="tab" aria-selected={mode === 'friends'} className={mode === 'friends' ? 'browse-view-active' : ''} onClick={showFriends}>Friends watching</button>}
+          <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={showHistory}>Previously watched</button>
+        </div>
+        {(mode === 'trending' || mode === 'search') && (
+          <button type="button" className="browse-refresh" onClick={() => void retryCurrentView()} disabled={loading} aria-label="Refresh Discover videos">
+            <Icon name="refresh" size={16} />
+            <span>{loading ? 'Refreshing…' : 'Refresh'}</span>
+          </button>
+        )}
       </div>
 
       {loading && <BrowseLoading />}
@@ -339,8 +347,11 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
 
       {!loading && (mode === 'trending' || mode === 'search') && results.length > 0 && (
         <div className="browse-results">
+          {mode === 'trending' && category === '' && results.length > 1 && (
+            <BrowseFeatureCarousel items={results.slice(0, 6)} isHost={isHost} queuedId={queuedId} autoRotate={!settings.reduceMotion} onPlay={onPlayNow} onQueue={queue} />
+          )}
           {history.length > 0 && <VideoShelf title="Continue watching" eyebrow="Pick up together" items={history.slice(0, 8)} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
-          <VideoGrid title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={results} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
+          <VideoGrid title={mode === 'search' ? `Results for “${activeQuery}”` : category === '' ? 'Trending now' : CATEGORIES.find((item) => item.id === category)?.label ?? 'Discover'} eyebrow={mode === 'search' ? 'Search results' : 'Popular right now'} items={mode === 'trending' && category === '' && results.length > 1 ? results.slice(1) : results} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />
         </div>
       )}
 
@@ -351,6 +362,45 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
         </>
       )}
     </div>
+  );
+}
+
+function BrowseFeatureCarousel({ items, isHost, queuedId, autoRotate, onPlay, onQueue }: { items: readonly SearchResult[]; isHost: boolean; queuedId: string | null; autoRotate: boolean; onPlay(videoId: string, title: string): void; onQueue(result: SearchResult): void }): JSX.Element {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const result = items[activeIndex] ?? items[0];
+
+  useEffect(() => setActiveIndex(0), [items[0]?.videoId]);
+  useEffect(() => {
+    if (!autoRotate || paused || items.length < 2) return;
+    const timer = window.setInterval(() => setActiveIndex((current) => (current + 1) % items.length), 8_000);
+    return () => window.clearInterval(timer);
+  }, [autoRotate, items.length, paused]);
+
+  if (result === undefined) return <></>;
+  return (
+    <section className="browse-feature-hero" style={{ '--browse-feature-image': `url("${resolveExternalAssetUrl(result.thumbnailUrl)}")` } as CSSProperties} aria-roledescription="carousel" aria-label="Featured videos" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
+      <div className="browse-feature-copy">
+        <span className="eyebrow">Featured tonight · YouTube</span>
+        <h1 aria-live="polite">{result.title}</h1>
+        <div className="browse-feature-channel">
+          <ProfileAvatar src={resolveExternalAssetUrl(result.channelThumbnailUrl)} name={result.channelTitle} />
+          <span><strong>{result.channelTitle}</strong><small>{result.durationText === '' ? 'Official YouTube source' : `${result.durationText} · Official YouTube source`}</small></span>
+        </div>
+        <div className="browse-feature-actions">
+          <button type="button" className="button button-primary" disabled={!isHost} onClick={() => onPlay(result.videoId, result.title)}><Icon name="play-solid" size={16} />{isHost ? 'Play now' : 'Host controls playback'}</button>
+          <button type="button" className="button" onClick={() => onQueue(result)}><Icon name={queuedId === result.videoId ? 'check' : 'plus'} size={16} />{queuedId === result.videoId ? 'Added to queue' : 'Add to queue'}</button>
+        </div>
+      </div>
+      <div className="browse-feature-index" aria-hidden="true"><span>Featured</span><strong>{String(activeIndex + 1).padStart(2, '0')}</strong></div>
+      <div className="browse-feature-slides" aria-label="Choose featured video">
+        <button type="button" className="browse-feature-arrow" onClick={() => setActiveIndex((activeIndex - 1 + items.length) % items.length)} aria-label="Previous featured video"><Icon name="chevron-left" size={16} /></button>
+        <div className="browse-feature-dots">
+          {items.map((item, index) => <button key={item.videoId} type="button" className={index === activeIndex ? 'browse-feature-dot browse-feature-dot-active' : 'browse-feature-dot'} onClick={() => setActiveIndex(index)} aria-label={`Show featured video ${index + 1}: ${item.title}`} aria-current={index === activeIndex ? 'true' : undefined} />)}
+        </div>
+        <button type="button" className="browse-feature-arrow" onClick={() => setActiveIndex((activeIndex + 1) % items.length)} aria-label="Next featured video"><Icon name="chevron-right" size={16} /></button>
+      </div>
+    </section>
   );
 }
 

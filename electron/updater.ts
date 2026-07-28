@@ -14,7 +14,10 @@ const STARTUP_CHECK_DELAY_MS = 8000;
 export class UpdateManager {
   private initialized = false;
 
-  public constructor(private readonly getWindow: () => BrowserWindow | null) {}
+  public constructor(
+    private readonly getWindow: () => BrowserWindow | null,
+    private readonly prepareInstall: () => Promise<void> = async () => {},
+  ) {}
 
   public init(): void {
     if (!app.isPackaged || this.initialized) {
@@ -61,7 +64,9 @@ export class UpdateManager {
   public install(): void {
     if (app.isPackaged) {
       // Silent install, relaunch when done — no NSIS wizard.
-      autoUpdater.quitAndInstall(true, true);
+      void this.prepareInstall().finally(() => {
+        autoUpdater.quitAndInstall(true, true);
+      });
     }
   }
 

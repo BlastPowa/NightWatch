@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
@@ -95,5 +95,14 @@ describe('RoomScreen companion dock', () => {
 
     expect(screen.getByText('Official player stage')).toBe(stage);
     expect(container.querySelector('.room-view-mini')).toBeTruthy();
+  });
+
+  it('announces a newly joined member without announcing the initial roster', async () => {
+    const props = { room: ROOM, service: {} as RoomService, selfId: 'self', presentation: 'full' as const, meta: null, pendingVideo: null, onPendingHandled: vi.fn(), onMediaStateChange: vi.fn(), onReturnToRoom: vi.fn(), onLeave: vi.fn() };
+    const { rerender } = render(<RoomScreen {...props} />);
+    expect(screen.queryByText('has joined the room')).toBeNull();
+    rerender(<RoomScreen {...props} room={{ ...ROOM, members: [...ROOM.members, { id: 'friend', displayName: 'Luna', joinedAt: 2, isHost: false, streakDays: 0, avatarUrl: null }] }} />);
+    await waitFor(() => expect(screen.getByText('has joined the room')).toBeTruthy());
+    expect(screen.getByText('Luna')).toBeTruthy();
   });
 });

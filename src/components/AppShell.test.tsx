@@ -120,4 +120,11 @@ describe('AppShell', () => {
     );
     expect(screen.getByRole('button', { name: 'Library' })).toBeTruthy();
   });
+
+  it('provides working bottom-center quick navigation on Browse', async () => {
+    const user = userEvent.setup();
+    const { onNavigate } = renderShell();
+    await user.click(screen.getByRole('button', { name: 'Quick navigation: Friends' }));
+    expect(onNavigate).toHaveBeenCalledWith('friends');
+  });
 });
