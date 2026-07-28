@@ -6,6 +6,7 @@ import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { resolveExternalAssetUrl } from '@/lib/assets';
 import { getFriendMediaPresence, type FriendMediaPresence } from '@/lib/social/PresenceService';
 import { useSettings } from '@/hooks/useSettings';
+import { YouTubeThumbnail } from '@/components/YouTubeThumbnail';
 
 interface DiscoveryPanelProps {
   callerId: string;
@@ -131,7 +132,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
       title: entry.title,
       channelTitle: 'Watched with this room',
       channelThumbnailUrl: '',
-      thumbnailUrl: `https://i.ytimg.com/vi/${entry.videoId}/mqdefault.jpg`,
+      thumbnailUrl: `https://i.ytimg.com/vi/${entry.videoId}/hqdefault.jpg`,
       durationText: '',
     }));
     setHistory(nextHistory);
@@ -379,7 +380,8 @@ function BrowseFeatureCarousel({ items, isHost, queuedId, autoRotate, onPlay, on
 
   if (result === undefined) return <></>;
   return (
-    <section className="browse-feature-hero" style={{ '--browse-feature-image': `url("${resolveExternalAssetUrl(result.thumbnailUrl)}")` } as CSSProperties} aria-roledescription="carousel" aria-label="Featured videos" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
+    <section className="browse-feature-hero" aria-roledescription="carousel" aria-label="Featured videos" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} onFocusCapture={() => setPaused(true)} onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false); }}>
+      <YouTubeThumbnail videoId={result.videoId} suppliedUrl={result.thumbnailUrl} kind="hero" alt="" className="browse-feature-art" loading="eager" />
       <div className="browse-feature-copy">
         <span className="eyebrow">Featured tonight · YouTube</span>
         <h1 aria-live="polite">{result.title}</h1>
@@ -481,7 +483,7 @@ function MediaCard({ result, isHost, queued, previewAllowed, onPlay, onQueue, on
 
   return <li className={`media-card${previewing ? ' media-card-previewing' : ''}`} onPointerEnter={startPreview} onPointerLeave={stopPreview}>
     <div className="media-thumb">
-      <img src={resolveExternalAssetUrl(result.thumbnailUrl) ?? ''} alt="" loading="lazy" onError={onImageError} />
+      <YouTubeThumbnail videoId={result.videoId} suppliedUrl={result.thumbnailUrl} kind="card" alt="" onUnavailable={onImageError} />
       {previewing && (
         <iframe
           className="media-hover-preview"
