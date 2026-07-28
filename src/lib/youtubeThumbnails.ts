@@ -19,9 +19,13 @@ export function getYouTubeThumbnailCandidates(
   if (!YOUTUBE_VIDEO_ID.test(videoId)) return suppliedUrl === '' ? [] : [suppliedUrl];
 
   const base = `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}`;
+  // `hq720` is available for many modern uploads at 1280×720.  It is not
+  // guaranteed, hence the ordered fallback, but it prevents a 640px SD image
+  // from being stretched across the cinematic feature panel when maxres is
+  // absent.
   const variants = kind === 'hero'
-    ? ['maxresdefault.jpg', 'sddefault.jpg', 'hqdefault.jpg', 'mqdefault.jpg']
-    : ['maxresdefault.jpg', 'sddefault.jpg', 'hqdefault.jpg', 'mqdefault.jpg'];
+    ? ['maxresdefault.jpg', 'hq720.jpg', 'sddefault.jpg', 'hqdefault.jpg', 'mqdefault.jpg']
+    : ['maxresdefault.jpg', 'hq720.jpg', 'sddefault.jpg', 'hqdefault.jpg', 'mqdefault.jpg'];
 
   // Keep an API-provided non-standard thumbnail as a final escape hatch, but
   // do not request the same URL twice.
