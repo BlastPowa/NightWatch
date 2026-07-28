@@ -63,6 +63,13 @@ export const DIAGNOSTIC_FEATURES = [
   'room.media-publish',
   'room.media-read',
   'room.readiness',
+  // Phase 35 — opaque invite tokens. The token itself is never logged; only
+  // the fact that a mint/redeem/revoke happened and how it ended.
+  'room.invite-mint',
+  'room.invite-redeem',
+  'room.invite-revoke',
+  'discord.invite',
+  'discord.participants',
   'rtc.signal',
   'rtc.turn',
   'drive.connect',

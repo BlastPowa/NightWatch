@@ -21,6 +21,7 @@ import {
   type PresenceState,
   type WindowState,
 } from '@shared/ipc';
+import { parseInviteTokenLink } from '@shared/inviteToken';
 import { parseJoinLink } from '@shared/room';
 import { logger } from './logger';
 import { registerCaptureSupport } from './comms/captureSources';
@@ -107,9 +108,23 @@ function handleDeepLink(url: string | undefined): void {
     focusMainWindow();
     return;
   }
+  // Phase 35: opaque invite tokens. Checked before the legacy code link
+  // because the two paths are distinguishable by prefix and this is the one
+  // we want new shares to use.
+  const inviteToken = parseInviteTokenLink(url);
+  if (inviteToken !== null) {
+    // The token itself is a credential for one redemption — never log it.
+    logger.write('info', 'main', 'Invite token link received');
+    mainWindow?.webContents.send(IpcChannel.InviteLink, inviteToken);
+    focusMainWindow();
+    return;
+  }
+
   const joinCode = parseJoinLink(url);
   if (joinCode !== null) {
-    logger.write('info', 'main', `Invite link received for room ${joinCode}`);
+    // Phase 35 fix: this previously logged the room code, which is the room's
+    // access credential and is not allowed in the log file.
+    logger.write('info', 'main', 'Room invite link received');
     mainWindow?.webContents.send(IpcChannel.JoinLink, joinCode);
     focusMainWindow();
   }

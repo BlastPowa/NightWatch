@@ -93,6 +93,12 @@ export class RichPresenceManager {
         // Never expose the room code — it's the room's access credential.
         state: 'In a watch party',
         startTimestamp: this.sessionStartMs,
+        // Phase 35. `nightwatch` is the Rich Presence asset key uploaded in
+        // the Discord Developer Portal (Rich Presence → Art Assets). Discord
+        // silently drops an unknown key rather than erroring, so a mismatch
+        // shows the default app icon and breaks nothing.
+        largeImageKey: 'nightwatch',
+        largeImageText: 'NightWatch',
       });
     } catch {
       // Presence is cosmetic — never let it disturb the app.

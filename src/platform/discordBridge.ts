@@ -1,6 +1,10 @@
 import { DiscordSDK, patchUrlMappings } from '@discord/embedded-app-sdk';
 import { deriveRoomCode } from '@shared/room';
-import type { PlatformBridge } from '@/platform/PlatformBridge';
+import type {
+  PlatformBridge,
+  PlatformInviteOutcome,
+  PlatformParticipant,
+} from '@/platform/PlatformBridge';
 
 /**
  * Discord Activity implementation (ADR-008 / Phase 13).
@@ -120,5 +124,82 @@ export async function createDiscordBridge(clientId: string): Promise<PlatformBri
     media: null,
     // The Activity iframe cannot hold a refresh token safely. Desktop only.
     youtubeAccount: null,
+    listActivityParticipants: () => listParticipants(sdk),
+    inviteToActivity: () => openInvite(sdk),
   };
+}
+
+/**
+ * Phase 35 — who is in this Activity instance right now.
+ *
+ * This is deliberately NOT a friends list. Discord's `relationships.read`
+ * scope is whitelist-only and not available to us, so any "friends list"
+ * NightWatch showed would be a fiction. What Discord does expose is the set
+ * of participants in the running Activity, which is what the invite UI is
+ * built on.
+ *
+ * Returns an empty list rather than throwing: a social affordance that cannot
+ * load should disappear, not break the room.
+ */
+async function listParticipants(sdk: DiscordSDK): Promise<PlatformParticipant[]> {
+  try {
+    const response = await sdk.commands.getInstanceConnectedParticipants();
+    const participants = (response as { participants?: unknown }).participants;
+    if (!Array.isArray(participants)) {
+      return [];
+    }
+    return participants.flatMap((entry): PlatformParticipant[] => {
+      if (typeof entry !== 'object' || entry === null) {
+        return [];
+      }
+      const record = entry as Record<string, unknown>;
+      const id = record['id'];
+      if (typeof id !== 'string' || id.length === 0) {
+        return [];
+      }
+      const nickname = record['nickname'];
+      const globalName = record['global_name'];
+      const username = record['username'];
+      const name =
+        (typeof nickname === 'string' && nickname.length > 0 && nickname) ||
+        (typeof globalName === 'string' && globalName.length > 0 && globalName) ||
+        (typeof username === 'string' && username.length > 0 && username) ||
+        'Someone';
+      const avatar = record['avatar'];
+      return [
+        {
+          id,
+          name,
+          avatarUrl:
+            typeof avatar === 'string' && avatar.length > 0
+              ? `/discordcdn/avatars/${id}/${avatar}.png?size=64`
+              : null,
+        },
+      ];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Open Discord's own invite dialog. NightWatch never builds a Discord invite
+ * itself and never puts a room code in one — Discord owns the invite, and the
+ * Activity's channel already determines the room.
+ */
+async function openInvite(sdk: DiscordSDK): Promise<PlatformInviteOutcome> {
+  const commands = sdk.commands as {
+    openInviteDialog?: () => Promise<unknown>;
+  };
+  if (typeof commands.openInviteDialog !== 'function') {
+    return { ok: false, reason: 'not-supported' };
+  }
+  try {
+    await commands.openInviteDialog();
+    return { ok: true };
+  } catch {
+    // The user closing the dialog and the dialog failing are indistinguishable
+    // from here; treat both as "nothing happened", which is true either way.
+    return { ok: false, reason: 'declined' };
+  }
 }

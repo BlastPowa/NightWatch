@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Phase 35 — Discord social surface & opaque room invites (backend/platform)
+
+Authored on the Phase 34 branch at the owner's direction; **must be moved to
+its own branch off `main` before release.** See `PHASE_35_BACKEND_REPORT.md`.
+
+- Added opaque room invite tokens (migration `0029`). Sharing a room no longer
+  requires sharing its code: a token is 32 random hex characters, expires in
+  15 minutes by default, works once, can be revoked by its issuer, respects
+  blocks, and can only be minted by someone currently in the room. Redemption
+  answers identically for missing, spent, expired and revoked tokens so a
+  holder cannot probe which tokens exist. Migration applied and SQL test
+  passed against the live database.
+- Added `nightwatch://invite/<token>` deep-link routing through a dedicated
+  `invite:link` IPC channel, with the token shape validated in preload.
+- Fixed a log leak: the existing room-invite deep-link path wrote the room
+  code — the room's access credential — into the local log file.
+- Added Discord Activity participant listing and native invite-dialog support
+  as optional platform-bridge methods, so the surface simply does not render
+  on Electron or web. NightWatch does not and cannot list a user's Discord
+  friends: `relationships.read` is whitelist-only.
+- Set the Rich Presence `largeImageKey` to `nightwatch`.
+
 ### Phase 34 — production parity (backend/platform)
 
 - Added `runtime_capabilities_v2` (migration `0028`): one authenticated,
