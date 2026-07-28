@@ -1,10 +1,20 @@
 /* Phase 35: full-bleed discovery, player deck, startup-adjacent polish. */
 
+.app-view-settings .content {
+  /* Keep the shell fixed. The settings workspace, rather than the entire
+   * application page, owns the remaining block space and its own scroll. */
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .app-view-settings .settings-workspace {
   /* The application shell owns the viewport.  The workspace must not grow
    * past it or the final Appearance cards end up below an inaccessible page
    * scroll area on short Windows windows. */
-  height: 100% !important;
+  flex: 1 1 0;
+  height: auto !important;
   block-size: 100% !important;
   min-height: 0 !important;
   max-height: none !important;
