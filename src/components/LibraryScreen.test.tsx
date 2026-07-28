@@ -130,4 +130,21 @@ describe('LibraryScreen', () => {
     expect(screen.getByRole('button', { name: /authorize shared folder/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /upload video/i })).toBeTruthy();
   });
+
+  it('appends the next authorized Drive page instead of replacing visible entries', async () => {
+    const bridge = makeBridge();
+    bridge.getDriveConnection = vi.fn().mockResolvedValue({ connected: true, accountEmail: 'viewer@example.com', reason: null });
+    bridge.listDriveWorkspace = vi.fn()
+      .mockResolvedValueOnce({ ok: true, value: { folder: { id: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' }, entries: [{ id: 'B'.repeat(12), parentId: 'A'.repeat(12), name: 'First.mp4', kind: 'video', mimeType: 'video/mp4', size: 1024, modifiedAt: '2026-01-01T00:00:00Z', thumbnailUrl: null, canDownload: true }], nextPageToken: 'next-page' } })
+      .mockResolvedValueOnce({ ok: true, value: { folder: { id: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' }, entries: [{ id: 'C'.repeat(12), parentId: 'A'.repeat(12), name: 'Second.webm', kind: 'video', mimeType: 'video/webm', size: 2048, modifiedAt: '2026-01-01T00:00:00Z', thumbnailUrl: null, canDownload: true }], nextPageToken: null } });
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={driveCapabilities} />);
+
+    await user.click(await screen.findByRole('button', { name: /create shared folder/i }));
+    await screen.findByText('First.mp4');
+    await user.click(screen.getByRole('button', { name: /load more/i }));
+
+    expect(await screen.findByText('First.mp4')).toBeTruthy();
+    expect(await screen.findByText('Second.webm')).toBeTruthy();
+  });
 });

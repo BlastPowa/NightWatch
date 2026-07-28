@@ -202,7 +202,23 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
         setMessage(failureMessage(result.error));
         return;
       }
-      setWorkspacePage(result.value);
+      setWorkspacePage((current) => {
+        // Continuation tokens are only valid for this exact folder/query. Keep
+        // the already-rendered page and append the unique next rows instead of
+        // making a user lose the first fifty entries when they press Load more.
+        if (
+          options?.pageToken !== undefined &&
+          current !== null &&
+          current.folder.id === result.value.folder.id
+        ) {
+          const existing = new Set(current.entries.map((entry) => entry.id));
+          return {
+            ...result.value,
+            entries: [...current.entries, ...result.value.entries.filter((entry) => !existing.has(entry.id))],
+          };
+        }
+        return result.value;
+      });
       const root = {
         folderId: result.value.folder.id,
         name: result.value.folder.name,
