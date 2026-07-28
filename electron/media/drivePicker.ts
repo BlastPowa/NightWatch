@@ -26,6 +26,8 @@ export interface PickerConfig {
   accessToken: string;
   pickerApiKey: string;
   appId: string;
+  /** The isolated picker supports one explicit selection mode per window. */
+  selectionKind: 'file' | 'folder';
 }
 
 const PICKER_TIMEOUT_MS = 5 * 60 * 1000;
@@ -46,7 +48,7 @@ export interface PickerHost {
  * that smells like the page misbehaving — including a malformed file id, which
  * is treated as a forged payload, not as something to sanitize and keep.
  */
-export function pickDriveFileId(
+function pickDriveItemId(
   host: PickerHost,
   config: PickerConfig,
 ): Promise<MediaResult<string>> {
@@ -150,4 +152,20 @@ export function pickDriveFileId(
 
     void window.loadURL(host.pickerPageUrl);
   });
+}
+
+/** Explicit video selection through Google's Picker. */
+export function pickDriveFileId(
+  host: PickerHost,
+  config: Omit<PickerConfig, 'selectionKind'>,
+): Promise<MediaResult<string>> {
+  return pickDriveItemId(host, { ...config, selectionKind: 'file' });
+}
+
+/** Explicit folder selection through Google's Picker; no arbitrary id input. */
+export function pickDriveFolderId(
+  host: PickerHost,
+  config: Omit<PickerConfig, 'selectionKind'>,
+): Promise<MediaResult<string>> {
+  return pickDriveItemId(host, { ...config, selectionKind: 'folder' });
 }

@@ -33,7 +33,7 @@ import {
   streamDriveRange,
   type AccessTokenOutcome,
 } from './driveClient';
-import { pickDriveFileId, type PickerHost } from './drivePicker';
+import { pickDriveFileId, pickDriveFolderId, type PickerHost } from './drivePicker';
 import type { DriveTokenStore } from './tokenStore';
 
 export interface DriveManagerDeps {
@@ -217,6 +217,23 @@ export class DriveManager {
       },
       // Drive selections have no device-local file; the fileId is the handle.
       localHandle: metadata.value.fileId,
+    });
+  }
+
+  /**
+   * Explicitly select a folder through Google's Picker. The folder id is only
+   * a lookup key; DriveWorkspaceService re-fetches and validates it before it
+   * becomes reachable through the in-app library.
+   */
+  async pickWorkspaceFolder(host: PickerHost): Promise<MediaResult<string>> {
+    const token = await this.session.getAccessToken();
+    if (token.status !== 'ok') {
+      return authOutcomeToFailure(token);
+    }
+    return pickDriveFolderId(host, {
+      accessToken: token.accessToken,
+      pickerApiKey: this.deps.pickerApiKey,
+      appId: this.deps.appId,
     });
   }
 

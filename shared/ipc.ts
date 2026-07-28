@@ -18,6 +18,12 @@ import type {
   SelectedMedia,
   YouTubeAccountState,
 } from './mediaBridge';
+import type {
+  DriveListOptions,
+  DriveUploadProgress,
+  DriveWorkspaceFolder,
+  DriveWorkspacePage,
+} from './driveWorkspaceContracts';
 
 export const IpcChannel = {
   GetAppInfo: 'app:get-info',
@@ -52,6 +58,14 @@ export const IpcChannel = {
   MediaCancelDriveConnect: 'media:cancel-drive-connect',
   MediaEnsureDriveWorkspace: 'media:ensure-drive-workspace',
   MediaOpenDriveWorkspace: 'media:open-drive-workspace',
+  MediaListDriveWorkspace: 'media:list-drive-workspace',
+  MediaCreateDriveWorkspaceFolder: 'media:create-drive-workspace-folder',
+  /** Opens the isolated Picker in folder mode, then validates the selection. */
+  MediaAuthorizeDriveWorkspaceFolder: 'media:authorize-drive-workspace-folder',
+  /** Native file selection + main-process resumable upload. */
+  MediaUploadDriveWorkspaceFile: 'media:upload-drive-workspace-file',
+  MediaCancelDriveWorkspaceUpload: 'media:cancel-drive-workspace-upload',
+  MediaDriveWorkspaceUploadProgress: 'media:drive-workspace-upload-progress',
   MediaPickDriveFile: 'media:pick-drive-file',
   MediaDisconnectDrive: 'media:disconnect-drive',
   MediaCreateLease: 'media:create-lease',
@@ -210,6 +224,26 @@ export interface IpcInvokeContract {
     args: [];
     result: MediaResult<DriveWorkspaceInfo>;
   };
+  [IpcChannel.MediaListDriveWorkspace]: {
+    args: [DriveListOptions | undefined];
+    result: MediaResult<DriveWorkspacePage>;
+  };
+  [IpcChannel.MediaCreateDriveWorkspaceFolder]: {
+    args: [string, string | undefined];
+    result: MediaResult<DriveWorkspaceFolder>;
+  };
+  [IpcChannel.MediaAuthorizeDriveWorkspaceFolder]: {
+    args: [];
+    result: MediaResult<DriveWorkspaceFolder>;
+  };
+  [IpcChannel.MediaUploadDriveWorkspaceFile]: {
+    args: [string | undefined];
+    result: MediaResult<{ uploadId: string }>;
+  };
+  [IpcChannel.MediaCancelDriveWorkspaceUpload]: {
+    args: [string];
+    result: void;
+  };
   [IpcChannel.MediaPickDriveFile]: {
     args: [];
     result: MediaResult<SelectedMedia>;
@@ -307,6 +341,14 @@ export interface NightWatchMediaBridge {
   cancelDriveConnect(): Promise<void>;
   ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
+  listDriveWorkspace(options?: DriveListOptions): Promise<MediaResult<DriveWorkspacePage>>;
+  createDriveWorkspaceFolder(name: string, parentId?: string): Promise<MediaResult<DriveWorkspaceFolder>>;
+  /** Explicit Google Picker folder authorization; never accepts a free-form id. */
+  authorizeDriveWorkspaceFolder(): Promise<MediaResult<DriveWorkspaceFolder>>;
+  /** Opens a native file dialog and uploads through the main process. */
+  uploadDriveWorkspaceFile(parentId?: string): Promise<MediaResult<{ uploadId: string }>>;
+  cancelDriveWorkspaceUpload(uploadId: string): Promise<void>;
+  onDriveWorkspaceUploadProgress(callback: (progress: DriveUploadProgress) => void): () => void;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;

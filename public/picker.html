@@ -44,8 +44,13 @@
 
         gapi.load('picker', () => {
           try {
-            // Videos view, no upload surface, no multiselect.
-            const view = new google.picker.DocsView(google.picker.ViewId.DOCS_VIDEOS)
+            // One explicit selection mode per isolated window. Folder mode is
+            // used only to authorize a workspace through Picker; neither mode
+            // is a whole-Drive browser or exposes a raw path to NightWatch.
+            const viewId = config.selectionKind === 'folder'
+              ? google.picker.ViewId.FOLDERS
+              : google.picker.ViewId.DOCS_VIDEOS;
+            const view = new google.picker.DocsView(viewId)
               .setMode(google.picker.DocsViewMode.LIST);
             const picker = new google.picker.PickerBuilder()
               .setOAuthToken(config.accessToken)
