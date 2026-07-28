@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MediaCapabilities } from '@shared/media';
@@ -27,6 +27,12 @@ const capabilities: MediaCapabilities = {
   },
 };
 
+const driveCapabilities: MediaCapabilities = {
+  ...capabilities,
+  googleDrive: true,
+  reasons: { ...capabilities.reasons, googleDrive: 'available' },
+};
+
 function makeBridge(): MediaPlatformBridge {
   return {
     getCapabilities: vi.fn().mockResolvedValue(capabilities),
@@ -45,12 +51,12 @@ function makeBridge(): MediaPlatformBridge {
       },
     }),
     resolveLocalMatch: vi.fn(),
-    getDriveConnection: vi.fn(),
+    getDriveConnection: vi.fn().mockResolvedValue({ connected: false, accountEmail: null, reason: null }),
     connectDrive: vi.fn(),
     cancelDriveConnect: vi.fn().mockResolvedValue(undefined),
-    ensureDriveWorkspace: vi.fn(),
+    ensureDriveWorkspace: vi.fn().mockResolvedValue({ ok: true, value: { folderId: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' } }),
     openDriveWorkspace: vi.fn(),
-    listDriveWorkspace: vi.fn(),
+    listDriveWorkspace: vi.fn().mockResolvedValue({ ok: true, value: { folder: { id: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' }, entries: [{ id: 'B'.repeat(12), parentId: 'A'.repeat(12), name: 'Feature.mp4', kind: 'video', mimeType: 'video/mp4', size: 1024, modifiedAt: '2026-01-01T00:00:00Z', thumbnailUrl: null, canDownload: true }], nextPageToken: null } }),
     createDriveWorkspaceFolder: vi.fn(),
     authorizeDriveWorkspaceFolder: vi.fn(),
     uploadDriveWorkspaceFile: vi.fn(),
@@ -109,5 +115,19 @@ describe('LibraryScreen', () => {
     view.unmount();
 
     expect(bridge.releasePlaybackLease).toHaveBeenCalledWith('c'.repeat(32));
+  });
+
+  it('opens a restricted Drive workspace instead of offering a whole-Drive browser', async () => {
+    const bridge = makeBridge();
+    bridge.getDriveConnection = vi.fn().mockResolvedValue({ connected: true, accountEmail: 'viewer@example.com', reason: null });
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={driveCapabilities} />);
+
+    await user.click(await screen.findByRole('button', { name: /create shared folder/i }));
+
+    await waitFor(() => expect(bridge.listDriveWorkspace).toHaveBeenCalled());
+    expect(await screen.findByText('Feature.mp4')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /authorize shared folder/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /upload video/i })).toBeTruthy();
   });
 });

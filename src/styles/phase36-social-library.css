@@ -209,6 +209,47 @@
 .library-player-stage { overflow: hidden; border-radius: 14px; background: #050609; }
 .library-now-playing { padding: 1rem clamp(1rem, 2vw, 1.4rem); }
 
+.drive-browser {
+  display: grid;
+  gap: .75rem;
+  margin-top: 1.1rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 24%, var(--nw-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--nw-bg-sunken) 70%, transparent);
+}
+
+.drive-browser-toolbar,
+.drive-browser-actions,
+.drive-upload-progress {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  flex-wrap: wrap;
+}
+
+.drive-breadcrumbs { display: flex; min-width: 0; flex: 1 1 260px; gap: .25rem; overflow: auto hidden; white-space: nowrap; }
+.button-link { padding: .15rem .25rem; border: 0; background: none; color: var(--nw-text); font: inherit; cursor: pointer; }
+.button-link:hover, .button-link:focus-visible { color: var(--nw-accent); text-decoration: underline; }
+.drive-browser-search { display: flex; align-items: center; min-height: 38px; flex: 1 1 210px; gap: .45rem; padding-inline: .7rem; border: 1px solid var(--nw-border); border-radius: 10px; color: var(--nw-muted); background: color-mix(in srgb, var(--nw-bg-raised) 82%, transparent); }
+.drive-browser-search:focus-within { border-color: var(--nw-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nw-accent) 14%, transparent); }
+.drive-browser-search input { min-width: 0; width: 100%; border: 0 !important; outline: 0 !important; background: transparent; color: var(--nw-text); }
+.drive-browser-actions { padding-top: .7rem; border-top: 1px solid color-mix(in srgb, var(--nw-border) 70%, transparent); }
+.drive-upload-progress { grid-template-columns: minmax(150px, 1fr) minmax(100px, 2fr) auto; padding: .7rem .8rem; border-radius: 12px; background: color-mix(in srgb, var(--nw-accent) 8%, var(--nw-bg-raised)); }
+.drive-upload-progress > div { display: grid; gap: .1rem; }
+.drive-upload-progress span { color: var(--nw-muted); font-size: .78rem; }
+.drive-upload-progress progress { inline-size: 100%; accent-color: var(--nw-accent); }
+.drive-entry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: .65rem; }
+.drive-entry { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; align-items: center; gap: .65rem; min-height: 70px; padding: .55rem; border: 1px solid color-mix(in srgb, var(--nw-border) 86%, transparent); border-radius: 12px; background: color-mix(in srgb, var(--nw-bg-raised) 72%, transparent); color: inherit; text-align: left; cursor: pointer; transition: transform .18s var(--nw-ease), border-color .18s var(--nw-ease), box-shadow .18s var(--nw-ease); }
+.drive-entry:hover, .drive-entry:focus-visible { transform: translateY(-2px); border-color: color-mix(in srgb, var(--nw-accent) 48%, var(--nw-border)); box-shadow: 0 10px 25px color-mix(in srgb, black 20%, transparent); outline: none; }
+.drive-entry-art { display: grid; overflow: hidden; width: 52px; height: 42px; place-items: center; border-radius: 9px; color: var(--nw-accent); background: color-mix(in srgb, var(--nw-accent) 11%, var(--nw-bg-sunken)); }
+.drive-entry-art img { width: 100%; height: 100%; object-fit: cover; }
+.drive-entry-copy { display: grid; min-width: 0; gap: .2rem; }
+.drive-entry-copy strong, .drive-entry-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drive-entry-copy small { color: var(--nw-muted); font-size: .76rem; }
+.drive-browser-empty { grid-column: 1 / -1; margin: 0; padding: 1.2rem; border: 1px dashed var(--nw-border); border-radius: 12px; color: var(--nw-muted); text-align: center; }
+.drive-load-more { justify-self: center; }
+
 @media (max-width: 980px) {
   .messages-page { grid-template-columns: minmax(220px, 270px) minmax(0, 1fr); }
   .messages-page .message-stage { margin-left: .75rem; }
@@ -229,6 +270,7 @@
   .phase26-friend-grid { grid-template-columns: 1fr; }
   .drive-workspace > header { display: grid; }
   .drive-workspace-steps { grid-template-columns: 1fr; }
+  .drive-upload-progress { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 460px) {
