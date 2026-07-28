@@ -9,6 +9,8 @@ import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { MovieWatchPanel } from '@/components/MovieWatchPanel';
+import type { MediaPlatformBridge } from '@shared/mediaBridge';
 import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInviteToken } from '@/lib/room/InviteTokenService';
 import { getRoomPeople, type PublicPerson } from '@/lib/people/PeopleService';
 import { sendFriendRequest } from '@/lib/social/FriendService';
@@ -24,6 +26,8 @@ interface RoomScreenProps {
   pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue'; positionSeconds?: number } | null;
   onPendingHandled(): void;
   onMediaStateChange(hasVideo: boolean): void;
+  mediaBridge?: MediaPlatformBridge | null;
+  htmlMediaAvailable?: boolean;
   onReturnToRoom(): void;
   onLeave(): void;
 }
@@ -53,6 +57,8 @@ export function RoomScreen({
   pendingVideo,
   onPendingHandled,
   onMediaStateChange,
+  mediaBridge = null,
+  htmlMediaAvailable = false,
   onReturnToRoom,
   onLeave,
 }: RoomScreenProps): JSX.Element {
@@ -60,6 +66,7 @@ export function RoomScreen({
   const [dockTab, setDockTab] = useState<'queue' | 'chat' | 'people' | 'moments' | 'discovery'>('queue');
   const [miniCollapsed, setMiniCollapsed] = useState(false);
   const [miniPosition, setMiniPosition] = useState<{ left: number; top: number } | null>(null);
+  const [watchMode, setWatchMode] = useState<'youtube' | 'movie'>('youtube');
   const roomViewRef = useRef<HTMLElement | null>(null);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
@@ -374,7 +381,11 @@ export function RoomScreen({
             <div><span className="eyebrow">Now watching</span><h1>{meta?.name ?? 'Your watch party'}</h1></div>
             <span className={`watch-role${selfIsHost ? ' watch-role-host' : ''}`}>{selfIsHost ? 'Host controls' : 'Watching in sync'}</span>
           </div>
-          <PlayerPanel
+          <div className="watch-mode-tabs" role="tablist" aria-label="Watch source">
+            <button type="button" role="tab" aria-selected={watchMode === 'youtube'} className={watchMode === 'youtube' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('youtube')}><Icon name="play" size={16} />YouTube Watch</button>
+            {mediaBridge !== null && htmlMediaAvailable && <button type="button" role="tab" aria-selected={watchMode === 'movie'} className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('movie')}><Icon name="film" size={16} />Movie Watch</button>}
+          </div>
+          {watchMode === 'youtube' && <PlayerPanel
             service={service}
             isHost={selfIsHost}
             roomCode={room.code}
@@ -389,7 +400,19 @@ export function RoomScreen({
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;
             }}
-          />
+          />}
+          {mediaBridge !== null && <MovieWatchPanel
+            roomCode={room.code}
+            service={service}
+            selfId={selfId}
+            hostId={room.hostId}
+            isHost={selfIsHost}
+            bridge={mediaBridge}
+            htmlMediaAvailable={htmlMediaAvailable}
+            active={watchMode === 'movie'}
+            onModeChange={setWatchMode}
+            onHasMediaChange={() => onMediaStateChange(false)}
+          />}
 
         </div>
 

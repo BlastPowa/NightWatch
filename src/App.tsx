@@ -545,6 +545,8 @@ export function App(): JSX.Element {
             pendingVideo={pendingVideo}
             onPendingHandled={() => setPendingVideo(null)}
             onMediaStateChange={setRoomHasVideo}
+            mediaBridge={mediaBridge}
+            htmlMediaAvailable={mediaCapabilities?.htmlMedia === true}
             onReturnToRoom={() => setView('main')}
             onLeave={handleLeaveRoom}
           />

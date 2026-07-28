@@ -8,7 +8,8 @@ export type IconName =
   | 'music' | 'gaming' | 'live' | 'film' | 'entertainment' | 'comedy'
   | 'sports' | 'news' | 'education' | 'technology' | 'travel' | 'tools'
   | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right'
-  | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users' | 'maximize' | 'refresh';
+  | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users' | 'maximize' | 'refresh'
+  | 'pause' | 'sound';
 
 interface IconProps {
   name: IconName;
@@ -76,5 +77,7 @@ function glyph(name: IconName): JSX.Element {
     case 'lock': return <><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></>;
     case 'maximize': return <><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" /><path d="m3 8 5-5M21 8l-5-5M3 16l5 5M21 16l-5 5" /></>;
     case 'refresh': return <><path d="M20 7v5h-5" /><path d="M18.1 15a7 7 0 1 1-.4-6.5L20 12" /></>;
+    case 'pause': return <><rect x="7" y="5" width="3" height="14" rx="1" /><rect x="14" y="5" width="3" height="14" rx="1" /></>;
+    case 'sound': return <><path d="M5 10v4h3l4 4V6l-4 4H5Z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11" /></>;
   }
 }

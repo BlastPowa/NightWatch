@@ -176,6 +176,58 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
   object-position: center 35%;
 }
 
+/* Movie Watch uses a local HTML media element. These controls belong only to
+ * authorized local/Drive files; the official YouTube iframe remains wholly
+ * untouched in the YouTube Watch tab. */
+.watch-mode-tabs { display: inline-flex; gap: .35rem; margin: -.15rem 0 .85rem; padding: .25rem; border: 1px solid var(--nw-border); border-radius: 999px; background: color-mix(in srgb,var(--nw-bg-sunken) 78%,transparent); }
+.watch-mode-tab { display: inline-flex; min-height: 34px; align-items: center; gap: .4rem; padding: .35rem .72rem; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--nw-text-muted); cursor: pointer; font-size: .75rem; font-weight: 750; }
+.watch-mode-tab:hover { color: var(--nw-text); background: color-mix(in srgb,var(--nw-text) 6%,transparent); }
+.watch-mode-tab-active { border-color: color-mix(in srgb,var(--nw-accent) 48%,var(--nw-border)); background: color-mix(in srgb,var(--nw-accent) 16%,var(--nw-bg-raised)); color: var(--nw-text); box-shadow: 0 0 18px color-mix(in srgb,var(--nw-accent) 13%,transparent); }
+.movie-watch-panel { display: grid; gap: 1rem; min-height: 420px; padding: clamp(1rem,2vw,1.5rem); border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border)); border-radius: calc(var(--nw-radius-lg) + 3px); background: linear-gradient(135deg,color-mix(in srgb,var(--nw-accent) 8%,var(--nw-bg-raised)),var(--nw-bg-raised)); box-shadow: inset 0 1px color-mix(in srgb,white 5%,transparent),0 18px 42px rgba(0,0,0,.22); }
+.movie-watch-panel-hidden { display: none; }
+.movie-watch-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.movie-watch-header h2 { margin: .2rem 0; font-size: clamp(1.35rem,2.5vw,2rem); letter-spacing: -.04em; }
+.movie-watch-header p { max-width: 60ch; margin: 0; color: var(--nw-text-muted); font-size: .78rem; line-height: 1.55; }
+.movie-watch-source { display: inline-flex; align-items: center; gap: .4rem; padding: .42rem .62rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border)); border-radius: 999px; color: var(--nw-accent); font-size: .68rem; white-space: nowrap; }
+.movie-watch-picker,.movie-watch-state { display: grid; min-height: 280px; place-items: center; align-content: center; gap: .7rem; padding: 1.5rem; border: 1px dashed color-mix(in srgb,var(--nw-accent) 36%,var(--nw-border)); border-radius: var(--nw-radius-lg); background: color-mix(in srgb,var(--nw-bg-sunken) 55%,transparent); color: var(--nw-text-muted); text-align: center; }
+.movie-watch-picker svg,.movie-watch-state > svg { color: var(--nw-accent); filter: drop-shadow(0 0 14px color-mix(in srgb,var(--nw-accent) 44%,transparent)); }
+.movie-watch-picker h3,.movie-watch-state strong { margin: 0; color: var(--nw-text); }
+.movie-watch-picker p,.movie-watch-state p { max-width: 48ch; margin: 0; font-size: .8rem; line-height: 1.55; }
+.movie-watch-picker-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .55rem; }
+.movie-player-shell { display: grid; overflow: hidden; border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border)); border-radius: var(--nw-radius-lg); background: #020307; }
+.movie-player-stage { min-height: 300px; background: #020307; }
+.movie-player-stage video { display: block; width: 100%; max-height: min(64vh,720px); aspect-ratio: 16 / 9; margin: auto; background: #000; }
+.movie-player-controls { display: grid; grid-template-columns: auto auto minmax(130px,1fr) minmax(92px,.35fr) auto; align-items: center; gap: .55rem; padding: .7rem; border-top: 1px solid var(--nw-border); background: linear-gradient(180deg,color-mix(in srgb,var(--nw-bg-raised) 88%,transparent),var(--nw-bg-sunken)); }
+.movie-control { display: grid; min-width: 34px; min-height: 34px; place-items: center; padding: .3rem .45rem; border: 1px solid var(--nw-border); border-radius: 10px; background: color-mix(in srgb,var(--nw-bg-raised) 90%,transparent); color: var(--nw-text); cursor: pointer; font-size: .7rem; font-weight: 800; }
+.movie-control:hover:not(:disabled) { border-color: var(--nw-accent); color: var(--nw-accent); }
+.movie-control:disabled { cursor: not-allowed; opacity: .42; }
+.movie-control-primary { border-color: color-mix(in srgb,var(--nw-accent) 58%,var(--nw-border)); background: var(--nw-accent); color: var(--nw-accent-contrast); box-shadow: 0 0 18px color-mix(in srgb,var(--nw-accent) 35%,transparent); }
+.movie-control-primary:hover:not(:disabled) { color: var(--nw-accent-contrast); background: color-mix(in srgb,var(--nw-accent) 86%,white); }
+.movie-progress { display: grid; grid-template-columns:minmax(0,1fr) auto; align-items: center; gap: .5rem; min-width: 0; }
+.movie-progress input,.movie-volume input { width: 100%; accent-color: var(--nw-accent); }
+.movie-progress small { color: var(--nw-text-muted); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.movie-volume { display: flex; align-items: center; gap: .35rem; min-width: 0; color: var(--nw-text-muted); }
+.movie-host-note { display: flex; align-items: center; gap: .4rem; margin: -.3rem 0 0; color: var(--nw-text-muted); font-size: .72rem; }
+.movie-readiness { display: grid; gap: .65rem; padding: .75rem; border: 1px solid var(--nw-border); border-radius: var(--nw-radius); background: color-mix(in srgb,var(--nw-bg-sunken) 58%,transparent); }
+.movie-readiness h3 { margin: .15rem 0 0; font-size: .92rem; }
+.movie-readiness-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+.movie-readiness-list > p { margin: 0; color: var(--nw-text-muted); font-size: .74rem; }
+.movie-readiness-person { display: inline-grid; grid-template-columns: 24px auto; grid-template-rows: auto auto; column-gap: .35rem; align-items: center; min-width: 120px; padding: .38rem; border: 1px solid var(--nw-border); border-radius: 9px; background: color-mix(in srgb,var(--nw-bg-raised) 80%,transparent); }
+.movie-readiness-person .profile-avatar { grid-row: 1 / 3; width: 24px; height: 24px; }
+.movie-readiness-person small { overflow: hidden; color: var(--nw-text); font-size: .68rem; text-overflow: ellipsis; white-space: nowrap; }
+.movie-readiness-person i { color: var(--nw-text-muted); font-size: .58rem; font-style: normal; text-transform: capitalize; }
+.movie-readiness-ready { border-color: color-mix(in srgb,#45d496 48%,var(--nw-border)); }
+.movie-readiness-ready i { color: #65dba4; }
+.movie-readiness-hint,.movie-watch-message { margin: 0; color: var(--nw-text-muted); font-size: .74rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+@media (max-width: 620px) {
+  .movie-watch-header { display: grid; }
+  .movie-player-controls { grid-template-columns: auto auto minmax(0,1fr) auto; }
+  .movie-volume { display: none; }
+  .movie-player-stage { min-height: auto; }
+}
+
 /* The activity panel is a real drawer: opening it should layer beside the
  * page, not consume a flex column and squeeze Browse into a tiny canvas. */
 .friend-activity-drawer {
