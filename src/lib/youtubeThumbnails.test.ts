@@ -13,10 +13,11 @@ describe('getYouTubeThumbnailCandidates', () => {
     ]);
   });
 
-  it('uses hq images for cards without downloading hero-sized artwork', () => {
+  it('uses the highest available image chain for Browse cards', () => {
     expect(getYouTubeThumbnailCandidates(videoId, '', 'card')).toEqual([
-      `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
       `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
+      `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
       `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
     ]);
   });
