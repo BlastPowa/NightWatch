@@ -314,6 +314,23 @@ and is not one.
 Owner action: re-run `supabase/tests/phase34_social_contract_test.sql` only.
 No migration change; `0028` is unaffected and already verified.
 
+### Phase 35 backend is now IMPLEMENTED — read `PHASE_35_BACKEND_REPORT.md`
+
+Update 2026-07-25. At the owner's direction the Phase 35 backend was built in
+this worktree while Phase 34 was still checked out. **Those files must be
+moved to a branch cut from `origin/main` after the Phase 34 PR merges and must
+not ship in the Phase 34 PR.** `PHASE_35_BACKEND_REPORT.md` has the full file
+list, the Codex task list, and the two execution-found defects.
+
+Owner-verified: migration `0029_room_invite_tokens.sql` applied and
+`supabase/tests/phase35_invite_token_test.sql` passed. All TypeScript in that
+phase is written but uncompiled and untested.
+
+Note that the Phase 35 planning line below ("splash/main-window readiness
+stages") is a *different* item from the owner's Discord social request, which
+also landed under the Phase 35 label. The readiness-stage work is still
+unstarted.
+
 ### New owner requests captured as Phase 35
 
 Discord friends list, invite-from-Activity, share-room, and the Discord app

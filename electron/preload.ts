@@ -168,6 +168,20 @@ const bridge: NightWatchBridge = {
       ipcRenderer.removeListener(IpcChannel.JoinLink, listener);
     };
   },
+  onInviteLink: (callback: (token: string) => void): (() => void) => {
+    // Same shape check as the server's column constraint. A payload that is
+    // not exactly 32 lowercase hex characters is dropped rather than passed
+    // to the renderer to be sent somewhere.
+    const listener = (_event: unknown, token: string): void => {
+      if (typeof token === 'string' && /^[0-9a-f]{32}$/.test(token)) {
+        callback(token);
+      }
+    };
+    ipcRenderer.on(IpcChannel.InviteLink, listener);
+    return () => {
+      ipcRenderer.removeListener(IpcChannel.InviteLink, listener);
+    };
+  },
   notify: (request: NotificationRequest): Promise<void> => {
     return ipcRenderer.invoke(IpcChannel.NotifyShow, request) as Promise<void>;
   },

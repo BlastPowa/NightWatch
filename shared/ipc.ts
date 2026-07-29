@@ -30,6 +30,13 @@ export const IpcChannel = {
   AuthCallback: 'auth:callback',
   /** Push channel (main → renderer) carrying a room code from an invite. */
   JoinLink: 'join:link',
+  /**
+   * Push channel (main → renderer) carrying an OPAQUE invite token from a
+   * `nightwatch://invite/<token>` link (Phase 35). Separate from JoinLink on
+   * purpose: a token still has to be redeemed server-side, and main must
+   * never learn the room code it maps to.
+   */
+  InviteLink: 'invite:link',
   /** Desktop notification (e.g. a scheduled watch party is starting). */
   NotifyShow: 'notify:show',
   LogWrite: 'log:write',
@@ -266,6 +273,11 @@ export interface NightWatchBridge {
   onAuthCallback(callback: (url: string) => void): () => void;
   /** Subscribe to invite deep links (nightwatch://join/CODE). */
   onJoinLink(callback: (code: string) => void): () => void;
+  /**
+   * Subscribe to opaque invite deep links (nightwatch://invite/<32 hex>).
+   * The renderer redeems the token; only the server can turn it into a room.
+   */
+  onInviteLink(callback: (token: string) => void): () => void;
   /** Raise a desktop notification (fire-and-forget). */
   notify(request: NotificationRequest): Promise<void>;
   /** Append a line to the local log file (fire-and-forget). */

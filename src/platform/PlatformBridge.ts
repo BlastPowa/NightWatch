@@ -12,6 +12,19 @@ import {
   type YouTubeAccountBridge,
 } from '@shared/mediaBridge';
 
+/** Phase 35 — someone currently inside this Discord Activity instance. */
+export interface PlatformParticipant {
+  /** Discord user id. Opaque to NightWatch; used only to offer an action. */
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+}
+
+/** Result of asking the platform to open its own invite surface. */
+export type PlatformInviteOutcome =
+  | { ok: true }
+  | { ok: false; reason: 'not-supported' | 'declined' | 'failed' };
+
 /**
  * Platform adapter (§9, ADR-008): the renderer core talks to the host
  * platform (Electron, Discord Activity, plain browser) only through this
@@ -35,6 +48,19 @@ export interface PlatformBridge {
    * when the user goes through the normal name prompt / guest flow.
    */
   getPlatformIdentity(): Promise<{ name: string; avatarUrl: string | null } | null>;
+  /**
+   * Phase 35 — Discord Activity social surface. OPTIONAL on purpose: these
+   * are absent on Electron and web, so the UI keys off `undefined` and hides
+   * the controls rather than rendering something that cannot work.
+   *
+   * Note on scope: Discord exposes no generally available API for a user's
+   * friend list (`relationships.read` is whitelist-only), so the honest
+   * surface is "who is in this Activity right now" plus Discord's own invite
+   * dialog. NightWatch never constructs a Discord invite itself.
+   */
+  listActivityParticipants?(): Promise<PlatformParticipant[]>;
+  /** Open Discord's native invite dialog for this Activity/voice channel. */
+  inviteToActivity?(): Promise<PlatformInviteOutcome>;
   /**
    * Raise a desktop notification (Phase 19: a scheduled watch party is about
    * to start). Best-effort — platforms without a notification surface no-op.
