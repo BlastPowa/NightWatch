@@ -39,7 +39,7 @@ import {
 } from '@/lib/identity';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
 import { canonicalDiscordAvatarUrl } from '@/lib/assets';
-import type { MediaCapabilities } from '@shared/media';
+import type { HtmlMediaSourceDescriptor, MediaCapabilities } from '@shared/media';
 import { diagnoseSocial, type SocialDiagnosis } from '@/lib/social/SocialDiagnosticsService';
 import { Icon } from '@/components/Icon';
 import { redeemRoomInvite } from '@/lib/room/InviteTokenService';
@@ -51,6 +51,11 @@ interface PendingVideo {
   title: string;
   mode: 'play' | 'queue';
   positionSeconds?: number;
+}
+
+/** A private descriptor selected in Library; leases and paths never enter app state. */
+interface PendingMovie {
+  source: HtmlMediaSourceDescriptor;
 }
 
 export function App(): JSX.Element {
@@ -157,6 +162,7 @@ export function App(): JSX.Element {
   const [roomMeta, setRoomMeta] = useState<RoomMeta | null>(null);
   const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<PendingVideo | null>(null);
+  const [pendingMovie, setPendingMovie] = useState<PendingMovie | null>(null);
 
   // Invite deep links (nightwatch://join/CODE, Phase 16).
   useEffect(() => {
@@ -372,10 +378,10 @@ export function App(): JSX.Element {
       // Inside a Discord Activity the room is fixed to the voice channel.
       setRoomCode(fixedRoomCode ?? code);
       // Land on the grid — unless a Discover pick is waiting to play.
-      setView(pendingVideo?.mode === 'play' ? 'main' : 'discover');
+      setView(pendingVideo?.mode === 'play' || pendingMovie !== null ? 'main' : 'discover');
       achievementTracker.record('room-joined');
     },
-    [fixedRoomCode, pendingVideo],
+    [fixedRoomCode, pendingMovie, pendingVideo],
   );
 
   const handleLeaveRoom = useCallback((): void => {
@@ -450,6 +456,17 @@ export function App(): JSX.Element {
     [roomCode, identity],
   );
 
+  /** Library hands over only a descriptor. The RoomScreen host obtains a fresh
+   * device-local lease before the descriptor is synchronized to participants. */
+  const handleLibraryWatch = useCallback((source: HtmlMediaSourceDescriptor): void => {
+    setPendingMovie({ source });
+    if (roomCode === null && identity !== null) {
+      setRoomCode(generateRoomCode());
+      achievementTracker.record('room-joined');
+    }
+    setView('main');
+  }, [identity, roomCode]);
+
   const displayName = authUser?.name ?? identity?.displayName ?? 'Guest';
   const displayAvatarUrl = canonicalDiscordAvatarUrl(authUser?.avatarUrl ?? platformAvatarUrl);
 
@@ -521,7 +538,11 @@ export function App(): JSX.Element {
         {view === 'messages' && (socialCapabilities.messaging && authUser !== null ? <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} /> : <SocialUnavailable feature="Messages and group chats" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
         {view === 'creator' && (socialCapabilities.creatorClubs ? <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} /> : <SocialUnavailable feature="Creator Club" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
         {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (
-          <LibraryScreen bridge={mediaBridge} capabilities={mediaCapabilities} />
+          <LibraryScreen
+            bridge={mediaBridge}
+            capabilities={mediaCapabilities}
+            onWatchInRoom={!inRoom || selfIsHost ? handleLibraryWatch : undefined}
+          />
         )}
         {view === 'faq' && <FaqScreen />}
         {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
@@ -547,6 +568,8 @@ export function App(): JSX.Element {
             onMediaStateChange={setRoomHasVideo}
             mediaBridge={mediaBridge}
             htmlMediaAvailable={mediaCapabilities?.htmlMedia === true}
+            pendingMovieSource={pendingMovie?.source ?? null}
+            onPendingMovieHandled={() => setPendingMovie(null)}
             onReturnToRoom={() => setView('main')}
             onLeave={handleLeaveRoom}
           />

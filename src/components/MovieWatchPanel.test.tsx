@@ -85,4 +85,21 @@ describe('MovieWatchPanel', () => {
     expect(roomService.send).toHaveBeenCalledWith('media:v1:load', expect.objectContaining({ source, revision: 1 }));
     expect(mediaBridge.createPlaybackLease).toHaveBeenCalledWith(source);
   });
+
+  it('accepts a Library descriptor without receiving a handle or playback URL', async () => {
+    const roomService = service();
+    const mediaBridge = bridge();
+    const onPendingSourceHandled = vi.fn();
+    mocks.getCapabilities.mockResolvedValue({ fileWatch: true });
+    mocks.getDescriptor.mockResolvedValue({ ok: true, value: null });
+    mocks.publish.mockResolvedValue({ ok: true, value: { revision: 2, controllerId: 'host', mode: { modeVersion: 2, mode: 'file-watch', descriptor: source, readiness: 'all-ready' }, updatedAt: null } });
+    mocks.report.mockResolvedValue({ ok: true, value: undefined });
+    mocks.roster.mockResolvedValue({ ok: true, value: [] });
+
+    render(<MovieWatchPanel roomCode="ABC234" service={roomService} selfId="host" hostId="host" isHost bridge={mediaBridge} htmlMediaAvailable active pendingSource={source} onPendingSourceHandled={onPendingSourceHandled} onModeChange={vi.fn()} onHasMediaChange={vi.fn()} />);
+
+    await waitFor(() => expect(mocks.publish).toHaveBeenCalledWith('ABC234', null, expect.objectContaining({ descriptor: source })));
+    expect(onPendingSourceHandled).toHaveBeenCalledOnce();
+    expect(mediaBridge.createPlaybackLease).toHaveBeenCalledWith(source);
+  });
 });

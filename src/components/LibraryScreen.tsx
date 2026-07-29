@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { MediaCapabilities, MediaFailure } from '@shared/media';
+import type { HtmlMediaSourceDescriptor, MediaCapabilities, MediaFailure } from '@shared/media';
 import type {
   DriveConnectionState,
   DriveWorkspaceInfo,
@@ -14,6 +14,8 @@ import { Icon } from '@/components/Icon';
 interface LibraryScreenProps {
   bridge: MediaPlatformBridge;
   capabilities: MediaCapabilities;
+  /** A private descriptor can be handed to the host's Movie Watch flow. */
+  onWatchInRoom?(source: HtmlMediaSourceDescriptor): void;
 }
 
 interface ActiveMedia {
@@ -21,7 +23,7 @@ interface ActiveMedia {
   lease: PlaybackLease;
 }
 
-export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX.Element {
+export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibraryScreenProps): JSX.Element {
   const [active, setActive] = useState<ActiveMedia | null>(null);
   const activeRef = useRef<ActiveMedia | null>(null);
   const [drive, setDrive] = useState<DriveConnectionState | null>(null);
@@ -505,6 +507,11 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
                 <p>{formatBytes(active.selected.descriptor.size)} · {active.selected.descriptor.mimeType}</p>
               </div>
               <span className="library-private-badge"><Icon name="lock" size={14} />Private preview</span>
+              {onWatchInRoom !== undefined && (
+                <button type="button" className="button button-primary" onClick={() => onWatchInRoom(active.selected.descriptor)}>
+                  <Icon name="play" size={15} />Watch in room
+                </button>
+              )}
             </div>
           </>
         )}

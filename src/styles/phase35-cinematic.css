@@ -197,12 +197,14 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 .movie-player-shell { display: grid; overflow: hidden; border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border)); border-radius: var(--nw-radius-lg); background: #020307; }
 .movie-player-stage { min-height: 300px; background: #020307; }
 .movie-player-stage video { display: block; width: 100%; max-height: min(64vh,720px); aspect-ratio: 16 / 9; margin: auto; background: #000; }
-.movie-player-controls { display: grid; grid-template-columns: auto auto minmax(130px,1fr) minmax(92px,.35fr) auto; align-items: center; gap: .55rem; padding: .7rem; border-top: 1px solid var(--nw-border); background: linear-gradient(180deg,color-mix(in srgb,var(--nw-bg-raised) 88%,transparent),var(--nw-bg-sunken)); }
+.movie-player-controls { display: grid; grid-template-columns: auto auto minmax(130px,1fr) minmax(92px,.35fr) auto auto; align-items: center; gap: .55rem; padding: .7rem; border-top: 1px solid var(--nw-border); background: linear-gradient(180deg,color-mix(in srgb,var(--nw-bg-raised) 88%,transparent),var(--nw-bg-sunken)); }
 .movie-control { display: grid; min-width: 34px; min-height: 34px; place-items: center; padding: .3rem .45rem; border: 1px solid var(--nw-border); border-radius: 10px; background: color-mix(in srgb,var(--nw-bg-raised) 90%,transparent); color: var(--nw-text); cursor: pointer; font-size: .7rem; font-weight: 800; }
 .movie-control:hover:not(:disabled) { border-color: var(--nw-accent); color: var(--nw-accent); }
 .movie-control:disabled { cursor: not-allowed; opacity: .42; }
 .movie-control-primary { border-color: color-mix(in srgb,var(--nw-accent) 58%,var(--nw-border)); background: var(--nw-accent); color: var(--nw-accent-contrast); box-shadow: 0 0 18px color-mix(in srgb,var(--nw-accent) 35%,transparent); }
 .movie-control-primary:hover:not(:disabled) { color: var(--nw-accent-contrast); background: color-mix(in srgb,var(--nw-accent) 86%,white); }
+.movie-subtitle-control { position: relative; overflow: hidden; letter-spacing: -.04em; }
+.movie-subtitle-control input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .movie-progress { display: grid; grid-template-columns:minmax(0,1fr) auto; align-items: center; gap: .5rem; min-width: 0; }
 .movie-progress input,.movie-volume input { width: 100%; accent-color: var(--nw-accent); }
 .movie-progress small { color: var(--nw-text-muted); font-size: .68rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -223,7 +225,7 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 
 @media (max-width: 620px) {
   .movie-watch-header { display: grid; }
-  .movie-player-controls { grid-template-columns: auto auto minmax(0,1fr) auto; }
+  .movie-player-controls { grid-template-columns: auto auto minmax(0,1fr) auto auto; }
   .movie-volume { display: none; }
   .movie-player-stage { min-height: auto; }
 }

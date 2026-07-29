@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { deriveSourceKey } from '@shared/media';
 import {
@@ -33,6 +33,9 @@ interface MovieWatchPanelProps {
   bridge: MediaPlatformBridge | null;
   htmlMediaAvailable: boolean;
   active: boolean;
+  /** A Library selection stays descriptor-only until this host publishes it. */
+  pendingSource?: HtmlMediaSourceDescriptor | null;
+  onPendingSourceHandled?(): void;
   onModeChange(mode: 'youtube' | 'movie'): void;
   onHasMediaChange(hasMedia: boolean): void;
 }
@@ -52,6 +55,8 @@ export function MovieWatchPanel({
   bridge,
   htmlMediaAvailable,
   active,
+  pendingSource = null,
+  onPendingSourceHandled,
   onModeChange,
   onHasMediaChange,
 }: MovieWatchPanelProps): JSX.Element {
@@ -63,6 +68,7 @@ export function MovieWatchPanel({
   const [readiness, setReadiness] = useState<FileWatchReadinessEntry[]>([]);
   const activeLeaseRef = useRef<ActiveLease | null>(null);
   const latestSnapshotRef = useRef<PlaybackSnapshotV1 | null>(null);
+  const handledPendingSourceRef = useRef<string | null>(null);
 
   const source = snapshot?.mode.mode === 'file-watch' ? snapshot.mode.descriptor : null;
   const sessionId = snapshot === null ? null : roomMediaSessionId(snapshot.revision);
@@ -195,6 +201,70 @@ export function MovieWatchPanel({
 
   useEffect(() => () => { void releaseLease(); }, [releaseLease]);
 
+  const publishHostSource = useCallback(async (descriptor: HtmlMediaSourceDescriptor): Promise<void> => {
+    if (bridge === null || !canHostFileWatch) return;
+    const nextLease = await bridge.createPlaybackLease(descriptor);
+    if (!nextLease.ok) {
+      setMessage(nextLease.error.message);
+      return;
+    }
+    const mode = {
+      modeVersion: 2 as const,
+      mode: 'file-watch' as const,
+      descriptor,
+      readiness: 'all-ready' as const,
+    };
+    const published = await publishRoomMediaDescriptor(roomCode, snapshot?.revision ?? null, mode);
+    if (!published.ok) {
+      await bridge.releasePlaybackLease(nextLease.value.leaseId);
+      setMessage(published.message);
+      return;
+    }
+    await releaseLease();
+    const next = { descriptor, lease: nextLease.value };
+    activeLeaseRef.current = next;
+    setLease(next);
+    setSnapshot(published.value);
+    latestSnapshotRef.current = null;
+    onModeChange('movie');
+    onHasMediaChange(false);
+    await reportMediaReadiness(roomCode, published.value.revision, 'ready');
+    await service.send('media:v1:load', {
+      sessionId: roomMediaSessionId(published.value.revision),
+      source: descriptor,
+      revision: published.value.revision,
+    });
+  }, [bridge, canHostFileWatch, onHasMediaChange, onModeChange, releaseLease, roomCode, service, snapshot?.revision]);
+
+  useEffect(() => {
+    if (pendingSource === null) {
+      handledPendingSourceRef.current = null;
+      return;
+    }
+    if (!canHostFileWatch || bridge === null) return;
+    const pendingKey = deriveSourceKey(pendingSource);
+    const complete = (): void => {
+      if (handledPendingSourceRef.current === pendingKey) return;
+      handledPendingSourceRef.current = pendingKey;
+      onPendingSourceHandled?.();
+    };
+    if (source !== null && deriveSourceKey(source) === pendingKey) {
+      complete();
+      return;
+    }
+    // A Library hand-off should take the host to Movie Watch even if its
+    // device cannot immediately turn the descriptor into a playback lease.
+    // That keeps the actionable error and source picker visible instead of
+    // silently returning them to the YouTube panel.
+    onModeChange('movie');
+    setBusy(pendingSource.kind === 'drive' ? 'drive' : 'local');
+    setMessage(null);
+    void publishHostSource(pendingSource).finally(() => {
+      setBusy(null);
+      complete();
+    });
+  }, [bridge, canHostFileWatch, onModeChange, onPendingSourceHandled, pendingSource, publishHostSource, source]);
+
   async function chooseSource(kind: 'local' | 'drive'): Promise<void> {
     if (bridge === null || !canHostFileWatch) return;
     setBusy(kind);
@@ -205,37 +275,7 @@ export function MovieWatchPanel({
         if (picked.error.code !== 'cancelled') setMessage(picked.error.message);
         return;
       }
-      const nextLease = await bridge.createPlaybackLease(picked.value.descriptor);
-      if (!nextLease.ok) {
-        setMessage(nextLease.error.message);
-        return;
-      }
-      const mode = {
-        modeVersion: 2 as const,
-        mode: 'file-watch' as const,
-        descriptor: picked.value.descriptor,
-        readiness: 'all-ready' as const,
-      };
-      const published = await publishRoomMediaDescriptor(roomCode, snapshot?.revision ?? null, mode);
-      if (!published.ok) {
-        await bridge.releasePlaybackLease(nextLease.value.leaseId);
-        setMessage(published.message);
-        return;
-      }
-      await releaseLease();
-      const next = { descriptor: picked.value.descriptor, lease: nextLease.value };
-      activeLeaseRef.current = next;
-      setLease(next);
-      setSnapshot(published.value);
-      latestSnapshotRef.current = null;
-      onModeChange('movie');
-      onHasMediaChange(false);
-      await reportMediaReadiness(roomCode, published.value.revision, 'ready');
-      await service.send('media:v1:load', {
-        sessionId: roomMediaSessionId(published.value.revision),
-        source: picked.value.descriptor,
-        revision: published.value.revision,
-      });
+      await publishHostSource(picked.value.descriptor);
     } finally {
       setBusy(null);
     }
@@ -310,6 +350,13 @@ function FileWatchPlayer({ lease, service, isHost, hostId, sessionId, sourceKey,
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(100);
+  const [subtitleUrl, setSubtitleUrl] = useState<string | null>(null);
+  const [subtitleName, setSubtitleName] = useState<string | null>(null);
+  const subtitleUrlRef = useRef<string | null>(null);
+
+  useEffect(() => () => {
+    if (subtitleUrlRef.current !== null) URL.revokeObjectURL(subtitleUrlRef.current);
+  }, []);
 
   const sendSnapshot = useCallback((type: 'media:v1:play' | 'media:v1:pause' | 'media:v1:seek' | 'media:v1:snapshot') => {
     if (!isHost || applyingRef.current) return;
@@ -376,15 +423,31 @@ function FileWatchPlayer({ lease, service, isHost, hostId, sessionId, sourceKey,
     await videoRef.current?.requestFullscreen?.().catch(() => {});
   }
 
+  function chooseSubtitles(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.currentTarget.files?.[0] ?? null;
+    event.currentTarget.value = '';
+    if (file === null) return;
+    const isVtt = file.type === 'text/vtt' || file.name.toLowerCase().endsWith('.vtt');
+    if (!isVtt) return;
+    if (subtitleUrlRef.current !== null) URL.revokeObjectURL(subtitleUrlRef.current);
+    const next = URL.createObjectURL(file);
+    subtitleUrlRef.current = next;
+    setSubtitleUrl(next);
+    setSubtitleName(file.name);
+  }
+
   return <div className="movie-player-shell">
     <div className="movie-player-stage">
-      <video ref={videoRef} src={lease.lease.playbackUrl} preload="metadata" onLoadedMetadata={(event) => { setDuration(event.currentTarget.duration || 0); setLocalVolume(volume); }} onPlay={() => { setPaused(false); sendSnapshot('media:v1:play'); }} onPause={() => { setPaused(true); sendSnapshot('media:v1:pause'); }} onSeeked={() => sendSnapshot('media:v1:seek')} onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)} onEnded={() => { setPaused(true); sendSnapshot('media:v1:pause'); }} />
+      <video ref={videoRef} src={lease.lease.playbackUrl} preload="metadata" onLoadedMetadata={(event) => { setDuration(event.currentTarget.duration || 0); setLocalVolume(volume); }} onPlay={() => { setPaused(false); sendSnapshot('media:v1:play'); }} onPause={() => { setPaused(true); sendSnapshot('media:v1:pause'); }} onSeeked={() => sendSnapshot('media:v1:seek')} onTimeUpdate={(event) => setPosition(event.currentTarget.currentTime)} onEnded={() => { setPaused(true); sendSnapshot('media:v1:pause'); }}>
+        {subtitleUrl !== null && <track key={subtitleUrl} kind="subtitles" src={subtitleUrl} srcLang="en" label={subtitleName ?? 'Local subtitles'} default />}
+      </video>
     </div>
     <div className="movie-player-controls" aria-label="Movie Watch player controls">
       <button type="button" className="movie-control movie-control-primary" disabled={!isHost} onClick={togglePlayback} aria-label={paused ? 'Play movie' : 'Pause movie'}><Icon name={paused ? 'play' : 'pause'} size={17} /></button>
       <button type="button" className="movie-control" disabled={!isHost} onClick={() => seek(-10)} aria-label="Seek back 10 seconds">−10</button>
       <label className="movie-progress"><span className="sr-only">Movie progress</span><input type="range" min={0} max={duration || 1} step={.1} value={Math.min(position, duration || 0)} disabled={!isHost} onChange={(event) => { if (videoRef.current !== null) videoRef.current.currentTime = Number(event.target.value); setPosition(Number(event.target.value)); }} onMouseUp={() => sendSnapshot('media:v1:seek')} /><small>{formatTime(position)} / {formatTime(duration)}</small></label>
       <label className="movie-volume"><Icon name="sound" size={15} /><span className="sr-only">Local volume</span><input type="range" min={0} max={100} value={volume} onChange={(event) => setLocalVolume(Number(event.target.value))} /></label>
+      <label className="movie-control movie-subtitle-control" title="Load a private WebVTT subtitle file"><span aria-hidden="true">CC</span><span className="sr-only">Load local WebVTT subtitles</span><input type="file" accept="text/vtt,.vtt" onChange={chooseSubtitles} /></label>
       <button type="button" className="movie-control" onClick={() => void fullscreen()} aria-label="Fullscreen"><Icon name="maximize" size={17} /></button>
     </div>
     {!isHost && <p className="movie-host-note"><Icon name="users" size={14} />The host controls playback; volume and fullscreen stay local.</p>}

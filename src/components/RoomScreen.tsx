@@ -11,6 +11,7 @@ import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MovieWatchPanel } from '@/components/MovieWatchPanel';
 import type { MediaPlatformBridge } from '@shared/mediaBridge';
+import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInviteToken } from '@/lib/room/InviteTokenService';
 import { getRoomPeople, type PublicPerson } from '@/lib/people/PeopleService';
 import { sendFriendRequest } from '@/lib/social/FriendService';
@@ -28,6 +29,8 @@ interface RoomScreenProps {
   onMediaStateChange(hasVideo: boolean): void;
   mediaBridge?: MediaPlatformBridge | null;
   htmlMediaAvailable?: boolean;
+  pendingMovieSource?: HtmlMediaSourceDescriptor | null;
+  onPendingMovieHandled?(): void;
   onReturnToRoom(): void;
   onLeave(): void;
 }
@@ -59,6 +62,8 @@ export function RoomScreen({
   onMediaStateChange,
   mediaBridge = null,
   htmlMediaAvailable = false,
+  pendingMovieSource = null,
+  onPendingMovieHandled,
   onReturnToRoom,
   onLeave,
 }: RoomScreenProps): JSX.Element {
@@ -410,6 +415,8 @@ export function RoomScreen({
             bridge={mediaBridge}
             htmlMediaAvailable={htmlMediaAvailable}
             active={watchMode === 'movie'}
+            pendingSource={pendingMovieSource}
+            onPendingSourceHandled={onPendingMovieHandled}
             onModeChange={setWatchMode}
             onHasMediaChange={() => onMediaStateChange(false)}
           />}

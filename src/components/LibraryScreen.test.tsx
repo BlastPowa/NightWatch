@@ -105,6 +105,25 @@ describe('LibraryScreen', () => {
     expect(document.querySelector('video')?.getAttribute('src')).toMatch(/^nightwatch-media:/);
   });
 
+  it('hands only the selected descriptor to Movie Watch when the host chooses Watch in room', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
+    const bridge = makeBridge();
+    const onWatchInRoom = vi.fn();
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={capabilities} onWatchInRoom={onWatchInRoom} />);
+
+    await user.click(screen.getByRole('button', { name: /choose local video/i }));
+    await user.click(await screen.findByRole('button', { name: /watch in room/i }));
+
+    expect(onWatchInRoom).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'local',
+      title: 'Moonlight Cut',
+      fingerprint: `sha256:${'a'.repeat(64)}`,
+    }));
+    expect(onWatchInRoom.mock.calls[0]?.[0]).not.toHaveProperty('localHandle');
+    expect(onWatchInRoom.mock.calls[0]?.[0]).not.toHaveProperty('playbackUrl');
+  });
+
   it('releases the active lease when leaving the Library', async () => {
     vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
     const bridge = makeBridge();
