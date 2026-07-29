@@ -14,6 +14,12 @@ import type {
   MediaResult,
   MediaSourceDescriptor,
 } from './media';
+import type {
+  DriveListOptions,
+  DriveUploadProgress,
+  DriveWorkspaceFolder,
+  DriveWorkspacePage,
+} from './driveWorkspaceContracts';
 
 /**
  * A file the user explicitly chose, as seen by the renderer.
@@ -113,6 +119,14 @@ export interface MediaPlatformBridge {
   cancelDriveConnect(): Promise<void>;
   ensureDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
   openDriveWorkspace(): Promise<MediaResult<DriveWorkspaceInfo>>;
+  listDriveWorkspace(options?: DriveListOptions): Promise<MediaResult<DriveWorkspacePage>>;
+  createDriveWorkspaceFolder(name: string, parentId?: string): Promise<MediaResult<DriveWorkspaceFolder>>;
+  /** Explicit Picker selection; no caller-supplied folder id is accepted. */
+  authorizeDriveWorkspaceFolder(): Promise<MediaResult<DriveWorkspaceFolder>>;
+  /** Native file picker plus resumable upload; the renderer never gets a path. */
+  uploadDriveWorkspaceFile(parentId?: string): Promise<MediaResult<{ uploadId: string }>>;
+  cancelDriveWorkspaceUpload(uploadId: string): Promise<void>;
+  onDriveWorkspaceUploadProgress(callback: (progress: DriveUploadProgress) => void): () => void;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;

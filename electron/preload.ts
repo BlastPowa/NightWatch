@@ -26,6 +26,12 @@ import type {
   SelectedMedia,
   YouTubeAccountState,
 } from '@shared/mediaBridge';
+import type {
+  DriveListOptions,
+  DriveUploadProgress,
+  DriveWorkspaceFolder,
+  DriveWorkspacePage,
+} from '@shared/driveWorkspaceContracts';
 
 /**
  * Phase 29 media surface.
@@ -77,6 +83,26 @@ const media: NightWatchMediaBridge = {
   },
   openDriveWorkspace: (): Promise<MediaResult<DriveWorkspaceInfo>> => {
     return ipcRenderer.invoke(IpcChannel.MediaOpenDriveWorkspace) as Promise<MediaResult<DriveWorkspaceInfo>>;
+  },
+  listDriveWorkspace: (options?: DriveListOptions): Promise<MediaResult<DriveWorkspacePage>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaListDriveWorkspace, options) as Promise<MediaResult<DriveWorkspacePage>>;
+  },
+  createDriveWorkspaceFolder: (name: string, parentId?: string): Promise<MediaResult<DriveWorkspaceFolder>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaCreateDriveWorkspaceFolder, name, parentId) as Promise<MediaResult<DriveWorkspaceFolder>>;
+  },
+  authorizeDriveWorkspaceFolder: (): Promise<MediaResult<DriveWorkspaceFolder>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaAuthorizeDriveWorkspaceFolder) as Promise<MediaResult<DriveWorkspaceFolder>>;
+  },
+  uploadDriveWorkspaceFile: (parentId?: string): Promise<MediaResult<{ uploadId: string }>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaUploadDriveWorkspaceFile, parentId) as Promise<MediaResult<{ uploadId: string }>>;
+  },
+  cancelDriveWorkspaceUpload: (uploadId: string): Promise<void> => {
+    return ipcRenderer.invoke(IpcChannel.MediaCancelDriveWorkspaceUpload, uploadId) as Promise<void>;
+  },
+  onDriveWorkspaceUploadProgress: (callback: (progress: DriveUploadProgress) => void): (() => void) => {
+    const listener = (_event: unknown, progress: DriveUploadProgress): void => callback(progress);
+    ipcRenderer.on(IpcChannel.MediaDriveWorkspaceUploadProgress, listener);
+    return () => ipcRenderer.removeListener(IpcChannel.MediaDriveWorkspaceUploadProgress, listener);
   },
   pickDriveFile: (): Promise<MediaResult<SelectedMedia>> => {
     return ipcRenderer.invoke(IpcChannel.MediaPickDriveFile) as Promise<MediaResult<SelectedMedia>>;

@@ -27,6 +27,7 @@ import { logger } from './logger';
 import { registerCaptureSupport } from './comms/captureSources';
 import { maxMediaSizeBytes } from './media/capabilities';
 import { DriveWorkspace } from './media/driveWorkspace';
+import { DriveWorkspaceService } from './media/driveWorkspaceService';
 import { mediaFail } from '@shared/media';
 import { drivePublicConfiguration } from './media/buildConfig';
 import { DriveManager } from './media/driveManager';
@@ -525,6 +526,18 @@ if (!hasSingleInstanceLock) {
             fetchImpl: (url, init) => net.fetch(url as string, init as RequestInit),
           })
         : null;
+    const driveWorkspaceService =
+      driveWorkspace !== null
+        ? new DriveWorkspaceService({
+            getAccessToken: () => driveManager!.getWorkspaceToken(),
+            ensureWorkspace: () => driveWorkspace.ensureWorkspace(),
+            fetchImpl: (url, init) => net.fetch(url as string, init as RequestInit),
+            maxSizeBytes: maxMediaSizeBytes,
+            emitProgress: (progress) => {
+              mainWindow?.webContents.send(IpcChannel.MediaDriveWorkspaceUploadProgress, progress);
+            },
+          })
+        : null;
 
     ipcMain.handle(IpcChannel.MediaEnsureDriveWorkspace, async (event) => {
       if (event.sender !== mainWindow?.webContents) {
@@ -548,6 +561,54 @@ if (!hasSingleInstanceLock) {
         await shell.openExternal(workspace.value.webViewLink);
       }
       return workspace;
+    });
+
+    ipcMain.handle(IpcChannel.MediaListDriveWorkspace, async (event, options: unknown) => {
+      if (event.sender !== mainWindow?.webContents || driveWorkspaceService === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      return driveWorkspaceService.list(options);
+    });
+
+    ipcMain.handle(IpcChannel.MediaCreateDriveWorkspaceFolder, async (event, name: unknown, parentId: unknown) => {
+      if (event.sender !== mainWindow?.webContents || driveWorkspaceService === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      return driveWorkspaceService.createFolder(name, parentId);
+    });
+
+    ipcMain.handle(IpcChannel.MediaAuthorizeDriveWorkspaceFolder, async (event) => {
+      if (event.sender !== mainWindow?.webContents || driveWorkspaceService === null || driveManager === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      const picked = await driveManager.pickWorkspaceFolder({
+        pickerPageUrl: DEV_SERVER_URL ? `${DEV_SERVER_URL}picker.html` : 'app://nightwatch/picker.html',
+        parent: mainWindow,
+      });
+      return picked.ok ? driveWorkspaceService.authorizePickerFolder(picked.value) : picked;
+    });
+
+    ipcMain.handle(IpcChannel.MediaUploadDriveWorkspaceFile, async (event, parentId: unknown) => {
+      if (event.sender !== mainWindow?.webContents || driveWorkspaceService === null) {
+        return mediaFail('capability-disabled', 'Google Drive is not configured.');
+      }
+      const selection = await dialog.showOpenDialog(mainWindow!, {
+        title: 'Upload a video to NightWatch Shared',
+        properties: ['openFile'],
+        filters: [{ name: 'Video files', extensions: ['mp4', 'webm'] }],
+      });
+      if (selection.canceled || selection.filePaths.length !== 1) {
+        return mediaFail('cancelled', 'No video was selected.');
+      }
+      const [filePath] = selection.filePaths;
+      if (filePath === undefined) {
+        return mediaFail('cancelled', 'No video was selected.');
+      }
+      return driveWorkspaceService.uploadFile(filePath, parentId);
+    });
+
+    ipcMain.handle(IpcChannel.MediaCancelDriveWorkspaceUpload, (event, uploadId: unknown): void => {
+      if (event.sender === mainWindow?.webContents) driveWorkspaceService?.cancelUpload(uploadId);
     });
 
     ipcMain.handle(IpcChannel.MediaGetDriveFileAccess, async (event, fileId: unknown) => {
