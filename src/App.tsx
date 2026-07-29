@@ -18,7 +18,7 @@ import { RoomScreen } from '@/components/RoomScreen';
 import { SettingsPanel, type SettingsSection } from '@/components/SettingsPanel';
 import { UserCard } from '@/components/UserCard';
 import { achievementTracker, type AchievementDef } from '@/lib/engagement/AchievementTracker';
-import { recordParticipation } from '@/lib/social/FriendService';
+import { acceptFriendRequest, declineFriendRequest, getSocialGraph, recordParticipation, type Relation } from '@/lib/social/FriendService';
 import {
   heartbeatLiveRoomSocial,
   leaveLiveRoomSocial,
@@ -39,15 +39,23 @@ import {
 } from '@/lib/identity';
 import { getPlatformBridge } from '@/platform/PlatformBridge';
 import { canonicalDiscordAvatarUrl } from '@/lib/assets';
-import type { MediaCapabilities } from '@shared/media';
+import type { HtmlMediaSourceDescriptor, MediaCapabilities } from '@shared/media';
 import { diagnoseSocial, type SocialDiagnosis } from '@/lib/social/SocialDiagnosticsService';
 import { Icon } from '@/components/Icon';
+import { redeemRoomInvite } from '@/lib/room/InviteTokenService';
+import { subscribeToFriendRequests } from '@/lib/social/SocialRealtime';
+import { ProfileAvatar } from '@/components/ProfileAvatar';
 
 interface PendingVideo {
   videoId: string;
   title: string;
   mode: 'play' | 'queue';
   positionSeconds?: number;
+}
+
+/** A private descriptor selected in Library; leases and paths never enter app state. */
+interface PendingMovie {
+  source: HtmlMediaSourceDescriptor;
 }
 
 export function App(): JSX.Element {
@@ -73,11 +81,30 @@ export function App(): JSX.Element {
   const [mediaCapabilities, setMediaCapabilities] = useState<MediaCapabilities | null>(null);
   const [settingsInitialSection, setSettingsInitialSection] = useState<SettingsSection>('appearance');
   const [socialDiagnosis, setSocialDiagnosis] = useState<SocialDiagnosis>({ status: 'account-required' });
+  const [friendRequestNotice, setFriendRequestNotice] = useState<Relation | null>(null);
+  const [friendRequestBusy, setFriendRequestBusy] = useState(false);
 
   useEffect(() => {
     return achievementTracker.onUnlock((achievement) => {
       setUnlockToast(achievement);
       window.setTimeout(() => setUnlockToast(null), 4000);
+    });
+  }, []);
+
+  // Opaque desktop invite links are redeemed only by the authenticated
+  // backend. The link never exposes a room code to Discord, the OS, or a
+  // third-party share surface.
+  useEffect(() => {
+    if (typeof window.nightwatch === 'undefined') return;
+    return window.nightwatch.onInviteLink((token) => {
+      void redeemRoomInvite(token).then((result) => {
+        if (!result.ok) {
+          setBridgeError(result.message);
+          return;
+        }
+        setPendingJoinCode(result.value);
+        setView('discover');
+      });
     });
   }, []);
 
@@ -135,6 +162,7 @@ export function App(): JSX.Element {
   const [roomMeta, setRoomMeta] = useState<RoomMeta | null>(null);
   const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<PendingVideo | null>(null);
+  const [pendingMovie, setPendingMovie] = useState<PendingMovie | null>(null);
 
   // Invite deep links (nightwatch://join/CODE, Phase 16).
   useEffect(() => {
@@ -166,6 +194,32 @@ export function App(): JSX.Element {
     }
     void setProfileAvatar(canonicalDiscordAvatarUrl(authUser.avatarUrl));
   }, [authUser]);
+
+  useEffect(() => {
+    if (authUser === null) {
+      setFriendRequestNotice(null);
+      return;
+    }
+    let active = true;
+    const refresh = (): void => {
+      void getSocialGraph().then((result) => {
+        if (!active || result.status !== 'ok') return;
+        setFriendRequestNotice(result.data.incoming[0] ?? null);
+      });
+    };
+    refresh();
+    return subscribeToFriendRequests(refresh);
+  }, [authUser]);
+
+  const respondToFriendNotice = useCallback(async (accept: boolean): Promise<void> => {
+    if (friendRequestNotice === null) return;
+    setFriendRequestBusy(true);
+    const result = await (accept
+      ? acceptFriendRequest(friendRequestNotice.userId)
+      : declineFriendRequest(friendRequestNotice.userId));
+    setFriendRequestBusy(false);
+    if (result.status === 'ok') setFriendRequestNotice(null);
+  }, [friendRequestNotice]);
 
   // Carry the Discord avatar into room presence (Phase 24). Non-persisted and
   // validated inside withAvatarUrl, so signing out (authUser → null) clears it.
@@ -324,10 +378,10 @@ export function App(): JSX.Element {
       // Inside a Discord Activity the room is fixed to the voice channel.
       setRoomCode(fixedRoomCode ?? code);
       // Land on the grid — unless a Discover pick is waiting to play.
-      setView(pendingVideo?.mode === 'play' ? 'main' : 'discover');
+      setView(pendingVideo?.mode === 'play' || pendingMovie !== null ? 'main' : 'discover');
       achievementTracker.record('room-joined');
     },
-    [fixedRoomCode, pendingVideo],
+    [fixedRoomCode, pendingMovie, pendingVideo],
   );
 
   const handleLeaveRoom = useCallback((): void => {
@@ -402,6 +456,17 @@ export function App(): JSX.Element {
     [roomCode, identity],
   );
 
+  /** Library hands over only a descriptor. The RoomScreen host obtains a fresh
+   * device-local lease before the descriptor is synchronized to participants. */
+  const handleLibraryWatch = useCallback((source: HtmlMediaSourceDescriptor): void => {
+    setPendingMovie({ source });
+    if (roomCode === null && identity !== null) {
+      setRoomCode(generateRoomCode());
+      achievementTracker.record('room-joined');
+    }
+    setView('main');
+  }, [identity, roomCode]);
+
   const displayName = authUser?.name ?? identity?.displayName ?? 'Guest';
   const displayAvatarUrl = canonicalDiscordAvatarUrl(authUser?.avatarUrl ?? platformAvatarUrl);
 
@@ -473,7 +538,11 @@ export function App(): JSX.Element {
         {view === 'messages' && (socialCapabilities.messaging && authUser !== null ? <MessagesScreen initialConversationId={selectedConversationId} currentUserId={authUser.id} /> : <SocialUnavailable feature="Messages and group chats" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
         {view === 'creator' && (socialCapabilities.creatorClubs ? <CreatorClubScreen discoveryEnabled={socialCapabilities.clubDiscovery} /> : <SocialUnavailable feature="Creator Club" diagnosis={socialDiagnosis} onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }} />)}
         {view === 'library' && mediaBridge !== null && mediaCapabilities !== null && libraryAvailable && (
-          <LibraryScreen bridge={mediaBridge} capabilities={mediaCapabilities} />
+          <LibraryScreen
+            bridge={mediaBridge}
+            capabilities={mediaCapabilities}
+            onWatchInRoom={!inRoom || selfIsHost ? handleLibraryWatch : undefined}
+          />
         )}
         {view === 'faq' && <FaqScreen />}
         {view === 'card' && <UserCard displayName={authUser?.name ?? identity?.displayName ?? ''} user={authUser} />}
@@ -497,6 +566,10 @@ export function App(): JSX.Element {
             pendingVideo={pendingVideo}
             onPendingHandled={() => setPendingVideo(null)}
             onMediaStateChange={setRoomHasVideo}
+            mediaBridge={mediaBridge}
+            htmlMediaAvailable={mediaCapabilities?.htmlMedia === true}
+            pendingMovieSource={pendingMovie?.source ?? null}
+            onPendingMovieHandled={() => setPendingMovie(null)}
             onReturnToRoom={() => setView('main')}
             onLeave={handleLeaveRoom}
           />
@@ -508,6 +581,14 @@ export function App(): JSX.Element {
               onEnterRoom={handleEnterRoom}
             />
           )
+        )}
+
+        {friendRequestNotice !== null && (
+          <aside className="friend-request-toast" role="status" aria-live="polite">
+            <ProfileAvatar src={friendRequestNotice.avatarUrl} name={friendRequestNotice.displayName} className="friend-request-avatar" />
+            <div><span className="eyebrow">Your circle</span><strong>{friendRequestNotice.displayName} wants to add you as a friend</strong><small>Accept to unlock messages, invites, and friends-only moments.</small></div>
+            <div className="friend-request-actions"><button type="button" className="button button-primary" disabled={friendRequestBusy} onClick={() => void respondToFriendNotice(true)}>Accept</button><button type="button" className="button" disabled={friendRequestBusy} onClick={() => void respondToFriendNotice(false)}>Decline</button></div>
+          </aside>
         )}
 
         {unlockToast !== null && (

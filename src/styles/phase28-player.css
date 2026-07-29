@@ -41,6 +41,35 @@
   display: none;
 }
 
+.room-invite-control {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  min-width: 0;
+}
+
+.room-invite-control .button { white-space: nowrap; }
+.room-invite-status { max-width: 20rem; color: var(--nw-muted); font-size: .72rem; line-height: 1.25; }
+
+.room-people-actions { display: grid; gap: .55rem; margin-top: .7rem; }
+.room-people-hint { margin: 0; color: var(--nw-muted); font-size: .78rem; line-height: 1.35; }
+.room-person-request-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .55rem;
+  padding: .55rem;
+  border: 1px solid color-mix(in srgb, var(--nw-accent) 28%, var(--nw-border));
+  border-radius: 13px;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--nw-accent) 10%, var(--nw-bg-raised)), color-mix(in srgb, var(--nw-bg-sunken) 78%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 9%, transparent);
+}
+.room-person-request-card .member-avatar { width: 34px; height: 34px; }
+.room-person-request-card > div { display: grid; min-width: 0; gap: .08rem; }
+.room-person-request-card strong, .room-person-request-card small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-person-request-card small { color: var(--nw-muted); font-size: .7rem; }
+.room-person-request-card .button { min-height: 33px; padding: .38rem .55rem; font-size: .72rem; }
+
 .room-view-mini .room-body {
   display: block;
 }
@@ -110,6 +139,11 @@
 
 .app-cinematic-shell:has(.room-view-mini-collapsed) .content {
   padding-bottom: 7rem;
+}
+
+@media (max-width: 900px) {
+  .room-invite-control { order: 5; width: 100%; flex-wrap: wrap; }
+  .room-invite-status { max-width: none; flex: 1 1 180px; }
 }
 
 .mini-player-copy {

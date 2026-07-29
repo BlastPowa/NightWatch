@@ -309,6 +309,12 @@ export class DriveSession {
       // Transient server-side failure: keep the stored token, report offline-ish.
       return { status: 'offline' };
     }
+    if (outcome.status === 'configuration-error') {
+      // The installed build cannot use this client configuration. Keep the
+      // encrypted token so a corrected update can retry without destroying
+      // user data, but never pretend this is a transient network failure.
+      return { status: 'auth-expired' };
+    }
 
     this.adopt(outcome.tokens.accessToken, outcome.tokens.expiresInSeconds);
     if (outcome.tokens.refreshToken !== null) {

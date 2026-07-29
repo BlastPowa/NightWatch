@@ -1,4 +1,5 @@
-import { getRuntimeCapabilityManifest } from '@/lib/runtime/RuntimeCapabilityService';
+import { runtimeCapabilities } from '@/lib/platform/RuntimeCapabilityService';
+import type { RuntimeCapabilityManifestV2 } from '@shared/runtimeCapabilities';
 
 export interface SocialCapabilities {
   friends: boolean;
@@ -29,11 +30,14 @@ function hasEvery(functions: Readonly<Record<string, boolean>>, names: readonly 
   return names.every((name) => functions[name] === true);
 }
 
-/** Detect from one read-only manifest. No feature RPC is executed as a probe. */
-async function detect(): Promise<SocialCapabilities> {
-  const result = await getRuntimeCapabilityManifest();
-  if (result.status !== 'ok' || !result.data.authenticated) return NONE;
-  const functions = result.data.functions;
+/**
+ * Convert the single session-aware capability manifest into the feature flags
+ * consumed by the social UI. Keeping this pure makes every subscriber agree
+ * on the same "not signed in" and partial-deployment behaviour.
+ */
+export function socialCapabilitiesFromManifest(manifest: RuntimeCapabilityManifestV2): SocialCapabilities {
+  if (!manifest.authenticated) return NONE;
+  const functions = manifest.functions;
   return {
     friends: hasEvery(functions, ['get_social_graph', 'send_friend_request']),
     messaging: hasEvery(functions, ['list_conversations', 'get_messages', 'send_message']),
@@ -44,6 +48,17 @@ async function detect(): Promise<SocialCapabilities> {
     highlights: functions['get_session_highlights'] === true,
     friendMediaPresence: functions['get_friend_presence_v2'] === true,
   };
+}
+
+/**
+ * Detect from the shared, read-only manifest. Unlike the retired direct RPC
+ * lookup, this waits for Electron's persisted Discord/Supabase session to
+ * settle and is refreshed by the central auth, reconnect, and resume hooks.
+ */
+async function detect(): Promise<SocialCapabilities> {
+  await runtimeCapabilities.whenSessionSettled();
+  const manifest = await runtimeCapabilities.refresh('social.capabilities');
+  return socialCapabilitiesFromManifest(manifest);
 }
 
 /** Cached until auth/network/application lifecycle asks for a fresh manifest. */

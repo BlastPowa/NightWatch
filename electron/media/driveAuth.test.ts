@@ -267,6 +267,19 @@ describe('token exchange', () => {
     expect((await refreshAccessToken(down, config, 'rt')).status).toBe('offline');
   });
 
+  it('identifies OAuth client and redirect configuration failures safely', async () => {
+    const invalidClient: FetchLike = async () => jsonResponse(401, { error: 'invalid_client' });
+    const unauthorized: FetchLike = async () => jsonResponse(400, { error: 'unauthorized_client' });
+    const redirect: FetchLike = async () => jsonResponse(400, { error: 'redirect_uri_mismatch' });
+
+    await expect(exchangeCodeForTokens(invalidClient, config, 'code', 'verifier', 'http://127.0.0.1/callback'))
+      .resolves.toEqual({ status: 'configuration-error', reason: 'invalid-client' });
+    await expect(exchangeCodeForTokens(unauthorized, config, 'code', 'verifier', 'http://127.0.0.1/callback'))
+      .resolves.toEqual({ status: 'configuration-error', reason: 'unauthorized-client' });
+    await expect(exchangeCodeForTokens(redirect, config, 'code', 'verifier', 'http://127.0.0.1/callback'))
+      .resolves.toEqual({ status: 'configuration-error', reason: 'redirect-uri' });
+  });
+
   it('rejects a malformed token payload', async () => {
     const weird: FetchLike = async () => jsonResponse(200, { access_token: '', expires_in: -5 });
     expect((await refreshAccessToken(weird, config, 'rt')).status).toBe('failed');

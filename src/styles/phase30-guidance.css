@@ -733,7 +733,8 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 
 @media (max-height: 720px) and (min-width: 621px) {
   .settings-workspace {
-    height: calc(100dvh - var(--nw-titlebar-h, 0px) - 6.5rem);
+    height: auto;
+    max-height: none;
   }
 
   .settings-rail {

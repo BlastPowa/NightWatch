@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MediaCapabilities } from '@shared/media';
@@ -27,6 +27,12 @@ const capabilities: MediaCapabilities = {
   },
 };
 
+const driveCapabilities: MediaCapabilities = {
+  ...capabilities,
+  googleDrive: true,
+  reasons: { ...capabilities.reasons, googleDrive: 'available' },
+};
+
 function makeBridge(): MediaPlatformBridge {
   return {
     getCapabilities: vi.fn().mockResolvedValue(capabilities),
@@ -45,12 +51,12 @@ function makeBridge(): MediaPlatformBridge {
       },
     }),
     resolveLocalMatch: vi.fn(),
-    getDriveConnection: vi.fn(),
+    getDriveConnection: vi.fn().mockResolvedValue({ connected: false, accountEmail: null, reason: null }),
     connectDrive: vi.fn(),
     cancelDriveConnect: vi.fn().mockResolvedValue(undefined),
-    ensureDriveWorkspace: vi.fn(),
+    ensureDriveWorkspace: vi.fn().mockResolvedValue({ ok: true, value: { folderId: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' } }),
     openDriveWorkspace: vi.fn(),
-    listDriveWorkspace: vi.fn(),
+    listDriveWorkspace: vi.fn().mockResolvedValue({ ok: true, value: { folder: { id: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' }, entries: [{ id: 'B'.repeat(12), parentId: 'A'.repeat(12), name: 'Feature.mp4', kind: 'video', mimeType: 'video/mp4', size: 1024, modifiedAt: '2026-01-01T00:00:00Z', thumbnailUrl: null, canDownload: true }], nextPageToken: null } }),
     createDriveWorkspaceFolder: vi.fn(),
     authorizeDriveWorkspaceFolder: vi.fn(),
     uploadDriveWorkspaceFile: vi.fn(),
@@ -99,6 +105,25 @@ describe('LibraryScreen', () => {
     expect(document.querySelector('video')?.getAttribute('src')).toMatch(/^nightwatch-media:/);
   });
 
+  it('hands only the selected descriptor to Movie Watch when the host chooses Watch in room', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
+    const bridge = makeBridge();
+    const onWatchInRoom = vi.fn();
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={capabilities} onWatchInRoom={onWatchInRoom} />);
+
+    await user.click(screen.getByRole('button', { name: /choose local video/i }));
+    await user.click(await screen.findByRole('button', { name: /watch in room/i }));
+
+    expect(onWatchInRoom).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'local',
+      title: 'Moonlight Cut',
+      fingerprint: `sha256:${'a'.repeat(64)}`,
+    }));
+    expect(onWatchInRoom.mock.calls[0]?.[0]).not.toHaveProperty('localHandle');
+    expect(onWatchInRoom.mock.calls[0]?.[0]).not.toHaveProperty('playbackUrl');
+  });
+
   it('releases the active lease when leaving the Library', async () => {
     vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
     const bridge = makeBridge();
@@ -109,5 +134,36 @@ describe('LibraryScreen', () => {
     view.unmount();
 
     expect(bridge.releasePlaybackLease).toHaveBeenCalledWith('c'.repeat(32));
+  });
+
+  it('opens a restricted Drive workspace instead of offering a whole-Drive browser', async () => {
+    const bridge = makeBridge();
+    bridge.getDriveConnection = vi.fn().mockResolvedValue({ connected: true, accountEmail: 'viewer@example.com', reason: null });
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={driveCapabilities} />);
+
+    await user.click(await screen.findByRole('button', { name: /create shared folder/i }));
+
+    await waitFor(() => expect(bridge.listDriveWorkspace).toHaveBeenCalled());
+    expect(await screen.findByText('Feature.mp4')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /authorize shared folder/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /upload video/i })).toBeTruthy();
+  });
+
+  it('appends the next authorized Drive page instead of replacing visible entries', async () => {
+    const bridge = makeBridge();
+    bridge.getDriveConnection = vi.fn().mockResolvedValue({ connected: true, accountEmail: 'viewer@example.com', reason: null });
+    bridge.listDriveWorkspace = vi.fn()
+      .mockResolvedValueOnce({ ok: true, value: { folder: { id: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' }, entries: [{ id: 'B'.repeat(12), parentId: 'A'.repeat(12), name: 'First.mp4', kind: 'video', mimeType: 'video/mp4', size: 1024, modifiedAt: '2026-01-01T00:00:00Z', thumbnailUrl: null, canDownload: true }], nextPageToken: 'next-page' } })
+      .mockResolvedValueOnce({ ok: true, value: { folder: { id: 'A'.repeat(12), name: 'NightWatch Shared', webViewLink: 'https://drive.google.com/folder' }, entries: [{ id: 'C'.repeat(12), parentId: 'A'.repeat(12), name: 'Second.webm', kind: 'video', mimeType: 'video/webm', size: 2048, modifiedAt: '2026-01-01T00:00:00Z', thumbnailUrl: null, canDownload: true }], nextPageToken: null } });
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={driveCapabilities} />);
+
+    await user.click(await screen.findByRole('button', { name: /create shared folder/i }));
+    await screen.findByText('First.mp4');
+    await user.click(screen.getByRole('button', { name: /load more/i }));
+
+    expect(await screen.findByText('First.mp4')).toBeTruthy();
+    expect(await screen.findByText('Second.webm')).toBeTruthy();
   });
 });

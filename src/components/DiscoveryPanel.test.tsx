@@ -114,4 +114,14 @@ describe('DiscoveryPanel browsing views and previews', () => {
     fireEvent.pointerLeave(card as Element);
     await waitFor(() => expect(screen.queryByTitle(`Preview ${TRENDING.title}`)).toBeNull());
   });
+
+  it('refreshes the active Discover view on demand', async () => {
+    const user = userEvent.setup();
+    const { getTrending } = await import('@/lib/search/SearchService');
+    render(<DiscoveryPanel callerId="self" isHost roomCode="" searchRequest={null} friendMediaPresence={false} onPlayNow={vi.fn()} onQueueAdd={() => true} />);
+    await screen.findByText(TRENDING.title);
+    const before = vi.mocked(getTrending).mock.calls.length;
+    await user.click(screen.getByRole('button', { name: 'Refresh Discover videos' }));
+    await waitFor(() => expect(vi.mocked(getTrending).mock.calls.length).toBeGreaterThan(before));
+  });
 });

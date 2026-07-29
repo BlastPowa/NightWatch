@@ -182,6 +182,17 @@ export function AppShell({
         </header>
         {children}
       </main>
+      {view === 'discover' && (
+        <nav className="cinema-dock" aria-label="Quick navigation">
+          <CinemaDockButton view="discover" label="Browse" icon="home" active onNavigate={onNavigate} />
+          <CinemaDockButton view="main" label={room.active ? 'Open room' : 'Join room'} icon="play" onNavigate={onNavigate} />
+          {isElectron && <CinemaDockButton view="rooms" label="Parties" icon="parties" onNavigate={onNavigate} />}
+          {capabilities.friends && <CinemaDockButton view="friends" label="Friends" icon="friends" onNavigate={onNavigate} />}
+          {capabilities.messaging && <CinemaDockButton view="messages" label="Messages" icon="message" onNavigate={onNavigate} />}
+          {capabilities.library && <CinemaDockButton view="library" label="Library" icon="library" onNavigate={onNavigate} />}
+          <CinemaDockButton view="settings" label="Settings" icon="settings" onNavigate={onNavigate} />
+        </nav>
+      )}
       {capabilities.friends && (
         <FriendActivityDrawer
           open={friendActivityOpen}
@@ -196,6 +207,10 @@ export function AppShell({
       />
     </div>
   );
+}
+
+function CinemaDockButton({ view, label, icon, active = false, onNavigate }: { view: AppView; label: string; icon: IconName; active?: boolean; onNavigate(view: AppView): void }): JSX.Element {
+  return <button type="button" className={active ? 'cinema-dock-button cinema-dock-button-active' : 'cinema-dock-button'} onClick={() => onNavigate(view)} aria-label={`Quick navigation: ${label}`} title={label}><Icon name={icon} size={18} /></button>;
 }
 
 function NavSection({ label, items, active, onNavigate }: { label: string; items: readonly NavItem[]; active: AppView; onNavigate(view: AppView): void }): JSX.Element {

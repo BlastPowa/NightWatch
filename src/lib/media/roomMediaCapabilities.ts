@@ -3,6 +3,8 @@ import {
   type RoomMediaCapabilities,
 } from '@shared/roomComms';
 import { supabase } from '@/lib/supabase';
+import { isFeatureReady } from '@shared/runtimeCapabilities';
+import { runtimeCapabilities } from '@/lib/platform/RuntimeCapabilityService';
 
 /**
  * Phase 32 capability detection. A single side-effect-free database RPC
@@ -17,7 +19,6 @@ export interface PlatformMediaSupport {
 }
 
 interface ServerCapabilities {
-  schemaVersion: 1;
   peopleDiscovery: boolean;
   roomPeople: boolean;
   roomMedia: boolean;
@@ -29,23 +30,6 @@ const pending = new Map<string, Promise<RoomMediaCapabilities>>();
 let turnDeployed = false;
 let lastServer: ServerCapabilities | null = null;
 let lastSignedIn = false;
-
-function parseServerCapabilities(value: unknown): ServerCapabilities | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return null;
-  }
-  const row = value as Record<string, unknown>;
-  if (
-    row['schemaVersion'] !== 1 ||
-    typeof row['peopleDiscovery'] !== 'boolean' ||
-    typeof row['roomPeople'] !== 'boolean' ||
-    typeof row['roomMedia'] !== 'boolean' ||
-    typeof row['signaling'] !== 'boolean'
-  ) {
-    return null;
-  }
-  return row as unknown as ServerCapabilities;
-}
 
 /** Auth/room errors prove a configured function; 404/5xx fail closed. */
 async function probeTurnFunction(): Promise<boolean> {
@@ -64,28 +48,29 @@ async function probeTurnFunction(): Promise<boolean> {
 }
 
 async function detect(platform: PlatformMediaSupport): Promise<RoomMediaCapabilities> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  lastSignedIn = sessionData.session !== null;
-  if (sessionData.session === null) {
+  // Use the Phase 34 manifest rather than racing auth restoration or probing
+  // feature RPCs. This is the same production-safe path used by Friends and
+  // Messages, so Movie Watch cannot be permanently disabled on cold launch.
+  await runtimeCapabilities.whenSessionSettled();
+  const manifest = await runtimeCapabilities.refresh('room-media.capabilities');
+  lastSignedIn = manifest.authenticated;
+  if (!manifest.authenticated) {
     turnDeployed = false;
     lastServer = null;
     return disabledRoomMediaCapabilities();
   }
 
-  const [{ data, error }, turn] = await Promise.all([
-    supabase.rpc('get_room_comms_capabilities'),
-    probeTurnFunction(),
-  ]);
+  const server: ServerCapabilities = {
+    peopleDiscovery: isFeatureReady(manifest, 'peopleSearch'),
+    roomPeople: isFeatureReady(manifest, 'roomPeople'),
+    roomMedia: isFeatureReady(manifest, 'roomMedia'),
+    signaling: isFeatureReady(manifest, 'signaling'),
+  };
+  // TURN is only meaningful after the signed-in manifest proves signaling is
+  // deployed. File Watch and Drive therefore remain non-destructive here.
+  const turn = server.signaling ? await probeTurnFunction() : false;
   turnDeployed = turn;
-  if (error !== null) {
-    lastServer = null;
-    return disabledRoomMediaCapabilities();
-  }
-  const server = parseServerCapabilities(data);
   lastServer = server;
-  if (server === null) {
-    return disabledRoomMediaCapabilities();
-  }
 
   return {
     fileWatch: server.roomMedia && platform.htmlMedia,
@@ -133,6 +118,14 @@ export function resetRoomMediaCapabilities(): void {
   lastServer = null;
   lastSignedIn = false;
 }
+
+// Auth refreshes, reconnects, and app resumes are all represented by a new
+// manifest. Drop memoized platform answers so a stale signed-out result never
+// keeps Drive/Movie Watch disabled for the rest of a packaged session.
+runtimeCapabilities.subscribe(() => {
+  cache.clear();
+  pending.clear();
+});
 
 // ---------------------------------------------------------------------------
 // Disabled-control diagnostics (remaining-features handoff, Priority 4).

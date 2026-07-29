@@ -37,16 +37,17 @@ const snapshot: PlaybackSnapshotV1 = {
 };
 
 describe('legacy events are untouched', () => {
-  it('does not add media:v1 events to the existing room event registry', () => {
-    // A v0.1.x client binds exactly these names. Adding to this list would put
-    // a custom descriptor on a channel old clients read as YouTube.
+  it('registers the separate media:v1 namespace without altering legacy names', () => {
+    // Custom media has its own names. Older builds do not bind those names,
+    // so they ignore the broadcasts instead of treating descriptors as legacy
+    // YouTube payloads.
     for (const name of MEDIA_V1_EVENTS) {
-      expect(ROOM_EVENTS).not.toContain(name);
+      expect(ROOM_EVENTS).toContain(name);
     }
   });
 
   it('keeps the legacy playback and sync events exactly as they were', () => {
-    expect(ROOM_EVENTS).toEqual([
+    expect(ROOM_EVENTS.slice(0, 11)).toEqual([
       'playback:load',
       'playback:play',
       'playback:pause',

@@ -36,6 +36,12 @@ import { DriveTokenStore } from './media/tokenStore';
 import { YouTubeAccountManager } from './media/youtubeAccount';
 import { RichPresenceManager } from './richPresence';
 import { UpdateManager } from './updater';
+import {
+  buildStartupSplashHtml,
+  buildStartupSplashUpdateScript,
+  STARTUP_SPLASH_STAGES,
+  type StartupSplashState,
+} from '@shared/startupSplash';
 
 const DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
@@ -67,6 +73,10 @@ if (!DEV_SERVER_URL) {
 registerMediaScheme();
 
 let mainWindow: BrowserWindow | null = null;
+let startupSplash: BrowserWindow | null = null;
+let splashLoaded = false;
+let pendingSplashState: StartupSplashState = STARTUP_SPLASH_STAGES.starting;
+let completingUpdate = false;
 
 /**
  * Windows we created ourselves. IPC from anything else is refused — a sender
@@ -95,7 +105,105 @@ function focusMainWindow(): void {
       mainWindow.restore();
     }
     mainWindow.focus();
+  } else if (startupSplash !== null && !startupSplash.isDestroyed()) {
+    startupSplash.focus();
   }
+}
+
+function updateStartupSplash(state: StartupSplashState): void {
+  pendingSplashState = state;
+  if (startupSplash === null || startupSplash.isDestroyed() || !splashLoaded) {
+    return;
+  }
+  void startupSplash.webContents.executeJavaScript(buildStartupSplashUpdateScript(state), true);
+}
+
+function createStartupSplash(): void {
+  if (startupSplash !== null && !startupSplash.isDestroyed()) {
+    startupSplash.show();
+    return;
+  }
+  startupSplash = new BrowserWindow({
+    width: 520,
+    height: 330,
+    show: false,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    movable: true,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    center: true,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+    },
+  });
+
+  startupSplash.once('ready-to-show', () => startupSplash?.show());
+  startupSplash.webContents.once('did-finish-load', () => {
+    splashLoaded = true;
+    updateStartupSplash(pendingSplashState);
+  });
+  startupSplash.on('closed', () => {
+    startupSplash = null;
+    splashLoaded = false;
+  });
+  void startupSplash.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(buildStartupSplashHtml())}`);
+}
+
+function updateMarkerPath(): string {
+  return path.join(app.getPath('userData'), 'update-handoff.pending');
+}
+
+async function prepareUpdateInstall(): Promise<void> {
+  try {
+    fs.writeFileSync(updateMarkerPath(), new Date().toISOString(), 'utf8');
+  } catch (error) {
+    logger.write('warn', 'main', `Could not write update handoff marker: ${String(error)}`);
+  }
+  createStartupSplash();
+  updateStartupSplash(STARTUP_SPLASH_STAGES.updateInstalling);
+  startupSplash?.moveTop();
+  // Give Windows time to paint the branded handoff before Electron exits for
+  // the silent NSIS replacement process.
+  await new Promise<void>((resolve) => setTimeout(resolve, 850));
+  mainWindow?.hide();
+}
+
+function revealMainWindow(reason: string): void {
+  if (mainWindow === null || mainWindow.isDestroyed() || mainWindow.isVisible()) {
+    return;
+  }
+  const degraded = reason === 'fallback timer';
+  updateStartupSplash(
+    completingUpdate
+      ? STARTUP_SPLASH_STAGES.updateReady
+      : degraded
+        ? STARTUP_SPLASH_STAGES.degraded
+        : STARTUP_SPLASH_STAGES.ready,
+  );
+  const revealDelay = startupSplash === null ? 0 : 420;
+  setTimeout(() => {
+    if (mainWindow !== null && !mainWindow.isDestroyed()) {
+      mainWindow.show();
+      logger.write('info', 'main', `Window shown (${reason})`);
+    }
+    if (startupSplash !== null && !startupSplash.isDestroyed()) {
+      startupSplash.close();
+    }
+    if (completingUpdate) {
+      completingUpdate = false;
+      try {
+        fs.rmSync(updateMarkerPath(), { force: true });
+      } catch (error) {
+        logger.write('warn', 'main', `Could not clear update handoff marker: ${String(error)}`);
+      }
+    }
+  }, revealDelay);
 }
 
 /** Route any nightwatch:// deep link (auth callback or room invite). */
@@ -137,7 +245,7 @@ function findDeepLink(argv: readonly string[]): string | undefined {
 
 // Note: must be dot-access — Vite only statically replaces import.meta.env.X.
 const richPresence = new RichPresenceManager(import.meta.env.VITE_DISCORD_CLIENT_ID);
-const updateManager = new UpdateManager(() => mainWindow);
+const updateManager = new UpdateManager(() => mainWindow, prepareUpdateInstall);
 
 function isValidNotificationRequest(value: unknown): value is NotificationRequest {
   if (typeof value !== 'object' || value === null) {
@@ -240,14 +348,13 @@ function createMainWindow(): void {
   // ready-to-show / did-finish-load arrives first reveals the window, and a
   // timer guarantees it regardless. An app that flashes an unpainted frame is a
   // blemish; an app that never appears is not an app.
-  let shown = false;
+  let revealScheduled = false;
   const reveal = (reason: string): void => {
-    if (shown || mainWindow === null || mainWindow.isDestroyed()) {
+    if (revealScheduled) {
       return;
     }
-    shown = true;
-    mainWindow.show();
-    logger.write('info', 'main', `Window shown (${reason})`);
+    revealScheduled = true;
+    revealMainWindow(reason);
   };
 
   mainWindow.once('ready-to-show', () => reveal('ready-to-show'));
@@ -399,6 +506,12 @@ if (!hasSingleInstanceLock) {
       return;
     }
 
+    completingUpdate = fs.existsSync(updateMarkerPath());
+    createStartupSplash();
+    updateStartupSplash(
+      completingUpdate ? STARTUP_SPLASH_STAGES.updateFinishing : STARTUP_SPLASH_STAGES.starting,
+    );
+
     // Register the app:// protocol handler that serves renderer files.
     if (!DEV_SERVER_URL) {
       protocol.handle('app', (request) => {
@@ -466,6 +579,7 @@ if (!hasSingleInstanceLock) {
     }
 
     registerIpcHandlers();
+    updateStartupSplash(STARTUP_SPLASH_STAGES.restoring);
 
     // Drive manager only when the desktop OAuth client is configured; without
     // it every Drive call answers typed 'not-configured'. Tokens are encrypted
@@ -516,6 +630,7 @@ if (!hasSingleInstanceLock) {
     // Register the private protocol and every media IPC handler before the
     // renderer can issue its first capability request.
     await mediaService.init();
+    updateStartupSplash(STARTUP_SPLASH_STAGES.connecting);
 
     // Phase 32: Google Drive shared workspace (handoff §2). Answers typed
     // failures when Drive is unconfigured/disconnected; never bytes/tokens.
@@ -636,6 +751,7 @@ if (!hasSingleInstanceLock) {
 
     richPresence.start();
     updateManager.init();
+    updateStartupSplash(STARTUP_SPLASH_STAGES.preparing);
     createMainWindow();
 
     app.on('activate', () => {
