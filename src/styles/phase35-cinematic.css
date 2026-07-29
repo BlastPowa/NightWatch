@@ -15,7 +15,9 @@
    * scroll area on short Windows windows. */
   flex: 1 1 0;
   height: auto !important;
-  block-size: 100% !important;
+  /* Do not use 100% here: the workspace sits below the sticky top bar, so
+   * 100% makes the final Appearance cards extend below the viewport. */
+  block-size: auto !important;
   min-height: 0 !important;
   max-height: none !important;
   align-self: stretch;
@@ -49,7 +51,10 @@ html[data-custom-background='true'] .app-cinematic-shell::before,
 html[data-custom-background='true'] .app-cinematic-shell::after {
   position: fixed;
   inset: var(--nw-titlebar-h, 0px) 0 0;
-  z-index: -2;
+  /* Keep the artwork and selected backdrop inside the shell stacking
+   * context. A negative layer could fall behind the Electron root and make
+   * each backdrop look identical whenever personal artwork was enabled. */
+  z-index: 0;
   pointer-events: none;
   content: '';
 }
@@ -60,7 +65,7 @@ html[data-custom-background='true'] .app-cinematic-shell::before {
 }
 
 html[data-custom-background='true'] .app-cinematic-shell::after {
-  z-index: -1;
+  z-index: 0;
   background:
     linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 30%,transparent), color-mix(in srgb,var(--nw-bg) 68%,transparent)),
     radial-gradient(75% 68% at 82% 3%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 34%,transparent), transparent 70%),
@@ -109,6 +114,7 @@ html[data-custom-background='true'][data-background='cinema'] .app-cinematic-she
 }
 
 html[data-custom-background='true'] .app-cinematic-shell .content {
+  z-index: 1;
   background: transparent !important;
 }
 
