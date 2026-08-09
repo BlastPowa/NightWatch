@@ -47,9 +47,10 @@ Last updated: 2026-08-09.
 - Codex fixed the service's pre-initialization session-settle deadlock and ran
   the complete code gate: strict typecheck, 439 tests across 48 files, Activity
   build, and Windows Electron/NSIS packaging all pass.
-- The two SQL scripts remain unexecuted on this machine because no Supabase CLI
-  or owner-approved database URL is available.
-- Owner database work: deploy `supabase/migrations/0028_runtime_capabilities_v2.sql`
+- The owner reported migration `0028` deployed and both Phase 34 SQL scripts
+  passing. Codex cannot independently inspect the private SQL session, so keep
+  the successful SQL output with the release evidence.
+- Historical owner database work: deploy `supabase/migrations/0028_runtime_capabilities_v2.sql`
   (functions only — no table, RLS policy, or publication change), then run
   `supabase/tests/phase34_runtime_capabilities_test.sql` and
   `supabase/tests/phase34_social_contract_test.sql`.
@@ -66,7 +67,8 @@ Last updated: 2026-08-09.
 - Backend PR #55 is merged: migration `0028`, the versioned capability
   manifest, safe diagnostics, Drive workspace contracts, SQL/RLS verification
   scripts, and release-smoke contracts passed GitHub's complete feature gate.
-  The owner still needs to deploy `0028` and execute both Phase 34 SQL scripts.
+  The owner has since reported `0028` deployed and both Phase 34 SQL scripts
+  passing; retain that output with the release evidence.
 - Frontend capability detection now consumes one read-only versioned manifest,
   with the existing `social_diagnostics` RPC as a migration fallback. It no
   longer executes feature operations as deployment probes and rechecks after

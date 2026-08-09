@@ -50,7 +50,7 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
 - [x] Codex: review the lane, repair the session-settle test deadlock, and pass
   strict typecheck, 439 tests, Activity build, and Windows packaging.
 - [x] Codex: commit, push, validate, and merge reviewed backend PR #55.
-- [ ] Owner: deploy migration `0028` and run both Phase 34 SQL tests.
+- [x] Owner-reported: deploy migration `0028` and run both Phase 34 SQL tests.
 
 ## Phase 34 frontend production parity
 
@@ -75,7 +75,7 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
   rendered-browser checks.
 - [x] Codex: deliver and verify reviewed frontend PR #56 after the complete
   GitHub feature gate, including packaged smoke.
-- [ ] Owner: deploy migration `0028` and run both Phase 34 SQL scripts.
+- [x] Owner-reported: deploy migration `0028` and run both Phase 34 SQL scripts.
 - [ ] Owner: complete two-account packaged acceptance before any v0.1.28
   Release workflow run.
 
