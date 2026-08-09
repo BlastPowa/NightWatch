@@ -8,6 +8,7 @@ import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { Icon } from '@/components/Icon';
+import { copyText } from '@/lib/clipboard';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MovieWatchPanel } from '@/components/MovieWatchPanel';
 import { ScreenWatchPanel } from '@/components/ScreenWatchPanel';
@@ -213,28 +214,11 @@ export function RoomScreen({
   }
 
   function copyCode(): void {
-    navigator.clipboard
-      .writeText(room.code)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => {
-        const field = document.createElement('textarea');
-        field.value = room.code;
-        field.setAttribute('readonly', '');
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        const didCopy = document.execCommand('copy');
-        field.remove();
-        if (didCopy) {
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 1500);
-        }
-        // Clipboard unavailable (e.g. file:// context) — code stays visible.
-      });
+    void copyText(room.code).then((didCopy) => {
+      if (!didCopy) return;
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    });
   }
 
   async function copySecureInvite(): Promise<void> {
@@ -242,7 +226,10 @@ export function RoomScreen({
     setInviteStatus(null);
     try {
       if (roomInvite !== null) {
-        await navigator.clipboard.writeText(buildInviteTokenLink(roomInvite.token));
+        if (!await copyText(buildInviteTokenLink(roomInvite.token))) {
+          setInviteStatus('The secure invite is ready, but this device could not copy it.');
+          return;
+        }
         setInviteStatus('Secure invite copied. It can be used once before it expires.');
         return;
       }
@@ -251,7 +238,10 @@ export function RoomScreen({
         setInviteStatus(result.message);
         return;
       }
-      await navigator.clipboard.writeText(buildInviteTokenLink(result.value.token));
+      if (!await copyText(buildInviteTokenLink(result.value.token))) {
+        setInviteStatus('The secure invite was created, but this device could not copy it.');
+        return;
+      }
       setRoomInvite(result.value);
       setInviteStatus('Secure invite copied. It can be used once before it expires.');
     } catch {

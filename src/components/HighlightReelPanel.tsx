@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@/components/Icon';
+import { copyText } from '@/lib/clipboard';
 import {
   exportHighlightsMarkdown,
   formatTimestamp,
@@ -58,12 +59,12 @@ export function HighlightReelPanel({
   }, [sessionId]);
 
   async function copyMarkdown(): Promise<void> {
-    try {
-      await navigator.clipboard.writeText(exportHighlightsMarkdown(highlights));
+    const copied = await copyText(exportHighlightsMarkdown(highlights));
+    if (copied) {
       setCopyState('copied');
-    } catch {
-      setCopyState('error');
+      return;
     }
+    setCopyState('error');
   }
 
   return (
