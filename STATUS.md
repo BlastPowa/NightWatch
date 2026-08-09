@@ -4,14 +4,14 @@ Last updated: 2026-08-09.
 
 ## Phase 44 reliability patch (PR #61, pending merge)
 
-- `fix/phase-44-reliability` is pushed through commit `011b1d6` and has a
+- `fix/phase-44-reliability` is pushed through commit `604afb7` and has a
   clean, green PR: [#61](https://github.com/BlastPowa/NightWatch/pull/61).
 - Fixed the inner Search focus rectangle, deterministic Settings scrolling,
   visible backdrop/artwork layers, truthful Activity-vs-NightWatch account
   labeling, exact Google Drive workspace entry authorization, room-people
   fallback discovery, room heartbeat retry/status feedback, room-history
   wording, preview action coverage, and Drive-link clipboard fallback.
-- Evidence on 2026-08-09: strict typecheck; 492 tests across 57 files; Activity
+- Evidence on 2026-08-09: strict typecheck; 496 tests across 58 files; Activity
   build; Windows Electron/NSIS package; packaged smoke; GitHub Feature PR and
   Workers builds all pass.
 - The code gates do not prove live Supabase/RLS, Realtime, OAuth, Drive
@@ -19,9 +19,17 @@ Last updated: 2026-08-09.
   accounts must test room chat, reactions, friend request/accept, DM/group
   messaging, relaunch/reconnect, and Drive workspace authorization before
   merging/releasing.
-- A read-only live probe on 2026-08-09 could not resolve the configured
-  Supabase hostname, so the current environment cannot confirm the deployed
-  manifest. This is an owner/network configuration gate, not a passing result.
+- A read-only live probe on 2026-08-09 reached the configured Supabase project.
+  `runtime_capabilities_v2()` reported schema generation 34 and all current
+  social, room-media, and RTC function flags. The anonymous probe correctly
+  reported `authenticated: false`; repeat it while signed in during owner
+  acceptance. The `turn-credentials` Edge Function currently returns HTTP 404,
+  so ScreenWatch/voice remain gated until that function is deployed with its
+  provider secrets and Verify JWT enabled.
+- Browser Discord OAuth callback support is now in this branch. Add
+  `http://localhost:5173/auth/callback` and
+  `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs before
+  testing two browser profiles. Electron continues using its deep-link callback.
 
 ## Phase 34 backend (merged through PR #55)
 

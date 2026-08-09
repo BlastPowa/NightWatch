@@ -18,9 +18,16 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
 - [ ] Owner: review and merge PR #61.
 - [ ] Owner: run two-account packaged social acceptance and Drive permission
   acceptance; only then trigger the intentional Release workflow.
-- [ ] Owner/network: confirm the configured `VITE_SUPABASE_URL` resolves from
-  the test machine, then run `select public.runtime_capabilities_v2();` while
-  signed in. The current environment's read-only probe returned DNS failure.
+- [x] Owner/network: confirm the configured `VITE_SUPABASE_URL` resolves from
+  the test machine. Anonymous probe reached the project and reported schema
+  generation 34 with the expected social, room-media, and RTC functions; its
+  `authenticated: false` result is expected without a signed-in session.
+- [ ] Owner: add `http://localhost:5173/auth/callback` and
+  `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs, then
+  verify two browser profiles each show a NightWatch account session.
+- [ ] Owner/platform: deploy `supabase/functions/turn-credentials` with TURN
+  provider secrets and Verify JWT enabled. The live endpoint currently returns
+  HTTP 404, so ScreenWatch and voice cannot become ready yet.
 
 ## Phase 34 backend lane (`backend/phase-34-production-parity`)
 
