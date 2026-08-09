@@ -36,6 +36,7 @@ interface RoomScreenProps {
   pendingMovieSource?: HtmlMediaSourceDescriptor | null;
   onPendingMovieHandled?(): void;
   onReturnToRoom(): void;
+  onOpenAccount?(): void;
   onLeave(): void;
 }
 
@@ -70,6 +71,7 @@ export function RoomScreen({
   pendingMovieSource = null,
   onPendingMovieHandled,
   onReturnToRoom,
+  onOpenAccount,
   onLeave,
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -455,6 +457,7 @@ export function RoomScreen({
             selfId={selfId}
             isHost={selfIsHost}
             active={watchMode === 'screen'}
+            onOpenAccount={onOpenAccount}
             youtubeVideoId={youtubeVideoId}
           />
 

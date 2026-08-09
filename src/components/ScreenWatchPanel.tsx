@@ -10,6 +10,7 @@ interface ScreenWatchPanelProps {
   selfId: string;
   isHost: boolean;
   active: boolean;
+  onOpenAccount?(): void;
   /** Last known YouTube id is used to restore the room after a share stops. */
   youtubeVideoId: string | null;
 }
@@ -24,6 +25,7 @@ export function ScreenWatchPanel({
   selfId,
   isHost,
   active,
+  onOpenAccount,
   youtubeVideoId,
 }: ScreenWatchPanelProps): JSX.Element {
   const [capable, setCapable] = useState(false);
@@ -159,7 +161,7 @@ export function ScreenWatchPanel({
           <p><strong>3. Stop any time.</strong> Closing the shared window, revoking the permission, or clicking <em>Stop sharing</em> ends the share for everyone. Nothing is uploaded or recorded.</p>
         </div>
       </details>
-      {!capable && <div className="screen-watch-state" role="status"><Icon name="lock" size={28} /><strong>ScreenWatch is not ready in this session</strong><p>{!ShareSession.supported() ? 'This browser or Activity does not support secure screen capture.' : 'Screen sharing needs a signed-in account and the room relay service before it can start.'}</p></div>}
+      {!capable && <div className="screen-watch-state" role="status"><Icon name="lock" size={28} /><strong>ScreenWatch is not ready in this session</strong><p>{!ShareSession.supported() ? 'This browser or Activity does not support secure screen capture.' : 'Connect a NightWatch account first, then the room relay can safely coordinate the share.'}</p>{onOpenAccount !== undefined && <button type="button" className="button button-primary" onClick={onOpenAccount}><Icon name="profile" size={16} />Open account settings</button>}</div>}
       {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream === null && <div className="screen-watch-state" role="status"><Icon name="monitor" size={28} /><strong>Waiting for the shared screen</strong><p>{snapshot.mode.sourceLabel} is being offered by the host. Choose “join share” to view it on this device.</p><button type="button" className="button button-primary" onClick={() => void loadSnapshot()}>Join share</button></div>}
       {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream !== null && <video ref={remoteVideoRef} className="screen-watch-video" autoPlay playsInline controls aria-label="Shared screen" />}
       {capable && (snapshot?.mode.mode !== 'live-share' || isSharer) && <div className="screen-watch-actions"><div className="screen-watch-prompt"><Icon name="monitor" size={30} /><strong>{isSharer ? 'You are sharing' : 'Share a window or desktop'}</strong><span>The browser/Electron picker lets you choose a specific window, tab, or entire display.</span></div>{isSharer ? <button type="button" className="button button-danger" onClick={() => void stopSharing()}>Stop sharing</button> : <button type="button" className="button button-primary" onClick={() => void startSharing()} disabled={!isHost}><Icon name="monitor" size={16} />{isHost ? 'Share screen' : 'Host chooses the share'}</button>}</div>}

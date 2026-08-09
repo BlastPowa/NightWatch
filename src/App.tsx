@@ -600,6 +600,7 @@ export function App(): JSX.Element {
             pendingMovieSource={pendingMovie?.source ?? null}
             onPendingMovieHandled={() => setPendingMovie(null)}
             onReturnToRoom={() => setView('main')}
+            onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }}
             onLeave={handleLeaveRoom}
           />
         ) : (
