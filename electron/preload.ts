@@ -107,6 +107,9 @@ const media: NightWatchMediaBridge = {
   pickDriveFile: (): Promise<MediaResult<SelectedMedia>> => {
     return ipcRenderer.invoke(IpcChannel.MediaPickDriveFile) as Promise<MediaResult<SelectedMedia>>;
   },
+  authorizeDriveWorkspaceEntry: (entryId: string): Promise<MediaResult<SelectedMedia>> => {
+    return ipcRenderer.invoke(IpcChannel.MediaAuthorizeDriveWorkspaceEntry, entryId) as Promise<MediaResult<SelectedMedia>>;
+  },
   disconnectDrive: (): Promise<MediaResult<void>> => {
     return ipcRenderer.invoke(IpcChannel.MediaDisconnectDrive) as Promise<MediaResult<void>>;
   },

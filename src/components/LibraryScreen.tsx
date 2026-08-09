@@ -288,9 +288,14 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
       return;
     }
     setBusy('drive-pick');
-    setMessage('Choose this authorized file in Google Picker to create a private playback lease.');
+    setMessage('Authorizing this Drive file on this device…');
     try {
-      const selected = await bridge.pickDriveFile();
+      // Workspace rows already came from the authorized folder. Re-use the
+      // exact clicked id when the Electron bridge supports it; Picker remains
+      // only as a compatibility fallback for older/web bridges.
+      const selected = bridge.authorizeDriveWorkspaceEntry !== undefined
+        ? await bridge.authorizeDriveWorkspaceEntry(entry.id)
+        : await bridge.pickDriveFile();
       if (selected.ok) await prepare(selected.value);
       else if (selected.error.code !== 'cancelled') setMessage(failureMessage(selected.error));
     } finally {
