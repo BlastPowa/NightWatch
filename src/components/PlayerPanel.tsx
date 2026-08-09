@@ -30,6 +30,7 @@ interface PlayerPanelProps {
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   onMediaStateChange?(hasVideo: boolean): void;
+  onVideoIdChange?(videoId: string | null): void;
   onReturnToRoom?(): void;
   miniCollapsed?: boolean;
   onMiniCollapsedChange?(collapsed: boolean): void;
@@ -52,6 +53,7 @@ export function PlayerPanel({
   presentation,
   takeNextFromQueue,
   onMediaStateChange,
+  onVideoIdChange,
   onReturnToRoom,
   miniCollapsed = false,
   onMiniCollapsedChange,
@@ -294,6 +296,10 @@ export function PlayerPanel({
   useEffect(() => {
     onMediaStateChange?.(hasVideo);
   }, [hasVideo, onMediaStateChange]);
+
+  useEffect(() => {
+    onVideoIdChange?.(videoId);
+  }, [onVideoIdChange, videoId]);
 
   useEffect(() => {
     return () => onMediaStateChange?.(false);

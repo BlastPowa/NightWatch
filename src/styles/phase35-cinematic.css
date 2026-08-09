@@ -464,3 +464,37 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 @media (prefers-reduced-motion: reduce) {
   .browse-refresh svg,.room-join-toast { animation: none !important; }
 }
+
+/* ScreenWatch: a capability-gated direct WebRTC surface. The room still
+   owns the surrounding layout; only the selected source panel is shown. */
+.screen-watch-panel { display: grid; gap: 1rem; padding: clamp(1rem,2vw,1.5rem); border: 1px solid color-mix(in srgb,var(--nw-accent) 38%,var(--nw-border)); border-radius: var(--nw-radius-lg); background: linear-gradient(145deg,color-mix(in srgb,var(--nw-bg-raised) 94%,transparent),color-mix(in srgb,var(--nw-bg-sunken) 86%,transparent)); box-shadow: inset 0 1px color-mix(in srgb,white 7%,transparent), 0 20px 60px rgba(0,0,0,.2); }
+.screen-watch-panel-hidden { display: none; }
+.screen-watch-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+.screen-watch-header h2 { margin:.2rem 0 .35rem; font-size:clamp(1.35rem,2vw,1.8rem); }
+.screen-watch-header p { max-width:58ch; margin:0; color:var(--nw-text-muted); line-height:1.5; }
+.screen-watch-status { display:inline-flex; align-items:center; gap:.4rem; flex:none; padding:.4rem .65rem; border:1px solid var(--nw-border); border-radius:999px; color:var(--nw-text-muted); font-size:.72rem; font-weight:800; white-space:nowrap; }
+.screen-watch-status-sharing { color:var(--nw-accent); border-color:color-mix(in srgb,var(--nw-accent) 55%,var(--nw-border)); box-shadow:0 0 18px color-mix(in srgb,var(--nw-accent) 18%,transparent); }
+.screen-watch-help { border:1px solid color-mix(in srgb,var(--nw-accent) 26%,var(--nw-border)); border-radius:var(--nw-radius); background:color-mix(in srgb,var(--nw-bg-sunken) 46%,transparent); }
+.screen-watch-help summary { display:flex; align-items:center; gap:.5rem; padding:.75rem .9rem; color:var(--nw-text); font-weight:800; cursor:pointer; list-style:none; }
+.screen-watch-help summary::-webkit-details-marker { display:none; }
+.screen-watch-help summary::after { content:'+'; margin-left:auto; color:var(--nw-accent); font-size:1.1rem; }
+.screen-watch-help[open] summary::after { content:'−'; }
+.screen-watch-help-body { display:grid; gap:.45rem; padding:0 .9rem .85rem; color:var(--nw-text-muted); font-size:.82rem; line-height:1.5; }
+.screen-watch-help-body p { margin:0; }
+.screen-watch-help-body strong { color:var(--nw-text); }
+.screen-watch-help-body em { color:var(--nw-accent); font-style:normal; font-weight:700; }
+.screen-watch-state,.screen-watch-actions { display:grid; place-items:center; gap:.5rem; min-height:230px; padding:2rem; text-align:center; border:1px dashed color-mix(in srgb,var(--nw-accent) 42%,var(--nw-border)); border-radius:var(--nw-radius); background:color-mix(in srgb,var(--nw-bg-sunken) 72%,transparent); }
+.screen-watch-state strong,.screen-watch-prompt strong { font-size:1.05rem; }
+.screen-watch-state p,.screen-watch-prompt span { max-width:52ch; margin:0; color:var(--nw-text-muted); line-height:1.45; }
+.screen-watch-actions { grid-template-columns:minmax(0,1fr) auto; place-items:center start; min-height:0; text-align:left; border-style:solid; }
+.screen-watch-prompt { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:.75rem; }
+.screen-watch-prompt svg { grid-row:span 2; color:var(--nw-accent); }
+.screen-watch-video { display:block; width:100%; max-height:min(70vh,720px); aspect-ratio:16/9; border:1px solid var(--nw-border); border-radius:var(--nw-radius); background:#000; object-fit:contain; }
+.screen-watch-viewers,.screen-watch-message { margin:0; color:var(--nw-text-muted); font-size:.82rem; }
+.screen-watch-message { color:var(--nw-danger); }
+@media (max-width:700px) {
+  .screen-watch-header,.screen-watch-actions { grid-template-columns:1fr; flex-direction:column; align-items:stretch; }
+  .screen-watch-status { justify-self:start; }
+  .screen-watch-actions { place-items:stretch; }
+  .screen-watch-prompt { margin-bottom:.35rem; }
+}

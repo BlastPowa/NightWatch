@@ -10,6 +10,7 @@ import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MovieWatchPanel } from '@/components/MovieWatchPanel';
+import { ScreenWatchPanel } from '@/components/ScreenWatchPanel';
 import type { MediaPlatformBridge } from '@shared/mediaBridge';
 import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInviteToken } from '@/lib/room/InviteTokenService';
@@ -75,7 +76,8 @@ export function RoomScreen({
   const [dockTab, setDockTab] = useState<'queue' | 'chat' | 'people' | 'moments' | 'discovery'>('queue');
   const [miniCollapsed, setMiniCollapsed] = useState(false);
   const [miniPosition, setMiniPosition] = useState<{ left: number; top: number } | null>(null);
-  const [watchMode, setWatchMode] = useState<'youtube' | 'movie'>('youtube');
+  const [watchMode, setWatchMode] = useState<'youtube' | 'movie' | 'screen'>('youtube');
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   const roomViewRef = useRef<HTMLElement | null>(null);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
@@ -415,6 +417,7 @@ export function RoomScreen({
           <div className="watch-mode-tabs" role="tablist" aria-label="Watch source">
             <button type="button" role="tab" aria-selected={watchMode === 'youtube'} className={watchMode === 'youtube' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('youtube')}><Icon name="play" size={16} />YouTube Watch</button>
             {mediaBridge !== null && htmlMediaAvailable && <button type="button" role="tab" aria-selected={watchMode === 'movie'} className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('movie')}><Icon name="film" size={16} />Movie Watch</button>}
+            <button type="button" role="tab" aria-selected={watchMode === 'screen'} className={watchMode === 'screen' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('screen')}><Icon name="monitor" size={16} />ScreenWatch</button>
           </div>
           {watchMode === 'youtube' && <PlayerPanel
             service={service}
@@ -424,6 +427,7 @@ export function RoomScreen({
             presentation={presentation}
             takeNextFromQueue={queue.popNext}
             onMediaStateChange={onMediaStateChange}
+            onVideoIdChange={setYoutubeVideoId}
             onReturnToRoom={onReturnToRoom}
             miniCollapsed={miniCollapsed}
             onMiniCollapsedChange={setMiniCollapsed}
@@ -446,6 +450,13 @@ export function RoomScreen({
             onModeChange={setWatchMode}
             onHasMediaChange={() => onMediaStateChange(false)}
           />}
+          <ScreenWatchPanel
+            roomCode={room.code}
+            selfId={selfId}
+            isHost={selfIsHost}
+            active={watchMode === 'screen'}
+            youtubeVideoId={youtubeVideoId}
+          />
 
         </div>
 

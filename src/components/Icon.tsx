@@ -9,7 +9,7 @@ export type IconName =
   | 'sports' | 'news' | 'education' | 'technology' | 'travel' | 'tools'
   | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right' | 'chevron-up'
   | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users' | 'maximize' | 'refresh'
-  | 'pause' | 'sound';
+  | 'pause' | 'sound' | 'monitor';
 
 interface IconProps {
   name: IconName;
@@ -80,5 +80,6 @@ function glyph(name: IconName): JSX.Element {
     case 'refresh': return <><path d="M20 7v5h-5" /><path d="M18.1 15a7 7 0 1 1-.4-6.5L20 12" /></>;
     case 'pause': return <><rect x="7" y="5" width="3" height="14" rx="1" /><rect x="14" y="5" width="3" height="14" rx="1" /></>;
     case 'sound': return <><path d="M5 10v4h3l4 4V6l-4 4H5Z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11" /></>;
+    case 'monitor': return <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></>;
   }
 }
