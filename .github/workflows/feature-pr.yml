@@ -33,6 +33,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build:activity
+      - run: npm run smoke:web
       - run: npm run build -- --publish never
         env:
           NIGHTWATCH_ENABLE_LOCAL_FILES: ${{ vars.NIGHTWATCH_ENABLE_LOCAL_FILES }}

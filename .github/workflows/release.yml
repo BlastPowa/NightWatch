@@ -42,6 +42,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build:activity
+      - run: npm run smoke:web
       - name: Build unpublished release candidate
         run: npm run build -- --publish never
         env:
