@@ -418,7 +418,7 @@ export function RoomScreen({
           </div>
           <div className="watch-mode-tabs" role="tablist" aria-label="Watch source">
             <button type="button" role="tab" aria-selected={watchMode === 'youtube'} className={watchMode === 'youtube' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('youtube')}><Icon name="play" size={16} />YouTube Watch</button>
-            {mediaBridge !== null && htmlMediaAvailable && <button type="button" role="tab" aria-selected={watchMode === 'movie'} className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('movie')}><Icon name="film" size={16} />Movie Watch</button>}
+            {mediaBridge !== null && htmlMediaAvailable ? <button type="button" role="tab" aria-selected={watchMode === 'movie'} className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('movie')}><Icon name="film" size={16} />Movie Watch</button> : <button type="button" role="tab" aria-selected="false" className="watch-mode-tab watch-mode-tab-disabled" disabled title="Movie Watch is available in the packaged Electron app"><Icon name="film" size={16} />Movie Watch<span className="watch-mode-tab-hint">Electron app</span></button>}
             <button type="button" role="tab" aria-selected={watchMode === 'screen'} className={watchMode === 'screen' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('screen')}><Icon name="monitor" size={16} />ScreenWatch</button>
           </div>
           {watchMode === 'youtube' && <PlayerPanel
