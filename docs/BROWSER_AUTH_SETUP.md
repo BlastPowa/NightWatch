@@ -31,7 +31,7 @@ application; the browser callback above is the final redirect back into
 NightWatch, not a replacement for the provider callback.
 
 This repository includes `vercel.json`, which builds the web renderer with
-`npm run build:web` (the renderer-only Vite target), serves `dist-web`, and rewrites the client-side
+`npm run build:web` (the normal browser renderer target in `vite.config.browser.ts`), serves `dist-web`, and rewrites the client-side
 `/auth/callback` route back to the renderer.
 
 ## Testing two accounts
