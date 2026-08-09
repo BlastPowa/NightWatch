@@ -375,6 +375,24 @@ html .app-cinematic-shell .content {
 .player-panel-full .player-community-module { margin-top: .7rem; border-radius: var(--nw-radius-lg); }
 .player-panel-full .player-community-bar { margin: 0; border: 0; background: transparent; box-shadow: none; }
 
+/* Keep the official YouTube iframe mounted when Movie Watch or ScreenWatch is
+   selected. The sync engine therefore keeps its room state and playback
+   position; the inactive stage is simply removed from the visual/focus flow. */
+.player-panel-inactive {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Up Next: a dedicated queue surface with readable thumbnails and vote context. */
 .room-dock-queue .queue-panel {
   gap: .8rem;

@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 
-vi.mock('@/components/PlayerPanel', () => ({ PlayerPanel: () => <div>Official player stage</div> }));
+vi.mock('@/components/PlayerPanel', () => ({ PlayerPanel: ({ active = true }: { active?: boolean }) => <div data-active={active}>Official player stage</div> }));
 vi.mock('@/components/QueuePanel', () => ({ QueuePanel: () => <div>Queue content</div> }));
 vi.mock('@/components/ChatPanel', () => ({ ChatPanel: () => <div>Chat content</div> }));
 vi.mock('@/components/SearchBox', () => ({ SearchBox: () => <div>Discovery content</div> }));
@@ -127,6 +127,20 @@ describe('RoomScreen companion dock', () => {
     expect(getRoomPeople).toHaveBeenCalledWith('ABC234');
     expect(sendFriendRequest).toHaveBeenCalledWith('user-2');
     expect(await screen.findByText(/friend request sent to luna/i)).toBeTruthy();
+  });
+
+  it('keeps the YouTube stage mounted while switching room sources', async () => {
+    const user = userEvent.setup();
+    render(<RoomScreen room={ROOM} service={{} as RoomService} selfId="self" presentation="full" meta={null} pendingVideo={null} onPendingHandled={vi.fn()} onMediaStateChange={vi.fn()} onReturnToRoom={vi.fn()} onLeave={vi.fn()} />);
+    const stage = screen.getByText('Official player stage');
+
+    await user.click(screen.getByRole('tab', { name: 'ScreenWatch' }));
+    expect(screen.getByText('Official player stage')).toBe(stage);
+    expect(stage.getAttribute('data-active')).toBe('false');
+
+    await user.click(screen.getByRole('tab', { name: 'YouTube Watch' }));
+    expect(screen.getByText('Official player stage')).toBe(stage);
+    expect(stage.getAttribute('data-active')).toBe('true');
   });
 
   it('keeps the People dock useful while the newer room RPC is unavailable', async () => {

@@ -27,6 +27,8 @@ interface PlayerPanelProps {
   roomCode: string;
   allowRoomMomentNotes: boolean;
   presentation: 'full' | 'mini' | 'hidden';
+  /** Keep the YouTube iframe mounted while another room source is selected. */
+  active?: boolean;
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   onMediaStateChange?(hasVideo: boolean): void;
@@ -51,6 +53,7 @@ export function PlayerPanel({
   roomCode,
   allowRoomMomentNotes,
   presentation,
+  active = true,
   takeNextFromQueue,
   onMediaStateChange,
   onVideoIdChange,
@@ -61,6 +64,7 @@ export function PlayerPanel({
   exposeLoadVideo,
 }: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
   const isHostRef = useRef(isHost);
@@ -85,6 +89,14 @@ export function PlayerPanel({
   const settings = useSettings();
   const authUser = useAuth();
   const socialCapabilities = useSocialCapabilities(authUser !== null);
+
+  useEffect(() => {
+    // React 18's DOM typings do not expose inert yet, but Chromium does. Set
+    // it imperatively so an inactive source cannot receive keyboard focus
+    // while its iframe remains mounted for playback continuity.
+    const element = rootRef.current as (HTMLDivElement & { inert?: boolean }) | null;
+    if (element !== null) element.inert = !active;
+  }, [active]);
 
   const { bursts, markers, send, status: reactionStatus, removeBurst } = useReactions(
     service,
@@ -306,7 +318,11 @@ export function PlayerPanel({
   }, [onMediaStateChange]);
 
   return (
-    <div className={`player-panel player-panel-${presentation}${theaterMode ? ' player-panel-theater' : ''}`}>
+    <div
+      ref={rootRef}
+      className={`player-panel player-panel-${presentation}${theaterMode ? ' player-panel-theater' : ''}${active ? '' : ' player-panel-inactive'}`}
+      aria-hidden={active ? undefined : true}
+    >
       <div
         className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
         style={{
