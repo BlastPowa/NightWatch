@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RoomMediaMode, RoomMediaSnapshot } from '@shared/roomComms';
 import { Icon } from '@/components/Icon';
-import { explainRoomMediaCapabilities, getRoomMediaCapabilities, type CapabilityDisabledReason } from '@/lib/media/roomMediaCapabilities';
+import { explainRoomMediaCapabilities, getRoomMediaCapabilities, resetRoomMediaCapabilities, type CapabilityDisabledReason } from '@/lib/media/roomMediaCapabilities';
 import { getRoomMediaDescriptor, publishRoomMediaDescriptor } from '@/lib/media/RoomMediaService';
 import { ShareSession } from '@/lib/rtc/ShareSession';
 
@@ -30,6 +30,7 @@ export function ScreenWatchPanel({
 }: ScreenWatchPanelProps): JSX.Element {
   const [capable, setCapable] = useState(false);
   const [disabledReason, setDisabledReason] = useState<CapabilityDisabledReason>('signed-out');
+  const [checking, setChecking] = useState(false);
   const [snapshot, setSnapshot] = useState<RoomMediaSnapshot | null>(null);
   const [phase, setPhase] = useState<'idle' | 'picking-source' | 'connecting' | 'sharing' | 'ended'>('idle');
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
@@ -86,6 +87,18 @@ export function ScreenWatchPanel({
     });
     return () => { alive = false; };
   }, [active]);
+
+  async function retryCapabilities(): Promise<void> {
+    setChecking(true);
+    resetRoomMediaCapabilities();
+    try {
+      const features = await getRoomMediaCapabilities({ htmlMedia: false, googleDrive: false });
+      setCapable(features.liveShare && ShareSession.supported());
+      setDisabledReason(explainRoomMediaCapabilities({ htmlMedia: false, googleDrive: false }).liveShare);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   useEffect(() => {
     if (!active || !capable) return;
@@ -174,7 +187,7 @@ export function ScreenWatchPanel({
           <p><strong>3. Stop any time.</strong> Closing the shared window, revoking the permission, or clicking <em>Stop sharing</em> ends the share for everyone. Nothing is uploaded or recorded.</p>
         </div>
       </details>
-      {!capable && <div className="screen-watch-state" role="status"><Icon name="lock" size={28} /><strong>ScreenWatch is not ready in this session</strong><p>{unavailableMessage}</p>{disabledReason === 'signed-out' && onOpenAccount !== undefined && <button type="button" className="button button-primary" onClick={onOpenAccount}><Icon name="profile" size={16} />Open account settings</button>}</div>}
+      {!capable && <div className="screen-watch-state" role="status"><Icon name="lock" size={28} /><strong>ScreenWatch is not ready in this session</strong><p>{unavailableMessage}</p><div className="screen-watch-state-actions">{disabledReason === 'signed-out' && onOpenAccount !== undefined && <button type="button" className="button button-primary" onClick={onOpenAccount}><Icon name="profile" size={16} />Open account settings</button>}<button type="button" className="button" onClick={() => void retryCapabilities()} disabled={checking}><Icon name="refresh" size={16} />{checking ? 'Checking…' : 'Check again'}</button></div></div>}
       {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream === null && <div className="screen-watch-state" role="status"><Icon name="monitor" size={28} /><strong>Waiting for the shared screen</strong><p>{snapshot.mode.sourceLabel} is being offered by the host. Choose “join share” to view it on this device.</p><button type="button" className="button button-primary" onClick={() => void loadSnapshot()}>Join share</button></div>}
       {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream !== null && <video ref={remoteVideoRef} className="screen-watch-video" autoPlay playsInline controls aria-label="Shared screen" />}
       {capable && (snapshot?.mode.mode !== 'live-share' || isSharer) && <div className="screen-watch-actions"><div className="screen-watch-prompt"><Icon name="monitor" size={30} /><strong>{isSharer ? 'You are sharing' : 'Share a window or desktop'}</strong><span>The browser/Electron picker lets you choose a specific window, tab, or entire display.</span></div>{isSharer ? <button type="button" className="button button-danger" onClick={() => void stopSharing()}>Stop sharing</button> : <button type="button" className="button button-primary" onClick={() => void startSharing()} disabled={!isHost}><Icon name="monitor" size={16} />{isHost ? 'Share screen' : 'Host chooses the share'}</button>}</div>}

@@ -486,6 +486,7 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 .screen-watch-state,.screen-watch-actions { display:grid; place-items:center; gap:.5rem; min-height:230px; padding:2rem; text-align:center; border:1px dashed color-mix(in srgb,var(--nw-accent) 42%,var(--nw-border)); border-radius:var(--nw-radius); background:color-mix(in srgb,var(--nw-bg-sunken) 72%,transparent); }
 .screen-watch-state strong,.screen-watch-prompt strong { font-size:1.05rem; }
 .screen-watch-state p,.screen-watch-prompt span { max-width:52ch; margin:0; color:var(--nw-text-muted); line-height:1.45; }
+.screen-watch-state-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.6rem; margin-top:.25rem; }
 .screen-watch-actions { grid-template-columns:minmax(0,1fr) auto; place-items:center start; min-height:0; text-align:left; border-style:solid; }
 .screen-watch-prompt { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:.75rem; }
 .screen-watch-prompt svg { grid-row:span 2; color:var(--nw-accent); }
