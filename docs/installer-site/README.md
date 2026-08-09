@@ -28,7 +28,11 @@ If a future deployment wants to display the exact version or direct installer as
 
 ## Deployment options
 
-The folder can be deployed independently to GitHub Pages, Vercel, Cloudflare Pages, or another static host. No backend is required. Configure the host to publish this directory as its root.
+The browser Vercel build also copies this folder to `/installer/`, so the
+same deployment exposes the page at `/installer/` while `/` remains the
+NightWatch browser app. It can still be deployed independently to GitHub
+Pages, Vercel, Cloudflare Pages, or another static host by configuring the
+host to publish this directory as its root.
 
 ## Design boundaries
 

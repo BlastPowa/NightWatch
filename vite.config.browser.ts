@@ -3,14 +3,23 @@ import path from 'node:path';
 import { defineConfig, type PluginOption } from 'vite';
 import react from '@vitejs/plugin-react';
 
-/** Keep desktop-only Picker markup out of the public browser bundle. */
-function removeDesktopPicker(): PluginOption {
+/** Keep desktop-only Picker markup out and publish the static installer page. */
+function preparePublicSite(): PluginOption {
   return {
-    name: 'nightwatch-remove-desktop-picker',
+    name: 'nightwatch-public-site-assets',
     closeBundle() {
       const picker = path.resolve(__dirname, 'dist-web', 'picker.html');
       if (fs.existsSync(picker)) {
         fs.rmSync(picker);
+      }
+
+      const installerSource = path.resolve(__dirname, 'docs', 'installer-site');
+      const installerTarget = path.resolve(__dirname, 'dist-web', 'installer');
+      if (fs.existsSync(installerSource)) {
+        fs.rmSync(installerTarget, { recursive: true, force: true });
+        fs.cpSync(installerSource, installerTarget, { recursive: true });
+        // README is useful in the repository but is not a public page asset.
+        fs.rmSync(path.resolve(installerTarget, 'README.md'), { force: true });
       }
     },
   };
@@ -23,7 +32,7 @@ function removeDesktopPicker(): PluginOption {
  * never requires Discord's frame_id query parameter.
  */
 export default defineConfig({
-  plugins: [react(), removeDesktopPicker()],
+  plugins: [react(), preparePublicSite()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
