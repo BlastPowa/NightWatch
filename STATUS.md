@@ -1,6 +1,24 @@
 # NightWatch current status
 
-Last updated: 2026-07-25.
+Last updated: 2026-08-09.
+
+## Phase 44 reliability patch (PR #61, pending merge)
+
+- `fix/phase-44-reliability` is pushed through commit `011b1d6` and has a
+  clean, green PR: [#61](https://github.com/BlastPowa/NightWatch/pull/61).
+- Fixed the inner Search focus rectangle, deterministic Settings scrolling,
+  visible backdrop/artwork layers, truthful Activity-vs-NightWatch account
+  labeling, exact Google Drive workspace entry authorization, room-people
+  fallback discovery, room heartbeat retry/status feedback, room-history
+  wording, preview action coverage, and Drive-link clipboard fallback.
+- Evidence on 2026-08-09: strict typecheck; 492 tests across 57 files; Activity
+  build; Windows Electron/NSIS package; packaged smoke; GitHub Feature PR and
+  Workers builds all pass.
+- The code gates do not prove live Supabase/RLS, Realtime, OAuth, Drive
+  permission, or two-account behavior. Owner acceptance remains: two signed-in
+  accounts must test room chat, reactions, friend request/accept, DM/group
+  messaging, relaunch/reconnect, and Drive workspace authorization before
+  merging/releasing.
 
 ## Phase 34 backend (merged through PR #55)
 

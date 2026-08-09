@@ -1,6 +1,23 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-25 (Phase 34 backend validation).
+Last updated: 2026-08-09 (Phase 44 reliability validation).
+
+## Phase 44 reliability patch (`fix/phase-44-reliability`, PR #61)
+
+- [x] Fix Search inner focus styling, Settings inner scroll sizing, and
+  backdrop/custom-art visibility.
+- [x] Distinguish Activity identity from an authenticated NightWatch account.
+- [x] Authorize the exact clicked Google Drive workspace entry.
+- [x] Preserve room-person discovery through fallback and retry room heartbeat
+  after transient auth/network/RPC failures.
+- [x] Make room-scoped history wording explicit and hide duplicate hover-card
+  actions while the official preview iframe is active.
+- [x] Add a clipboard fallback for Drive folder links and unit coverage.
+- [x] Pass typecheck, 492 tests, Activity build, Electron package, packaged
+  smoke, and remote Feature PR validation.
+- [ ] Owner: review and merge PR #61.
+- [ ] Owner: run two-account packaged social acceptance and Drive permission
+  acceptance; only then trigger the intentional Release workflow.
 
 ## Phase 34 backend lane (`backend/phase-34-production-parity`)
 
