@@ -90,9 +90,11 @@ Last updated: 2026-08-09.
   Previously watched fallback, group composer layout, friend activity, room
   code copying, responsive shell/settings/room behavior, movable mini-player,
   and the refreshed moon/play brand assets.
-- Phase 33 voice, screen share, and synchronized file-watch UI remains hidden:
-  TURN deployment and the packaged two-client acceptance checklist are still
-  required before those capability flags can be enabled.
+- Phase 33 voice, screen share, and synchronized file-watch capabilities remain
+  gated. The ScreenWatch room surface is now visible with a plain-language
+  explanation and retry state; TURN deployment and the packaged two-client
+  acceptance checklist are still required before live sharing or voice flags
+  can be enabled.
 
 ## Phase 33 remaining-features lane (backend implemented and validated)
 
@@ -110,7 +112,9 @@ Last updated: 2026-08-09.
   Electron/NSIS packaging pass. PR #53 merged after green GitHub Actions.
 - Voice, screen sharing, and shared file playback are **not complete** and
   their flags stay false until TURN is deployed and the packaged two-client
-  checklist passes across different networks.
+  checklist passes across different networks. Browser builds intentionally keep
+  local/Drive playback unavailable because the secure Electron media bridge
+  owns file paths and encrypted Drive tokens.
 
 ## Phase 32 room media & comms (merged; database verified; RTC gated)
 

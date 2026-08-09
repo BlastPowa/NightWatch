@@ -102,9 +102,10 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
   (`PHASE_33_PACKAGED_ACCEPTANCE.md`).
 - [x] Codex: reviewed the implementation, fixed lifecycle reason mapping, ran
   all five gates, and merged PR #53 on green.
-- [ ] Owner: TURN credentials + redeploy `turn-credentials`; run the packaged
-  checklist before any of `fileWatch`/`driveWorkspace`/`voiceChat`/`liveShare`
-  is enabled; Google OAuth verification assets; SFU approval for >8 peers.
+- [ ] Owner: configure and deploy `turn-credentials`; the ScreenWatch surface
+  is visible and capability-gated, but run the packaged two-client checklist
+  before enabling any of `fileWatch`/`driveWorkspace`/`voiceChat`/`liveShare`;
+  Google OAuth verification assets; SFU approval for >8 peers.
 
 ## Phase 32 backend lane (`backend/phase-32-room-media-comms`)
 
