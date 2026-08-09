@@ -16,6 +16,7 @@ import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInvite
 import { getRoomPeople, type PublicPerson } from '@/lib/people/PeopleService';
 import { sendFriendRequest } from '@/lib/social/FriendService';
 import { listLiveRoomCoWatchers } from '@/lib/social/LiveRoomSocialService';
+import type { SocialResult } from '@/lib/social/types';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -28,6 +29,7 @@ interface RoomScreenProps {
   pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue'; positionSeconds?: number } | null;
   onPendingHandled(): void;
   onMediaStateChange(hasVideo: boolean): void;
+  liveRoomPresenceStatus?: SocialResult<void>['status'];
   mediaBridge?: MediaPlatformBridge | null;
   htmlMediaAvailable?: boolean;
   pendingMovieSource?: HtmlMediaSourceDescriptor | null;
@@ -61,6 +63,7 @@ export function RoomScreen({
   pendingVideo,
   onPendingHandled,
   onMediaStateChange,
+  liveRoomPresenceStatus = 'ok',
   mediaBridge = null,
   htmlMediaAvailable = false,
   pendingMovieSource = null,
@@ -502,6 +505,7 @@ export function RoomScreen({
             )}
             {dockTab === 'people' && (
               <div className="room-people-actions">
+                {liveRoomPresenceStatus !== 'ok' && <p className="room-people-hint" role="status">{liveRoomPresenceStatus === 'unauthenticated' ? 'Connect your NightWatch account to discover people in this room.' : liveRoomPresenceStatus === 'rate-limited' ? 'Room discovery is briefly rate-limited; it will retry automatically.' : liveRoomPresenceStatus === 'offline' ? 'Room discovery is offline; reconnecting automatically.' : 'Room discovery is reconnecting…'}</p>}
                 {roomPeopleLoading && <p className="room-people-hint">Checking signed-in people in this roomâ€¦</p>}
                 {!roomPeopleLoading && roomPeople.filter((person) => person.relationship === 'none').map((person) => (
                   <article key={person.userId} className="room-person-request-card">

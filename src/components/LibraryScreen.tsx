@@ -10,6 +10,7 @@ import type {
 } from '@shared/mediaBridge';
 import type { DriveUploadProgress, DriveWorkspaceEntry, DriveWorkspacePage } from '@shared/driveWorkspaceContracts';
 import { Icon } from '@/components/Icon';
+import { copyText } from '@/lib/clipboard';
 
 interface LibraryScreenProps {
   bridge: MediaPlatformBridge;
@@ -310,8 +311,10 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
 
   async function copyWorkspaceLink(): Promise<void> {
     if (driveWorkspace === null) return;
-    await navigator.clipboard.writeText(driveWorkspace.webViewLink);
-    setMessage('Drive folder link copied. Google Drive permission is still required for every viewer.');
+    const copied = await copyText(driveWorkspace.webViewLink);
+    setMessage(copied
+      ? 'Drive folder link copied. Google Drive permission is still required for every viewer.'
+      : 'The folder link could not be copied on this device. Select it from Open in Drive and copy it there.');
   }
 
   async function disconnectDrive(): Promise<void> {
