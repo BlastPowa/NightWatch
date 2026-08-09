@@ -15,6 +15,7 @@ const playerHarness = vi.hoisted(() => {
     getPlayerState: vi.fn(() => -1),
     getOptions: vi.fn(() => ['captions']),
     setOption,
+    getIframe: vi.fn(() => document.createElement('iframe')),
     destroy: vi.fn(),
   };
   return {
@@ -39,6 +40,7 @@ describe('YouTubePlayer caption preferences', () => {
     playerHarness.Player.mockClear();
     playerHarness.player.getOptions.mockClear();
     playerHarness.player.setOption.mockClear();
+    playerHarness.player.getIframe.mockClear();
   });
 
   it('requests available captions and language through official player vars', async () => {
@@ -53,11 +55,26 @@ describe('YouTubePlayer caption preferences', () => {
     expect(playerHarness.options?.playerVars).toMatchObject({
       cc_load_policy: 1,
       cc_lang_pref: 'ja',
+      fs: 1,
     });
     playerHarness.options?.events?.onReady?.({
       target: playerHarness.player as unknown as YT.Player,
     });
     expect(playerHarness.player.setOption).toHaveBeenCalledWith('captions', 'fontSize', 2);
+  });
+
+  it('keeps the generated official iframe eligible for fullscreen', async () => {
+    const iframe = document.createElement('iframe');
+    playerHarness.player.getIframe.mockReturnValueOnce(iframe);
+    const player = new YouTubePlayer();
+
+    await player.mount(document.createElement('div'));
+    playerHarness.options?.events?.onReady?.({
+      target: playerHarness.player as unknown as YT.Player,
+    });
+
+    expect(iframe.allowFullscreen).toBe(true);
+    expect(iframe.getAttribute('allow')).toContain('fullscreen');
   });
 
   it('keeps YouTube defaults and applies caption size after an API change', async () => {

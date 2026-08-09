@@ -142,9 +142,13 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
         }
         return;
       }
-      setDrive(result.value);
-      setMessage(result.value.connected
-        ? `Google Drive connected${result.value.accountEmail ? ` as ${result.value.accountEmail}` : ''}.`
+      // The OAuth callback runs in the system browser. Read the encrypted
+      // desktop state again after it resolves instead of leaving the Library
+      // on an optimistic/old connection result when focus returns.
+      const confirmed = await bridge.getDriveConnection();
+      setDrive(confirmed);
+      setMessage(confirmed.connected
+        ? `Google Drive connected${confirmed.accountEmail ? ` as ${confirmed.accountEmail}` : ''}.`
         : 'Google authorization returned, but no Drive credential was stored. Try connecting again.');
     } finally {
       setBusy(null);

@@ -113,6 +113,14 @@ export function MovieWatchPanel({
   }, [bridge, htmlMediaAvailable]);
 
   useEffect(() => {
+    // The descriptor RPC is authenticated desktop-only functionality. Calling
+    // it from the browser/Activity fallback (or before the capability manifest
+    // has settled) produces a predictable PostgREST 400 and used to retry on
+    // every room event. Keep the UI in its explicit unavailable state until
+    // both the platform bridge and verified server capability are present.
+    if (bridge === null || !capable) {
+      return;
+    }
     void loadPersistedMode();
     const unlistenLoad = service.on('media:v1:load', (envelope) => {
       if (hostId !== null && envelope.senderId !== hostId) return;
@@ -131,7 +139,7 @@ export function MovieWatchPanel({
       unlistenLoad();
       unlistenSnapshotRequest();
     };
-  }, [hostId, isHost, loadPersistedMode, selfId, service]);
+  }, [bridge, capable, hostId, isHost, loadPersistedMode, selfId, service]);
 
   useEffect(() => {
     if (snapshot?.mode.mode !== 'file-watch' || source === null || bridge === null || !capable) return;

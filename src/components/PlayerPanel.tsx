@@ -77,6 +77,7 @@ export function PlayerPanel({
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
   const [reactionsOpen, setReactionsOpen] = useState(true);
   const [momentsOpen, setMomentsOpen] = useState(true);
+  const [theaterMode, setTheaterMode] = useState(false);
   const videoIdRef = useRef<string | null>(null);
   videoIdRef.current = videoId;
   const settings = useSettings();
@@ -299,7 +300,7 @@ export function PlayerPanel({
   }, [onMediaStateChange]);
 
   return (
-    <div className={`player-panel player-panel-${presentation}`}>
+    <div className={`player-panel player-panel-${presentation}${theaterMode ? ' player-panel-theater' : ''}`}>
       <div
         className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
         style={{
@@ -358,6 +359,15 @@ export function PlayerPanel({
         <div className="player-media-state">
           <span className={`watch-role${isHost ? ' watch-role-host' : ''}`}>{isHost ? 'Host' : 'Viewer'}</span>
           <span className="sync-readout"><span className="status-dot" aria-hidden="true" />{syncDelayMs === null ? 'Sync ready' : `~${syncDelayMs}ms`}</span>
+          <button
+            type="button"
+            className="button player-theater-button"
+            aria-pressed={theaterMode}
+            onClick={() => setTheaterMode((current) => !current)}
+          >
+            <Icon name="maximize" size={14} />
+            {theaterMode ? 'Exit theater' : 'Theater'}
+          </button>
         </div>
       </div>
 
@@ -387,7 +397,21 @@ export function PlayerPanel({
             {syncDelayMs !== null && ` · sync delay ~${syncDelayMs}ms`}
           </p>
         )}
-        {error !== null && <p className="form-error" role="status">{error}</p>}
+        {error !== null && (
+          <div className="player-error" role="status">
+            <p className="form-error">{error}</p>
+            {error === 'The video owner does not allow embedding.' && videoId !== null && (
+              <a
+                className="player-error-link"
+                href={`https://www.youtube.com/watch?v=${videoId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open on YouTube
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       <TimelineMarkers markers={markers} durationSeconds={durationSeconds} />

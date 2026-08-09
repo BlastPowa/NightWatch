@@ -349,9 +349,19 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 
 .player-panel-full .player-media-info { margin-top: .85rem; padding: 1rem 1.1rem; border-radius: calc(var(--nw-radius-lg) + 3px) calc(var(--nw-radius-lg) + 3px) var(--nw-radius) var(--nw-radius); }
 .player-panel-full .player-source-mark { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(145deg,color-mix(in srgb,var(--nw-accent) 72%,#ff334a),color-mix(in srgb,var(--nw-accent) 42%,#e51c3a)); box-shadow: 0 12px 28px color-mix(in srgb,var(--nw-accent) 26%,transparent); }
+.player-theater-button { min-height: 30px; padding: .32rem .55rem; font-size: .68rem; white-space: nowrap; }
+.player-theater-button[aria-pressed='true'] { border-color: color-mix(in srgb,var(--nw-accent) 62%,var(--nw-border)); background: color-mix(in srgb,var(--nw-accent) 16%,var(--nw-bg-sunken)); color: var(--nw-accent); }
+.room-view-full:has(.player-panel-theater) .room-body { grid-template-columns: minmax(0,1fr); }
+.room-view-full:has(.player-panel-theater) .room-aside { display: none; }
+.room-view-full:has(.player-panel-theater) .room-main { width: min(1200px,100%); margin-inline: auto; }
+.player-panel-theater .player-frame { aspect-ratio: 2 / 1; }
 .player-panel-full .player-command-bar { margin-top: .45rem; padding: .7rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 18%,var(--nw-border)); border-radius: var(--nw-radius); }
 .player-panel-full .player-form { gap: .55rem; }
 .player-panel-full .player-form .input { min-height: 44px; border-color: color-mix(in srgb,var(--nw-accent) 20%,var(--nw-border)); background: color-mix(in srgb,var(--nw-bg-sunken) 82%,transparent); }
+.player-error { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin-top: .55rem; }
+.player-error .form-error { margin: 0; }
+.player-error-link { color: var(--nw-accent); font-size: .8rem; font-weight: 750; text-decoration: underline; text-underline-offset: .18em; }
+.player-error-link:hover, .player-error-link:focus-visible { color: var(--nw-text); }
 .player-panel-full .player-community-module { margin-top: .7rem; border-radius: var(--nw-radius-lg); }
 .player-panel-full .player-community-bar { margin: 0; border: 0; background: transparent; box-shadow: none; }
 
@@ -405,6 +415,8 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 .room-dock-queue .queue-remove:hover,.room-dock-queue .queue-remove:focus-visible { border-color: color-mix(in srgb,var(--nw-danger) 55%,transparent); background: color-mix(in srgb,var(--nw-danger) 12%,transparent); }
 
 @media (max-width: 700px) {
+  .player-panel-theater .player-frame { aspect-ratio: 16 / 9; }
+  .player-theater-button { min-height: 36px; }
   .room-dock-queue .queue-header { flex-direction: column; }
   .queue-header-tools { width: 100%; justify-content: space-between; }
   .room-dock-queue .queue-entry { grid-template-columns: 1.1rem 58px minmax(0,1fr) auto; }
