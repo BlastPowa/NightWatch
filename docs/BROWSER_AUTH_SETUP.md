@@ -30,6 +30,10 @@ Keep the existing Supabase provider callback URL in Discord's OAuth
 application; the browser callback above is the final redirect back into
 NightWatch, not a replacement for the provider callback.
 
+This repository includes `vercel.json`, which builds the web renderer with
+`npm run build:activity`, serves `dist-web`, and rewrites the client-side
+`/auth/callback` route back to the renderer.
+
 ## Testing two accounts
 
 1. Start the browser build with the normal `.env` Supabase values, or deploy
