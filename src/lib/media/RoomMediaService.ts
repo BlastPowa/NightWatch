@@ -11,8 +11,14 @@ import {
   type RoomMediaSnapshot,
 } from '@shared/roomComms';
 import { supabase } from '@/lib/supabase';
+import { isValidRoomCode, normalizeRoomCode } from '@shared/room';
 
 type RpcRow = Record<string, unknown>;
+
+function validRoomCode(raw: string): string | null {
+  const code = normalizeRoomCode(raw);
+  return isValidRoomCode(code) ? code : null;
+}
 
 function firstRow(data: unknown): RpcRow | null {
   const value = Array.isArray(data) ? data[0] : data;
@@ -39,8 +45,12 @@ export async function publishRoomMediaDescriptor(
   expectedRevision: number | null,
   mode: RoomMediaMode,
 ): Promise<CommsOutcome<RoomMediaSnapshot>> {
+  const code = validRoomCode(roomCode);
+  if (code === null) {
+    return commsFail('forbidden', 'That room code is not valid.');
+  }
   const { data, error } = await supabase.rpc('publish_room_media_descriptor', {
-    p_room_code: roomCode,
+    p_room_code: code,
     p_expected_revision: expectedRevision,
     p_mode: mode,
   });
@@ -59,8 +69,12 @@ export async function publishRoomMediaDescriptor(
 export async function getRoomMediaDescriptor(
   roomCode: string,
 ): Promise<CommsOutcome<RoomMediaSnapshot | null>> {
+  const code = validRoomCode(roomCode);
+  if (code === null) {
+    return commsFail('forbidden', 'That room code is not valid.');
+  }
   const { data, error } = await supabase.rpc('get_room_media_descriptor', {
-    p_room_code: roomCode,
+    p_room_code: code,
   });
   if (error !== null) {
     return commsFailFromRpc(error);
@@ -79,8 +93,12 @@ export async function reportMediaReadiness(
   revision: number,
   readiness: FileWatchReadiness,
 ): Promise<CommsOutcome<void>> {
+  const code = validRoomCode(roomCode);
+  if (code === null) {
+    return commsFail('forbidden', 'That room code is not valid.');
+  }
   const { error } = await supabase.rpc('report_media_readiness', {
-    p_room_code: roomCode,
+    p_room_code: code,
     p_revision: revision,
     p_readiness: readiness,
   });
@@ -91,8 +109,12 @@ export async function getMediaReadinessRoster(
   roomCode: string,
   revision: number,
 ): Promise<CommsOutcome<FileWatchReadinessEntry[]>> {
+  const code = validRoomCode(roomCode);
+  if (code === null) {
+    return commsFail('forbidden', 'That room code is not valid.');
+  }
   const { data, error } = await supabase.rpc('get_media_readiness_roster', {
-    p_room_code: roomCode,
+    p_room_code: code,
     p_revision: revision,
   });
   if (error !== null) {

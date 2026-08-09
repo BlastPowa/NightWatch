@@ -13,7 +13,9 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
 - [x] Make room-scoped history wording explicit and hide duplicate hover-card
   actions while the official preview iframe is active.
 - [x] Add a clipboard fallback for Drive folder links and unit coverage.
-- [x] Pass typecheck, 492 tests, Activity build, Electron package, packaged
+- [x] Normalize/validate room codes before media and room-people RPC calls and
+  cover malformed browser input without contacting Supabase.
+- [x] Pass typecheck, 499 tests, Activity build, Electron package, packaged
   smoke, and remote Feature PR validation.
 - [ ] Owner: review and merge PR #61.
 - [ ] Owner: run two-account packaged social acceptance and Drive permission

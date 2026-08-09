@@ -11,7 +11,10 @@ Last updated: 2026-08-09.
   labeling, exact Google Drive workspace entry authorization, room-people
   fallback discovery, room heartbeat retry/status feedback, room-history
   wording, preview action coverage, and Drive-link clipboard fallback.
-- Evidence on 2026-08-09: strict typecheck; 496 tests across 58 files; Activity
+- Follow-up hardening validates and normalizes room codes before media and
+  room-people RPCs, preventing malformed browser state from producing noisy
+  PostgREST 400s. The guard is covered by dedicated service tests.
+- Evidence on 2026-08-09: strict typecheck; 499 tests across 59 files; Activity
   build; Windows Electron/NSIS package; packaged smoke; GitHub Feature PR and
   Workers builds all pass.
 - The code gates do not prove live Supabase/RLS, Realtime, OAuth, Drive
