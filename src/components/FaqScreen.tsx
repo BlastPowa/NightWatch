@@ -38,6 +38,11 @@ const FAQS: readonly FaqItem[] = [
     answer: 'When a room has loaded media, the same mounted player becomes a mini-player on other screens. This preserves playback and synchronization instead of creating a second player or reloading the video.',
   },
   {
+    category: 'Watch rooms',
+    question: 'How does ScreenWatch work?',
+    answer: 'The host opens ScreenWatch, chooses a window, browser tab, or full display in the system picker, then viewers choose Join share. The picture travels directly between participants over WebRTC; NightWatch coordinates the room but does not upload, record, or relay the pixels. Everyone needs a connected NightWatch account, and the room relay must be deployed before sharing can start.',
+  },
+  {
     category: 'Browse & player',
     question: 'Are hover previews muted?',
     answer: 'Yes. Desktop hover previews use one official YouTube iframe at a time and start muted to respect browser autoplay rules. They are disabled for touch layouts, reduced motion, unavailable embeds, and when you turn previews off in Settings.',
