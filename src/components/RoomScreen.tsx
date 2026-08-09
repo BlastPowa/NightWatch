@@ -15,6 +15,7 @@ import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInviteToken } from '@/lib/room/InviteTokenService';
 import { getRoomPeople, type PublicPerson } from '@/lib/people/PeopleService';
 import { sendFriendRequest } from '@/lib/social/FriendService';
+import { listLiveRoomCoWatchers } from '@/lib/social/LiveRoomSocialService';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -106,11 +107,33 @@ export function RoomScreen({
     if (dockTab !== 'people') return;
     let active = true;
     setRoomPeopleLoading(true);
-    void getRoomPeople(room.code).then((result) => {
+    void getRoomPeople(room.code).then(async (result) => {
+      if (!active) return;
+      if (result.ok) {
+        setRoomPeople(result.value);
+        setRoomPeopleLoading(false);
+        return;
+      }
+
+      // Keep friend requests usable while a new get_room_people deployment is
+      // propagating or a short-lived heartbeat has not reached the newer RPC.
+      // The legacy endpoint is still RLS/block aware and returns only people
+      // currently sharing this room.
+      const fallback = await listLiveRoomCoWatchers(room.code);
       if (!active) return;
       setRoomPeopleLoading(false);
-      if (result.ok) setRoomPeople(result.value);
-      else setFriendActionMessage(result.message);
+      if (fallback.status === 'ok') {
+        setRoomPeople(fallback.data.map((person) => ({
+          userId: person.userId,
+          handle: null,
+          displayName: person.displayName,
+          avatarUrl: person.avatarUrl,
+          border: person.selectedBorderId,
+          relationship: 'none',
+        })));
+      } else {
+        setFriendActionMessage(result.message);
+      }
     });
     return () => { active = false; };
   }, [dockTab, room.code, room.members.length]);

@@ -495,7 +495,19 @@ export function App(): JSX.Element {
       isElectron={isElectron}
       capabilities={{ ...socialCapabilities, library: libraryAvailable }}
       room={{ active: inRoom, code: inRoom ? session.state.code : '', name: roomMeta?.name ?? 'Watch room', memberCount: inRoom ? session.state.members.length : 0 }}
-      identity={{ name: displayName, avatarUrl: displayAvatarUrl, connected: authUser !== null || platformAvatarUrl !== null }}
+      identity={{
+        name: displayName,
+        avatarUrl: displayAvatarUrl,
+        // An Activity-provided display name/avatar is not a Supabase session.
+        // Keep the distinction visible so social features never look broken
+        // simply because an identity chip said “Discord connected”.
+        connected: authUser !== null,
+        connectionLabel: authUser !== null
+          ? 'NightWatch account'
+          : platformAvatarUrl !== null
+            ? 'Discord Activity identity'
+            : 'Local profile',
+      }}
       runtime={{ connectionStatus, bridgeError, appInfo }}
       search={{ query: globalSearchQuery, busy: browseSearching, onQueryChange: setGlobalSearchQuery, onSubmit: handleGlobalSearch }}
     >

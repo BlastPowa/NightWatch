@@ -1,11 +1,13 @@
 /* Phase 35: full-bleed discovery, player deck, startup-adjacent polish. */
 
 .app-view-settings .content {
-  /* Keep the shell fixed. The settings workspace, rather than the entire
-   * application page, owns the remaining block space and its own scroll. */
-  display: flex;
+  /* The application shell owns the viewport.  Only the right-hand settings
+   * pane scrolls, so short Windows windows never hide the final Appearance
+   * cards below an inaccessible page scrollbar. */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
   min-height: 0;
-  flex-direction: column;
   overflow: hidden;
 }
 
@@ -13,11 +15,8 @@
   /* The application shell owns the viewport.  The workspace must not grow
    * past it or the final Appearance cards end up below an inaccessible page
    * scroll area on short Windows windows. */
-  flex: 1 1 0;
-  height: auto !important;
-  /* Do not use 100% here: the workspace sits below the sticky top bar, so
-   * 100% makes the final Appearance cards extend below the viewport. */
-  block-size: auto !important;
+  height: 100% !important;
+  block-size: 100% !important;
   min-height: 0 !important;
   max-height: none !important;
   align-self: stretch;
@@ -25,9 +24,9 @@
 }
 
 .app-view-settings .settings-content {
-  height: 100%;
+  height: auto;
   min-height: 0;
-  max-height: 100%;
+  max-height: none;
   overflow-y: auto !important;
   overscroll-behavior: contain;
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));
@@ -67,9 +66,9 @@ html[data-custom-background='true'] .app-cinematic-shell::before {
 html[data-custom-background='true'] .app-cinematic-shell::after {
   z-index: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 30%,transparent), color-mix(in srgb,var(--nw-bg) 68%,transparent)),
-    radial-gradient(75% 68% at 82% 3%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 34%,transparent), transparent 70%),
-    radial-gradient(72% 66% at 8% 96%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 30%,transparent), transparent 72%);
+    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 24%,transparent), color-mix(in srgb,var(--nw-bg) 62%,transparent)),
+    radial-gradient(75% 68% at 82% 3%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 48%,transparent), transparent 70%),
+    radial-gradient(72% 66% at 8% 96%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 42%,transparent), transparent 72%);
   background-size: auto, 122% 122%, 126% 126%;
   animation: nw-artwork-backdrop 20s ease-in-out infinite alternate;
 }
@@ -111,6 +110,23 @@ html[data-custom-background='true'][data-background='cinema'] .app-cinematic-she
     radial-gradient(120% 96% at 50% 42%, transparent 20%, rgba(0,0,0,.62) 100%),
     radial-gradient(72% 58% at 50% 14%, color-mix(in srgb,#ffbb60 22%,transparent), transparent 72%);
   animation: none;
+}
+
+/* Personal artwork must not make the selected backdrop cosmetic.  These
+ * named washes deliberately remain distinct and sit above the image, while
+ * all application panels retain their normal readable surface treatment. */
+html[data-custom-background='true'][data-background='midnight'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,#020613 18%,transparent), color-mix(in srgb,#020613 76%,transparent)),
+    radial-gradient(78% 72% at 84% 2%, color-mix(in srgb,#315cc7 48%,transparent), transparent 68%),
+    radial-gradient(70% 68% at 8% 96%, color-mix(in srgb,#7458d8 40%,transparent), transparent 70%);
+}
+
+html[data-custom-background='true'][data-background='frost'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,#dff7ff 18%,transparent), color-mix(in srgb,#061521 72%,transparent)),
+    radial-gradient(86% 76% at 76% 0, color-mix(in srgb,#8eddff 58%,transparent), transparent 66%),
+    radial-gradient(70% 64% at 10% 100%, color-mix(in srgb,#4a7eff 38%,transparent), transparent 70%);
 }
 
 html[data-custom-background='true'] .app-cinematic-shell .content {
