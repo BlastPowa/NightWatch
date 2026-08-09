@@ -17,7 +17,15 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
   cover malformed browser input without contacting Supabase.
 - [x] Pass typecheck, 499 tests, Activity build, Electron package, packaged
   smoke, and remote Feature PR validation.
+- [x] Separate the normal Vercel browser build from the Discord Activity entry;
+  `build:web` uses `vite.config.browser.ts` and `build:activity` keeps the
+  `frame_id`-based Activity entry.
 - [ ] Owner: review and merge PR #61.
+- [ ] Owner: assign the desired production Vercel domain (for example
+  `nightwatch.vercel.app`) and allow public access on the Production
+  deployment; preview protection may show a Vercel login by design.
+- [ ] Owner: deploy `docs/installer-site/` as a separate static Vercel project
+  if the installer/download page should have its own public URL.
 - [ ] Owner: run two-account packaged social acceptance and Drive permission
   acceptance; only then trigger the intentional Release workflow.
 - [x] Owner/network: confirm the configured `VITE_SUPABASE_URL` resolves from

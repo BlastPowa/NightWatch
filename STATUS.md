@@ -4,7 +4,7 @@ Last updated: 2026-08-09.
 
 ## Phase 44 reliability patch (PR #61, pending merge)
 
-- `fix/phase-44-reliability` is pushed through commit `604afb7` and has a
+- `fix/phase-44-reliability` is pushed through commit `65d9ac8` and has a
   clean, green PR: [#61](https://github.com/BlastPowa/NightWatch/pull/61).
 - Fixed the inner Search focus rectangle, deterministic Settings scrolling,
   visible backdrop/artwork layers, truthful Activity-vs-NightWatch account
@@ -84,6 +84,12 @@ Last updated: 2026-08-09.
 - Release validation now runs all tests, builds an unpublished Windows
   candidate, and boots the packaged main process in smoke mode before any
   version commit or tag is created.
+- Vercel now uses the normal browser renderer (`vite.config.browser.ts` and
+  `index.html`/`main.tsx`); Discord Activity keeps its separate
+  `vite.config.web.ts` and `index.discord.html` entry. This prevents a normal
+  browser deployment from requiring Discord's `frame_id` query parameter.
+- The static installer/product page is tracked under `docs/installer-site/`
+  and is intentionally a separate Vercel project/root from the browser app.
 - Frontend evidence on 2026-07-25 after rebasing onto PR #55: strict typecheck;
   all 443 tests across 49 files; Activity build (333 modules); Windows
   Electron/NSIS package (81.8 MB
