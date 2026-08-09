@@ -18,6 +18,9 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
 - [ ] Owner: review and merge PR #61.
 - [ ] Owner: run two-account packaged social acceptance and Drive permission
   acceptance; only then trigger the intentional Release workflow.
+- [ ] Owner/network: confirm the configured `VITE_SUPABASE_URL` resolves from
+  the test machine, then run `select public.runtime_capabilities_v2();` while
+  signed in. The current environment's read-only probe returned DNS failure.
 
 ## Phase 34 backend lane (`backend/phase-34-production-parity`)
 

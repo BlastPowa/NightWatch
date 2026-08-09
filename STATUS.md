@@ -19,6 +19,9 @@ Last updated: 2026-08-09.
   accounts must test room chat, reactions, friend request/accept, DM/group
   messaging, relaunch/reconnect, and Drive workspace authorization before
   merging/releasing.
+- A read-only live probe on 2026-08-09 could not resolve the configured
+  Supabase hostname, so the current environment cannot confirm the deployed
+  manifest. This is an owner/network configuration gate, not a passing result.
 
 ## Phase 34 backend (merged through PR #55)
 
