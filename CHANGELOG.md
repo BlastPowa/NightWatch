@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Phase 44 — reliability and interaction hardening
+
+- Added CI-safe, non-secret Supabase/Discord validation configuration so
+  renderer tests initialize consistently on GitHub Actions.
+- Fixed Search focus styling, Settings inner scrolling, backdrop visibility,
+  exact Drive workspace file authorization, room discovery fallback and
+  heartbeat retry feedback.
+- Renamed the discovery history view to `Room history` so its room-scoped
+  behavior is explicit, hid duplicate thumbnail actions during hover previews,
+  and added a renderer clipboard fallback for Drive links.
+- Local evidence: 492 tests across 57 files, Activity build, Electron package,
+  packaged smoke, and green PR #61 validation.
+
 ### Phase 35 — Discord social surface & opaque room invites (backend/platform)
 
 Authored on the Phase 34 branch at the owner's direction; **must be moved to

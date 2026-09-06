@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FEATURE_FUNCTION_REQUIREMENTS } from '@shared/runtimeCapabilities';
+import { runtimeCapabilities } from '@/lib/platform/RuntimeCapabilityService';
 
 const rpcMock = vi.fn();
 const getSessionMock = vi.fn();
@@ -20,32 +22,47 @@ import {
 
 const PLATFORM = { htmlMedia: true, googleDrive: false };
 
-const SERVER_ALL = {
-  schemaVersion: 1,
-  peopleDiscovery: true,
-  roomPeople: true,
-  roomMedia: true,
-  signaling: true,
-};
+const ALL_FUNCTIONS = Object.fromEntries(
+  Object.values(FEATURE_FUNCTION_REQUIREMENTS).flat().map((name) => [name, true]),
+);
+
+function manifest(
+  authenticated: boolean,
+  functions: Record<string, boolean> = {},
+) {
+  return {
+    schemaGeneration: 2,
+    authenticated,
+    functions,
+    realtimeTables: [],
+  };
+}
 
 beforeEach(() => {
   resetRoomMediaCapabilities();
+  runtimeCapabilities.reset();
   rpcMock.mockReset();
   getSessionMock.mockReset();
+  // The singleton capability service waits for this promise before it asks
+  // Supabase for the server manifest. Every scenario must settle it.
+  getSessionMock.mockResolvedValue({ data: { session: null } });
   invokeMock.mockReset();
 });
 
 describe('explainRoomMediaCapabilities', () => {
   it('reports signed-out for every flag before authentication', async () => {
-    getSessionMock.mockResolvedValue({ data: { session: null } });
+    rpcMock.mockResolvedValue({ data: manifest(false), error: null });
     await getRoomMediaCapabilities(PLATFORM);
     const reasons = explainRoomMediaCapabilities(PLATFORM);
     expect(Object.values(reasons).every((reason) => reason === 'signed-out')).toBe(true);
   });
 
   it('reports not-deployed when the capabilities RPC is missing', async () => {
-    getSessionMock.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
-    rpcMock.mockResolvedValue({ data: null, error: { code: '42883' } });
+    rpcMock.mockImplementation((functionName: string) => (
+      functionName === 'runtime_capabilities_v2'
+        ? Promise.resolve({ data: null, error: { code: '42883' } })
+        : Promise.resolve({ data: { hasSession: true, functions: {}, realtimeTables: [] }, error: null })
+    ));
     invokeMock.mockResolvedValue({ data: null, error: { context: { status: 404 } } });
     await getRoomMediaCapabilities(PLATFORM);
     const reasons = explainRoomMediaCapabilities(PLATFORM);
@@ -54,8 +71,7 @@ describe('explainRoomMediaCapabilities', () => {
   });
 
   it('distinguishes platform gaps from relay gaps once deployed', async () => {
-    getSessionMock.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
-    rpcMock.mockResolvedValue({ data: SERVER_ALL, error: null });
+    rpcMock.mockResolvedValue({ data: manifest(true, ALL_FUNCTIONS), error: null });
     // TURN function not configured/deployed:
     invokeMock.mockResolvedValue({ data: null, error: { context: { status: 404 } } });
     await getRoomMediaCapabilities(PLATFORM);
@@ -69,8 +85,7 @@ describe('explainRoomMediaCapabilities', () => {
   });
 
   it('reports available across the board when everything is deployed', async () => {
-    getSessionMock.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
-    rpcMock.mockResolvedValue({ data: SERVER_ALL, error: null });
+    rpcMock.mockResolvedValue({ data: manifest(true, ALL_FUNCTIONS), error: null });
     invokeMock.mockResolvedValue({ data: null, error: { context: { status: 403 } } });
     await getRoomMediaCapabilities({ htmlMedia: true, googleDrive: true });
     const reasons = explainRoomMediaCapabilities({ htmlMedia: true, googleDrive: true });

@@ -7,9 +7,9 @@ export type IconName =
   | 'compass' | 'search' | 'close' | 'bell'
   | 'music' | 'gaming' | 'live' | 'film' | 'entertainment' | 'comedy'
   | 'sports' | 'news' | 'education' | 'technology' | 'travel' | 'tools'
-  | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right'
+  | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right' | 'chevron-up'
   | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users' | 'maximize' | 'refresh'
-  | 'pause' | 'sound';
+  | 'pause' | 'sound' | 'monitor';
 
 interface IconProps {
   name: IconName;
@@ -70,6 +70,7 @@ function glyph(name: IconName): JSX.Element {
     case 'sparkle': return <><path d="m12 2 1.3 4.7L18 8l-4.7 1.3L12 14l-1.3-4.7L6 8l4.7-1.3L12 2Z" /><path d="m19 14 .7 2.3L22 17l-2.3.7L19 20l-.7-2.3L16 17l2.3-.7L19 14Z" /></>;
     case 'chevron-left': return <path d="m15 18-6-6 6-6" />;
     case 'chevron-right': return <path d="m9 18 6-6-6-6" />;
+    case 'chevron-up': return <path d="m6 15 6-6 6 6" />;
     case 'plus': return <path d="M12 5v14M5 12h14" />;
     case 'check': return <path d="m5 12 4 4L19 6" />;
     case 'send': return <path d="m10.31 13.69 4.84-4.84M20.11 5.89l-4.09 13.29c-.37 1.19-.55 1.79-.87 1.99-.27.17-.61.2-.91.07-.34-.14-.62-.7-1.18-1.81l-2.59-5.18c-.09-.18-.13-.27-.19-.35a1.36 1.36 0 0 0-.51-.37l-5.2-2.59C3.46 10.38 2.9 10.1 2.76 9.76a1 1 0 0 1 .07-.91c.2-.32.8-.5 1.99-.87l13.29-4.09c.94-.29 1.41-.43 1.72-.32.28.1.5.32.6.6.11.31-.03.78-.32 1.72Z" />;
@@ -79,5 +80,6 @@ function glyph(name: IconName): JSX.Element {
     case 'refresh': return <><path d="M20 7v5h-5" /><path d="M18.1 15a7 7 0 1 1-.4-6.5L20 12" /></>;
     case 'pause': return <><rect x="7" y="5" width="3" height="14" rx="1" /><rect x="14" y="5" width="3" height="14" rx="1" /></>;
     case 'sound': return <><path d="M5 10v4h3l4 4V6l-4 4H5Z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11" /></>;
+    case 'monitor': return <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></>;
   }
 }

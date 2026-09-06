@@ -27,9 +27,12 @@ interface PlayerPanelProps {
   roomCode: string;
   allowRoomMomentNotes: boolean;
   presentation: 'full' | 'mini' | 'hidden';
+  /** Keep the YouTube iframe mounted while another room source is selected. */
+  active?: boolean;
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   onMediaStateChange?(hasVideo: boolean): void;
+  onVideoIdChange?(videoId: string | null): void;
   onReturnToRoom?(): void;
   miniCollapsed?: boolean;
   onMiniCollapsedChange?(collapsed: boolean): void;
@@ -50,8 +53,10 @@ export function PlayerPanel({
   roomCode,
   allowRoomMomentNotes,
   presentation,
+  active = true,
   takeNextFromQueue,
   onMediaStateChange,
+  onVideoIdChange,
   onReturnToRoom,
   miniCollapsed = false,
   onMiniCollapsedChange,
@@ -59,6 +64,7 @@ export function PlayerPanel({
   exposeLoadVideo,
 }: PlayerPanelProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const engineRef = useRef<SyncEngine | null>(null);
   const isHostRef = useRef(isHost);
@@ -77,11 +83,20 @@ export function PlayerPanel({
   const [syncDelayMs, setSyncDelayMs] = useState<number | null>(null);
   const [reactionsOpen, setReactionsOpen] = useState(true);
   const [momentsOpen, setMomentsOpen] = useState(true);
+  const [theaterMode, setTheaterMode] = useState(false);
   const videoIdRef = useRef<string | null>(null);
   videoIdRef.current = videoId;
   const settings = useSettings();
   const authUser = useAuth();
   const socialCapabilities = useSocialCapabilities(authUser !== null);
+
+  useEffect(() => {
+    // React 18's DOM typings do not expose inert yet, but Chromium does. Set
+    // it imperatively so an inactive source cannot receive keyboard focus
+    // while its iframe remains mounted for playback continuity.
+    const element = rootRef.current as (HTMLDivElement & { inert?: boolean }) | null;
+    if (element !== null) element.inert = !active;
+  }, [active]);
 
   const { bursts, markers, send, status: reactionStatus, removeBurst } = useReactions(
     service,
@@ -295,11 +310,19 @@ export function PlayerPanel({
   }, [hasVideo, onMediaStateChange]);
 
   useEffect(() => {
+    onVideoIdChange?.(videoId);
+  }, [onVideoIdChange, videoId]);
+
+  useEffect(() => {
     return () => onMediaStateChange?.(false);
   }, [onMediaStateChange]);
 
   return (
-    <div className={`player-panel player-panel-${presentation}`}>
+    <div
+      ref={rootRef}
+      className={`player-panel player-panel-${presentation}${theaterMode ? ' player-panel-theater' : ''}${active ? '' : ' player-panel-inactive'}`}
+      aria-hidden={active ? undefined : true}
+    >
       <div
         className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
         style={{
@@ -358,6 +381,15 @@ export function PlayerPanel({
         <div className="player-media-state">
           <span className={`watch-role${isHost ? ' watch-role-host' : ''}`}>{isHost ? 'Host' : 'Viewer'}</span>
           <span className="sync-readout"><span className="status-dot" aria-hidden="true" />{syncDelayMs === null ? 'Sync ready' : `~${syncDelayMs}ms`}</span>
+          <button
+            type="button"
+            className="button player-theater-button"
+            aria-pressed={theaterMode}
+            onClick={() => setTheaterMode((current) => !current)}
+          >
+            <Icon name="maximize" size={14} />
+            {theaterMode ? 'Exit theater' : 'Theater'}
+          </button>
         </div>
       </div>
 
@@ -387,7 +419,21 @@ export function PlayerPanel({
             {syncDelayMs !== null && ` · sync delay ~${syncDelayMs}ms`}
           </p>
         )}
-        {error !== null && <p className="form-error" role="status">{error}</p>}
+        {error !== null && (
+          <div className="player-error" role="status">
+            <p className="form-error">{error}</p>
+            {error === 'The video owner does not allow embedding.' && videoId !== null && (
+              <a
+                className="player-error-link"
+                href={`https://www.youtube.com/watch?v=${videoId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open on YouTube
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       <TimelineMarkers markers={markers} durationSeconds={durationSeconds} />

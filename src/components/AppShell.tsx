@@ -44,6 +44,7 @@ interface AppShellProps {
     name: string;
     avatarUrl: string | null;
     connected: boolean;
+    connectionLabel?: string;
   };
   runtime: {
     connectionStatus: ConnectionStatus;
@@ -176,7 +177,7 @@ export function AppShell({
             {capabilities.notifications && <NotificationCenter />}
             <button type="button" className="profile-chip" data-tour="profile" onClick={() => onNavigate('card')} aria-label="Open your profile">
               <ProfileAvatar src={identity.avatarUrl} name={identity.name} />
-              <span className="profile-chip-copy"><strong>{identity.name}</strong><small>{identity.connected ? 'Discord connected' : 'Local profile'}</small></span>
+              <span className="profile-chip-copy"><strong>{identity.name}</strong><small>{identity.connectionLabel ?? (identity.connected ? 'NightWatch account' : 'Local profile')}</small></span>
             </button>
           </div>
         </header>

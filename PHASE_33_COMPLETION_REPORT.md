@@ -46,8 +46,9 @@ session had no shell sandbox. Every test below is **written but not executed**.
 | `src/lib/rtc/TurnService.ts` | `getTurnDiagnostics()` client for the above |
 | `src/lib/media/roomMediaCapabilities.ts` | Retains the last detection pass and adds `explainRoomMediaCapabilities()` → typed disabled reasons |
 
-Not touched: React components, shared visual CSS, `NightWatch-acceptance`,
-Git, and every Phase 32 contract already merged.
+Not touched during that historical delivery: React components, shared visual
+CSS, the then-separate frontend acceptance worktree, Git, and every Phase 32
+contract already merged.
 
 ## 5. Migration order and SQL the owner must run
 

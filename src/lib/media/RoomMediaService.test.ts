@@ -19,6 +19,17 @@ const mode = {
 describe('RoomMediaService', () => {
   beforeEach(() => mocks.rpc.mockReset());
 
+  it('rejects malformed room codes before making a media RPC request', async () => {
+    const result = await getRoomMediaDescriptor('not-a-room');
+    expect(result).toEqual({
+      ok: false,
+      code: 'forbidden',
+      message: 'That room code is not valid.',
+      retryable: false,
+    });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it('normalizes a published snapshot', async () => {
     mocks.rpc.mockResolvedValue({
       data: [{
@@ -29,21 +40,21 @@ describe('RoomMediaService', () => {
       }],
       error: null,
     });
-    const result = await publishRoomMediaDescriptor('ABC123', 1, mode);
+    const result = await publishRoomMediaDescriptor('ABC234', 1, mode);
     expect(result.ok && result.value.revision).toBe(2);
     expect(mocks.rpc).toHaveBeenCalledWith('publish_room_media_descriptor', {
-      p_room_code: 'ABC123', p_expected_revision: 1, p_mode: mode,
+      p_room_code: 'ABC234', p_expected_revision: 1, p_mode: mode,
     });
   });
 
   it('returns null when a room has no persisted media state', async () => {
     mocks.rpc.mockResolvedValue({ data: [], error: null });
-    expect(await getRoomMediaDescriptor('ABC123')).toEqual({ ok: true, value: null });
+    expect(await getRoomMediaDescriptor('ABC234')).toEqual({ ok: true, value: null });
   });
 
   it('rejects malformed server state', async () => {
     mocks.rpc.mockResolvedValue({ data: [{ revision: 0 }], error: null });
-    const result = await getRoomMediaDescriptor('ABC123');
+    const result = await getRoomMediaDescriptor(' abc234 ');
     expect(!result.ok && result.code).toBe('server-error');
   });
 
@@ -57,8 +68,8 @@ describe('RoomMediaService', () => {
         }],
         error: null,
       });
-    expect((await reportMediaReadiness('ABC123', 2, 'ready')).ok).toBe(true);
-    const roster = await getMediaReadinessRoster('ABC123', 2);
+    expect((await reportMediaReadiness('ABC234', 2, 'ready')).ok).toBe(true);
+    const roster = await getMediaReadinessRoster('ABC234', 2);
     expect(roster.ok && roster.value[0]?.displayName).toBe('Viewer');
   });
 });

@@ -8,13 +8,17 @@ import { useQueue } from '@/hooks/useQueue';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { Icon } from '@/components/Icon';
+import { copyText } from '@/lib/clipboard';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MovieWatchPanel } from '@/components/MovieWatchPanel';
+import { ScreenWatchPanel } from '@/components/ScreenWatchPanel';
 import type { MediaPlatformBridge } from '@shared/mediaBridge';
 import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInviteToken } from '@/lib/room/InviteTokenService';
 import { getRoomPeople, type PublicPerson } from '@/lib/people/PeopleService';
 import { sendFriendRequest } from '@/lib/social/FriendService';
+import { listLiveRoomCoWatchers } from '@/lib/social/LiveRoomSocialService';
+import type { SocialResult } from '@/lib/social/types';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -27,11 +31,13 @@ interface RoomScreenProps {
   pendingVideo: { videoId: string; title: string; mode: 'play' | 'queue'; positionSeconds?: number } | null;
   onPendingHandled(): void;
   onMediaStateChange(hasVideo: boolean): void;
+  liveRoomPresenceStatus?: SocialResult<void>['status'];
   mediaBridge?: MediaPlatformBridge | null;
   htmlMediaAvailable?: boolean;
   pendingMovieSource?: HtmlMediaSourceDescriptor | null;
   onPendingMovieHandled?(): void;
   onReturnToRoom(): void;
+  onOpenAccount?(): void;
   onLeave(): void;
 }
 
@@ -60,18 +66,21 @@ export function RoomScreen({
   pendingVideo,
   onPendingHandled,
   onMediaStateChange,
+  liveRoomPresenceStatus = 'ok',
   mediaBridge = null,
   htmlMediaAvailable = false,
   pendingMovieSource = null,
   onPendingMovieHandled,
   onReturnToRoom,
+  onOpenAccount,
   onLeave,
 }: RoomScreenProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const [dockTab, setDockTab] = useState<'queue' | 'chat' | 'people' | 'moments' | 'discovery'>('queue');
   const [miniCollapsed, setMiniCollapsed] = useState(false);
   const [miniPosition, setMiniPosition] = useState<{ left: number; top: number } | null>(null);
-  const [watchMode, setWatchMode] = useState<'youtube' | 'movie'>('youtube');
+  const [watchMode, setWatchMode] = useState<'youtube' | 'movie' | 'screen'>('youtube');
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
   const roomViewRef = useRef<HTMLElement | null>(null);
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
@@ -106,11 +115,33 @@ export function RoomScreen({
     if (dockTab !== 'people') return;
     let active = true;
     setRoomPeopleLoading(true);
-    void getRoomPeople(room.code).then((result) => {
+    void getRoomPeople(room.code).then(async (result) => {
+      if (!active) return;
+      if (result.ok) {
+        setRoomPeople(result.value);
+        setRoomPeopleLoading(false);
+        return;
+      }
+
+      // Keep friend requests usable while a new get_room_people deployment is
+      // propagating or a short-lived heartbeat has not reached the newer RPC.
+      // The legacy endpoint is still RLS/block aware and returns only people
+      // currently sharing this room.
+      const fallback = await listLiveRoomCoWatchers(room.code);
       if (!active) return;
       setRoomPeopleLoading(false);
-      if (result.ok) setRoomPeople(result.value);
-      else setFriendActionMessage(result.message);
+      if (fallback.status === 'ok') {
+        setRoomPeople(fallback.data.map((person) => ({
+          userId: person.userId,
+          handle: null,
+          displayName: person.displayName,
+          avatarUrl: person.avatarUrl,
+          border: person.selectedBorderId,
+          relationship: 'none',
+        })));
+      } else {
+        setFriendActionMessage(result.message);
+      }
     });
     return () => { active = false; };
   }, [dockTab, room.code, room.members.length]);
@@ -183,28 +214,11 @@ export function RoomScreen({
   }
 
   function copyCode(): void {
-    navigator.clipboard
-      .writeText(room.code)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => {
-        const field = document.createElement('textarea');
-        field.value = room.code;
-        field.setAttribute('readonly', '');
-        field.style.position = 'fixed';
-        field.style.opacity = '0';
-        document.body.appendChild(field);
-        field.select();
-        const didCopy = document.execCommand('copy');
-        field.remove();
-        if (didCopy) {
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 1500);
-        }
-        // Clipboard unavailable (e.g. file:// context) — code stays visible.
-      });
+    void copyText(room.code).then((didCopy) => {
+      if (!didCopy) return;
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    });
   }
 
   async function copySecureInvite(): Promise<void> {
@@ -212,7 +226,10 @@ export function RoomScreen({
     setInviteStatus(null);
     try {
       if (roomInvite !== null) {
-        await navigator.clipboard.writeText(buildInviteTokenLink(roomInvite.token));
+        if (!await copyText(buildInviteTokenLink(roomInvite.token))) {
+          setInviteStatus('The secure invite is ready, but this device could not copy it.');
+          return;
+        }
         setInviteStatus('Secure invite copied. It can be used once before it expires.');
         return;
       }
@@ -221,7 +238,10 @@ export function RoomScreen({
         setInviteStatus(result.message);
         return;
       }
-      await navigator.clipboard.writeText(buildInviteTokenLink(result.value.token));
+      if (!await copyText(buildInviteTokenLink(result.value.token))) {
+        setInviteStatus('The secure invite was created, but this device could not copy it.');
+        return;
+      }
       setRoomInvite(result.value);
       setInviteStatus('Secure invite copied. It can be used once before it expires.');
     } catch {
@@ -388,9 +408,11 @@ export function RoomScreen({
           </div>
           <div className="watch-mode-tabs" role="tablist" aria-label="Watch source">
             <button type="button" role="tab" aria-selected={watchMode === 'youtube'} className={watchMode === 'youtube' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('youtube')}><Icon name="play" size={16} />YouTube Watch</button>
-            {mediaBridge !== null && htmlMediaAvailable && <button type="button" role="tab" aria-selected={watchMode === 'movie'} className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('movie')}><Icon name="film" size={16} />Movie Watch</button>}
+            {mediaBridge !== null && htmlMediaAvailable ? <button type="button" role="tab" aria-selected={watchMode === 'movie'} className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('movie')}><Icon name="film" size={16} />Movie Watch</button> : <button type="button" role="tab" aria-selected="false" className="watch-mode-tab watch-mode-tab-disabled" disabled title="Movie Watch is available in the packaged Electron app"><Icon name="film" size={16} />Movie Watch<span className="watch-mode-tab-hint">Electron app</span></button>}
+            <button type="button" role="tab" aria-selected={watchMode === 'screen'} className={watchMode === 'screen' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'} onClick={() => setWatchMode('screen')}><Icon name="monitor" size={16} />ScreenWatch</button>
           </div>
-          {watchMode === 'youtube' && <PlayerPanel
+          <PlayerPanel
+            active={watchMode === 'youtube'}
             service={service}
             isHost={selfIsHost}
             roomCode={room.code}
@@ -398,6 +420,7 @@ export function RoomScreen({
             presentation={presentation}
             takeNextFromQueue={queue.popNext}
             onMediaStateChange={onMediaStateChange}
+            onVideoIdChange={setYoutubeVideoId}
             onReturnToRoom={onReturnToRoom}
             miniCollapsed={miniCollapsed}
             onMiniCollapsedChange={setMiniCollapsed}
@@ -405,7 +428,7 @@ export function RoomScreen({
             exposeLoadVideo={(loader) => {
               loadVideoRef.current = loader;
             }}
-          />}
+          />
           {mediaBridge !== null && <MovieWatchPanel
             roomCode={room.code}
             service={service}
@@ -420,6 +443,14 @@ export function RoomScreen({
             onModeChange={setWatchMode}
             onHasMediaChange={() => onMediaStateChange(false)}
           />}
+          <ScreenWatchPanel
+            roomCode={room.code}
+            selfId={selfId}
+            isHost={selfIsHost}
+            active={watchMode === 'screen'}
+            onOpenAccount={onOpenAccount}
+            youtubeVideoId={youtubeVideoId}
+          />
 
         </div>
 
@@ -453,7 +484,7 @@ export function RoomScreen({
           </div>
 
           <div id={`room-dock-panel-${dockTab}`} className={`room-dock-panel room-dock-${dockTab}`} role="tabpanel" aria-labelledby={`room-dock-tab-${dockTab}`} tabIndex={0}>
-            {dockTab === 'queue' && <QueuePanel queue={queue} selfId={selfId} selfName={self?.displayName ?? 'Me'} isHost={selfIsHost} onPlayNext={handlePlayNext} />}
+            {dockTab === 'queue' && <QueuePanel queue={queue} selfId={selfId} selfName={self?.displayName ?? 'Me'} members={room.members} isHost={selfIsHost} onPlayNext={handlePlayNext} />}
             {dockTab === 'chat' && <div className="room-chat-section"><ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} /></div>}
             {dockTab === 'people' && (
               <ul className="member-list">
@@ -479,6 +510,7 @@ export function RoomScreen({
             )}
             {dockTab === 'people' && (
               <div className="room-people-actions">
+                {liveRoomPresenceStatus !== 'ok' && <p className="room-people-hint" role="status">{liveRoomPresenceStatus === 'unauthenticated' ? 'Connect your NightWatch account to discover people in this room.' : liveRoomPresenceStatus === 'rate-limited' ? 'Room discovery is briefly rate-limited; it will retry automatically.' : liveRoomPresenceStatus === 'offline' ? 'Room discovery is offline; reconnecting automatically.' : 'Room discovery is reconnecting…'}</p>}
                 {roomPeopleLoading && <p className="room-people-hint">Checking signed-in people in this roomâ€¦</p>}
                 {!roomPeopleLoading && roomPeople.filter((person) => person.relationship === 'none').map((person) => (
                   <article key={person.userId} className="room-person-request-card">

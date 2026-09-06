@@ -5,6 +5,7 @@ import {
   type CommsOutcome,
 } from '@shared/roomComms';
 import { supabase } from '@/lib/supabase';
+import { isValidRoomCode, normalizeRoomCode } from '@shared/room';
 
 /**
  * Phase 32 — privacy-safe people discovery and room-people actions (0026).
@@ -86,7 +87,11 @@ export async function searchPeople(query: string): Promise<CommsOutcome<PublicPe
 export async function getRoomPeople(
   roomCode: string,
 ): Promise<CommsOutcome<PublicPerson[]>> {
-  const { data, error } = await supabase.rpc('get_room_people', { p_room_code: roomCode });
+  const code = normalizeRoomCode(roomCode);
+  if (!isValidRoomCode(code)) {
+    return commsFail('forbidden', 'That room code is not valid.');
+  }
+  const { data, error } = await supabase.rpc('get_room_people', { p_room_code: code });
   if (error !== null) {
     return commsFailFromRpc(error);
   }

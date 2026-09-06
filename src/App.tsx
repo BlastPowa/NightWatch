@@ -41,6 +41,7 @@ import { getPlatformBridge } from '@/platform/PlatformBridge';
 import { canonicalDiscordAvatarUrl } from '@/lib/assets';
 import type { HtmlMediaSourceDescriptor, MediaCapabilities } from '@shared/media';
 import { diagnoseSocial, type SocialDiagnosis } from '@/lib/social/SocialDiagnosticsService';
+import type { SocialResult } from '@/lib/social/types';
 import { Icon } from '@/components/Icon';
 import { redeemRoomInvite } from '@/lib/room/InviteTokenService';
 import { subscribeToFriendRequests } from '@/lib/social/SocialRealtime';
@@ -72,6 +73,7 @@ export function App(): JSX.Element {
   const [browseSearching, setBrowseSearching] = useState(false);
   const [browseResetNonce, setBrowseResetNonce] = useState(0);
   const [roomHasVideo, setRoomHasVideo] = useState(false);
+  const [liveRoomPresenceStatus, setLiveRoomPresenceStatus] = useState<SocialResult<void>['status']>('ok');
   const connectionStatus = useConnectionStatus();
   const authUser = useAuth();
   const session = useRoom(roomCode, identity);
@@ -312,15 +314,29 @@ export function App(): JSX.Element {
   // caller has a fresh heartbeat in the same room.
   useEffect(() => {
     if (roomCode === null || authUser === null || identity === null) {
+      setLiveRoomPresenceStatus(authUser === null ? 'unauthenticated' : 'ok');
       return;
     }
-    const publish = (): void => {
-      void heartbeatLiveRoomSocial(roomCode, identity.id);
+    let active = true;
+    let retryTimer: number | null = null;
+    const publish = async (): Promise<void> => {
+      const result = await heartbeatLiveRoomSocial(roomCode, identity.id);
+      if (!active) return;
+      setLiveRoomPresenceStatus(result.status);
+      // Auth/session restoration and short-lived RPC deployment/network
+      // failures should recover without requiring the user to leave/rejoin.
+      // Do not retry a server rate-limit response; the regular heartbeat will
+      // resume at the safe cadence below.
+      if (result.status !== 'ok' && result.status !== 'rate-limited') {
+        retryTimer = window.setTimeout(() => { void publish(); }, 3_000);
+      }
     };
-    publish();
+    void publish();
     const timer = window.setInterval(publish, 60_000);
     return () => {
+      active = false;
       window.clearInterval(timer);
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
       void leaveLiveRoomSocial(roomCode);
     };
   }, [authUser, identity, roomCode]);
@@ -495,7 +511,19 @@ export function App(): JSX.Element {
       isElectron={isElectron}
       capabilities={{ ...socialCapabilities, library: libraryAvailable }}
       room={{ active: inRoom, code: inRoom ? session.state.code : '', name: roomMeta?.name ?? 'Watch room', memberCount: inRoom ? session.state.members.length : 0 }}
-      identity={{ name: displayName, avatarUrl: displayAvatarUrl, connected: authUser !== null || platformAvatarUrl !== null }}
+      identity={{
+        name: displayName,
+        avatarUrl: displayAvatarUrl,
+        // An Activity-provided display name/avatar is not a Supabase session.
+        // Keep the distinction visible so social features never look broken
+        // simply because an identity chip said “Discord connected”.
+        connected: authUser !== null,
+        connectionLabel: authUser !== null
+          ? 'NightWatch account'
+          : platformAvatarUrl !== null
+            ? 'Discord Activity identity'
+            : 'Local profile',
+      }}
       runtime={{ connectionStatus, bridgeError, appInfo }}
       search={{ query: globalSearchQuery, busy: browseSearching, onQueryChange: setGlobalSearchQuery, onSubmit: handleGlobalSearch }}
     >
@@ -566,11 +594,13 @@ export function App(): JSX.Element {
             pendingVideo={pendingVideo}
             onPendingHandled={() => setPendingVideo(null)}
             onMediaStateChange={setRoomHasVideo}
+            liveRoomPresenceStatus={liveRoomPresenceStatus}
             mediaBridge={mediaBridge}
             htmlMediaAvailable={mediaCapabilities?.htmlMedia === true}
             pendingMovieSource={pendingMovie?.source ?? null}
             onPendingMovieHandled={() => setPendingMovie(null)}
             onReturnToRoom={() => setView('main')}
+            onOpenAccount={() => { setSettingsInitialSection('account'); setView('settings'); }}
             onLeave={handleLeaveRoom}
           />
         ) : (

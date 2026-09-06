@@ -4,9 +4,8 @@
   what is stale.
 
 .DESCRIPTION
-  The backend and frontend lanes work in parallel and neither can see the
-  other's uncommitted work. This is the check that catches the three ways that
-  goes wrong:
+  NightWatch uses one local working folder and separate remote feature
+  branches. This check catches the three ways remote branch work can drift:
 
     * a lane has pushed work nobody merged
     * a lane is behind main and will hit conflicts on rebase

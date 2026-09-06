@@ -195,16 +195,27 @@ export class DriveManager {
       return picked;
     }
 
+    return this.selectFileIdWithToken(picked.value, token.accessToken);
+  }
+
+  /** Authorize the exact file selected in the in-app workspace listing. */
+  async selectFileId(fileId: string): Promise<MediaResult<SelectedMedia>> {
+    if (!/^[A-Za-z0-9_-]{10,128}$/.test(fileId)) {
+      return mediaFail('invalid-request', 'That Drive file selection is invalid.');
+    }
+    const token = await this.session.getAccessToken();
+    if (token.status !== 'ok') return authOutcomeToFailure(token);
+    return this.selectFileIdWithToken(fileId, token.accessToken);
+  }
+
+  private async selectFileIdWithToken(fileId: string, accessToken: string): Promise<MediaResult<SelectedMedia>> {
     const metadata = await fetchDriveMetadata(
       this.deps.fetchFn,
-      token.accessToken,
-      picked.value,
+      accessToken,
+      fileId,
       this.deps.maxSizeBytes(),
     );
-    if (!metadata.ok) {
-      return metadata;
-    }
-
+    if (!metadata.ok) return metadata;
     return mediaOk({
       descriptor: {
         schemaVersion: 1,
@@ -215,7 +226,6 @@ export class DriveManager {
         mimeType: metadata.value.mimeType,
         size: metadata.value.size,
       },
-      // Drive selections have no device-local file; the fileId is the handle.
       localHandle: metadata.value.fileId,
     });
   }

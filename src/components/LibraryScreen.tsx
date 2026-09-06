@@ -10,6 +10,7 @@ import type {
 } from '@shared/mediaBridge';
 import type { DriveUploadProgress, DriveWorkspaceEntry, DriveWorkspacePage } from '@shared/driveWorkspaceContracts';
 import { Icon } from '@/components/Icon';
+import { copyText } from '@/lib/clipboard';
 
 interface LibraryScreenProps {
   bridge: MediaPlatformBridge;
@@ -141,9 +142,13 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
         }
         return;
       }
-      setDrive(result.value);
-      setMessage(result.value.connected
-        ? `Google Drive connected${result.value.accountEmail ? ` as ${result.value.accountEmail}` : ''}.`
+      // The OAuth callback runs in the system browser. Read the encrypted
+      // desktop state again after it resolves instead of leaving the Library
+      // on an optimistic/old connection result when focus returns.
+      const confirmed = await bridge.getDriveConnection();
+      setDrive(confirmed);
+      setMessage(confirmed.connected
+        ? `Google Drive connected${confirmed.accountEmail ? ` as ${confirmed.accountEmail}` : ''}.`
         : 'Google authorization returned, but no Drive credential was stored. Try connecting again.');
     } finally {
       setBusy(null);
@@ -288,9 +293,14 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
       return;
     }
     setBusy('drive-pick');
-    setMessage('Choose this authorized file in Google Picker to create a private playback lease.');
+    setMessage('Authorizing this Drive file on this device…');
     try {
-      const selected = await bridge.pickDriveFile();
+      // Workspace rows already came from the authorized folder. Re-use the
+      // exact clicked id when the Electron bridge supports it; Picker remains
+      // only as a compatibility fallback for older/web bridges.
+      const selected = bridge.authorizeDriveWorkspaceEntry !== undefined
+        ? await bridge.authorizeDriveWorkspaceEntry(entry.id)
+        : await bridge.pickDriveFile();
       if (selected.ok) await prepare(selected.value);
       else if (selected.error.code !== 'cancelled') setMessage(failureMessage(selected.error));
     } finally {
@@ -305,8 +315,10 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
 
   async function copyWorkspaceLink(): Promise<void> {
     if (driveWorkspace === null) return;
-    await navigator.clipboard.writeText(driveWorkspace.webViewLink);
-    setMessage('Drive folder link copied. Google Drive permission is still required for every viewer.');
+    const copied = await copyText(driveWorkspace.webViewLink);
+    setMessage(copied
+      ? 'Drive folder link copied. Google Drive permission is still required for every viewer.'
+      : 'The folder link could not be copied on this device. Select it from Open in Drive and copy it there.');
   }
 
   async function disconnectDrive(): Promise<void> {

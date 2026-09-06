@@ -16,6 +16,13 @@ permissions:
 jobs:
   validate-and-open:
     runs-on: windows-latest
+    # Unit tests import the renderer Supabase client even when they exercise
+    # offline UI paths. Keep CI deterministic without embedding any project
+    # credentials; production values are supplied only to the packaged build.
+    env:
+      VITE_SUPABASE_URL: https://ci.supabase.invalid
+      VITE_SUPABASE_ANON_KEY: ci-test-anon-key
+      VITE_DISCORD_CLIENT_ID: ci-test-discord-client
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -26,6 +33,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build:activity
+      - run: npm run smoke:web
       - run: npm run build -- --publish never
         env:
           NIGHTWATCH_ENABLE_LOCAL_FILES: ${{ vars.NIGHTWATCH_ENABLE_LOCAL_FILES }}

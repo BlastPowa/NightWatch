@@ -45,17 +45,27 @@ export function mapSessionToUser(session: Session | null): AuthUser | null {
  * platform deep link and is completed by completeSignIn().
  */
 export async function signInWithDiscord(): Promise<void> {
+  const inElectron = typeof window !== 'undefined' && typeof window.nightwatch !== 'undefined';
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'discord',
     options: {
-      redirectTo: 'nightwatch://auth-callback',
-      skipBrowserRedirect: true,
+      // Electron receives the callback through its registered deep link. The
+      // browser build uses a same-origin route so multi-account testing can
+      // complete the PKCE exchange without requiring the desktop shell.
+      redirectTo: inElectron
+        ? 'nightwatch://auth-callback'
+        : `${window.location.origin}/auth/callback`,
+      skipBrowserRedirect: inElectron,
     },
   });
   if (error !== null || !data.url) {
     throw new Error(error?.message ?? 'Could not start Discord sign-in.');
   }
-  window.open(data.url);
+  if (inElectron) {
+    window.open(data.url);
+  } else {
+    window.location.assign(data.url);
+  }
 }
 
 /** Complete sign-in from the deep-link callback URL. */

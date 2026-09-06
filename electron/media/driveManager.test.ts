@@ -250,6 +250,21 @@ describe('pick', () => {
       expect(picked.error.code).toBe('auth-required');
     }
   });
+
+  it('authorizes the exact workspace entry id without opening Picker', async () => {
+    const { manager } = makeManager();
+    await manager.connect();
+    const selected = await manager.selectFileId(FILE_ID);
+    expect(selected.ok).toBe(true);
+    if (selected.ok) expect(selected.value.descriptor).toMatchObject({ fileId: FILE_ID });
+  });
+
+  it('rejects malformed workspace entry ids before contacting Drive', async () => {
+    const { manager } = makeManager();
+    const selected = await manager.selectFileId('bad!');
+    expect(selected.ok).toBe(false);
+    if (!selected.ok) expect(selected.error.code).toBe('invalid-request');
+  });
 });
 
 describe('lease validation', () => {

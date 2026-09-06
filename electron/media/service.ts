@@ -297,6 +297,20 @@ export class MediaService {
     );
 
     ipcMain.handle(
+      IpcChannel.MediaAuthorizeDriveWorkspaceEntry,
+      guard<[unknown], MediaResult<SelectedMedia>>(
+        async (_event, entryId) => {
+          const drive = driveReady();
+          if (drive === null || typeof entryId !== 'string') {
+            return driveOff<SelectedMedia>();
+          }
+          return drive.selectFileId(entryId);
+        },
+        () => driveOff<SelectedMedia>(),
+      ),
+    );
+
+    ipcMain.handle(
       IpcChannel.MediaDisconnectDrive,
       guard<[], MediaResult<void>>(
         async () => {

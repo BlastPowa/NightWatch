@@ -42,6 +42,22 @@ export function useAuth(): AuthUser | null {
           })
         : null;
 
+    // Browser OAuth returns to the same-origin callback route. Electron uses
+    // the nightwatch:// deep link above, so this branch is intentionally
+    // browser-only and keeps the URL clean after the PKCE exchange.
+    if (typeof window.nightwatch === 'undefined' && window.location.pathname.endsWith('/auth/callback')) {
+      completeSignIn(window.location.href)
+        .then(() => {
+          window.history.replaceState({}, document.title, '/');
+          setLastAuthError(null);
+        })
+        .catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          log('error', `Browser sign-in failed: ${message}`);
+          setLastAuthError(message);
+        });
+    }
+
     return () => {
       subscription.unsubscribe();
       unsubscribeCallback?.();
