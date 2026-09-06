@@ -356,13 +356,13 @@ in `build/`.
 ## Prompt for Claude/Opus 5
 
 ```text
-Work in C:\Users\Blast\source\repos\NightWatch-fable.
+Work in C:\Users\Blast\source\repos\NightWatch.
 
 Read these files completely before editing:
-1. C:\Users\Blast\source\repos\NightWatch-fable\CLAUDE.md
-2. C:\Users\Blast\source\repos\NightWatch-fable\PHASE_34_TO_43_BACKEND_PLATFORM_HANDOFF.md
-3. C:\Users\Blast\source\repos\NightWatch-fable\PHASE_33_FRONTEND_CONTRACTS.md
-4. C:\Users\Blast\source\repos\NightWatch-fable\PHASE_33_PACKAGED_ACCEPTANCE.md
+1. C:\Users\Blast\source\repos\NightWatch\CLAUDE.md
+2. C:\Users\Blast\source\repos\NightWatch\PHASE_34_TO_43_BACKEND_PLATFORM_HANDOFF.md
+3. C:\Users\Blast\source\repos\NightWatch\PHASE_33_FRONTEND_CONTRACTS.md
+4. C:\Users\Blast\source\repos\NightWatch\PHASE_33_PACKAGED_ACCEPTANCE.md
 
 Start Phase 34 only. Fetch origin and create backend/phase-34-production-parity from origin/main. Do not continue from backend/phase-33-comms-completion or another stale branch.
 

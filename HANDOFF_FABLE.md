@@ -2,9 +2,10 @@
 
 ## Workspaces
 
-- Frontend: `C:\Users\Blast\source\repos\NightWatch` on `frontend/nightwatch-cinematic`
-- Backend: `C:\Users\Blast\source\repos\NightWatch-fable` on `backend/nightwatch-platform`
-- Both worktrees belong to the same Git repository. Commit and push from the owning worktree; never copy uncommitted files between them.
+- Canonical checkout: `C:\Users\Blast\source\repos\NightWatch`
+- Frontend and backend ownership is separated by branches and file scope, not by local folders.
+- Run `npm run workspace:check`, then use `npm run git:start -- -Branch backend/<task>` from the canonical checkout.
+- Only one contributor edits the checkout at a time; never copy uncommitted files between branches.
 
 ## Fable ownership
 

@@ -16,6 +16,7 @@
     "vercel-build": "npm run build:web",
     "dev:activity": "vite --config vite.config.web.ts",
     "git:sync": "powershell -ExecutionPolicy Bypass -File scripts/git/sync-feature.ps1",
+    "git:start": "powershell -ExecutionPolicy Bypass -File scripts/git/start-feature.ps1",
     "git:finish": "powershell -ExecutionPolicy Bypass -File scripts/git/finish-feature.ps1",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "test": "vitest run",
@@ -23,7 +24,8 @@
     "smoke:packaged": "powershell -ExecutionPolicy Bypass -File scripts/smoke/run-packaged-smoke.ps1",
     "smoke:web": "npm run build:web && powershell -ExecutionPolicy Bypass -File scripts/smoke/check-web-build.ps1",
     "preview": "vite preview",
-    "lanes": "powershell -ExecutionPolicy Bypass -File scripts/git/lane-status.ps1"
+    "lanes": "powershell -ExecutionPolicy Bypass -File scripts/git/lane-status.ps1",
+    "workspace:check": "powershell -ExecutionPolicy Bypass -File scripts/git/workspace-check.ps1"
   },
   "dependencies": {
     "@discord/embedded-app-sdk": "^1.9.0",

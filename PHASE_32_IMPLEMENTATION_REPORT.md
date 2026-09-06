@@ -42,7 +42,7 @@ Modified:
   (`ive ran`) that broke fresh deploys
 - `STATUS.md`, `TASKS.md`, `ROADMAP.md`, `CHANGELOG.md`
 
-Not touched: React components, visual CSS, `NightWatch-acceptance`, Git.
+Not touched during that historical backend delivery: React components, visual CSS, the then-separate frontend acceptance worktree, and Git.
 
 ## 3. Contracts & capabilities implemented
 

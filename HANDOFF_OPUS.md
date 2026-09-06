@@ -19,11 +19,12 @@ sync state never streams, nothing rendered over the iframe, ads untouched.
   to main, never tag/release** (owner does that via PR merges + tag-triggered
   GitHub Action).
 - Two git worktrees of one parent repo:
-  - `C:\Users\Blast\source\repos\NightWatch` → branch
-    `frontend/nightwatch-cinematic` → **Codex** (components, index.css, brand)
-  - `C:\Users\Blast\source\repos\NightWatch-fable` → branch
-    `backend/nightwatch-platform` → **you** (electron/**, shared/**,
-    src/lib/**, src/platform/**, supabase/**, vite configs, packaging/updater)
+  - `C:\Users\Blast\source\repos\NightWatch` is the only local checkout.
+  - Codex uses an approved `frontend/**` or `fix/**` branch for UI work.
+  - Opus uses an approved `backend/**` branch for `electron/**`, `shared/**`,
+    `src/lib/**`, `src/platform/**`, `supabase/**`, Vite configs, packaging, and updater work.
+  - Only one contributor edits the checkout at a time. Start each branch with
+    `npm run git:start -- -Branch <branch>` and finish with `npm run git:finish`.
 - Coordinate (minimal diffs, flag in handback) before touching: App.tsx,
   RoomScreen.tsx, PlayerPanel.tsx, MyRoomsScreen.tsx, electron-builder.yml,
   package manifests, index.css, STATUS/TASKS/CHANGELOG.

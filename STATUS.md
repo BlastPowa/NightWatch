@@ -2,10 +2,17 @@
 
 Last updated: 2026-08-09.
 
+## Workspace consolidation (2026-09-06)
+
+- `C:\Users\Blast\source\repos\NightWatch` is the only supported local checkout for frontend, backend, Supabase, Electron, web, installer, documentation, and release work.
+- Former linked worktree folders were retired after their clean state was verified. The only uncommitted legacy Movie Watch work was preserved at `origin/archive/phase-31-movie-watch-snapshot` before removal.
+- Use `npm run workspace:check` to verify the checkout, `npm run git:start -- -Branch <type/name>` to start from current `origin/main`, and `npm run git:finish -- -Message "..."` to validate and publish through the reviewed pull-request workflow.
+- Only one contributor or agent may edit the canonical checkout at a time.
+
 ## Phase 44 reliability patch (PR #61, pending merge)
 
-- `fix/phase-44-reliability` is pushed through commit `65d9ac8` and has a
-  clean, green PR: [#61](https://github.com/BlastPowa/NightWatch/pull/61).
+- `fix/phase-44-reliability` is the active reviewed delivery branch for
+  [PR #61](https://github.com/BlastPowa/NightWatch/pull/61).
 - Fixed the inner Search focus rectangle, deterministic Settings scrolling,
   visible backdrop/artwork layers, truthful Activity-vs-NightWatch account
   labeling, exact Google Drive workspace entry authorization, room-people
@@ -266,5 +273,5 @@ Last updated: 2026-08-09.
 - Verify real Discord Activity avatar URL mappings and launch behavior.
 - Verify the installed updater round-trip from `v0.1.23` to the next approved release.
 - Verify the same-instance mini-player with two packaged clients and real YouTube caption tracks/languages; automated tests cover presentation continuity and official caption parameters, but live provider behavior remains an owner acceptance item.
-- Claude's separately gated Phase 29 handoff is ready at `C:\Users\Blast\source\repos\NightWatch-fable\PHASE_29_MEDIA_LIBRARY_HANDOFF.md` for `backend/phase-29-media-library`; it explicitly excludes protected-service downloads, DRM extraction, media relays, and free-unlimited-cloud claims.
+- The separately gated Phase 29 handoff is stored in the canonical checkout at `PHASE_29_MEDIA_LIBRARY_HANDOFF.md`; it explicitly excludes protected-service downloads, DRM extraction, media relays, and free-unlimited-cloud claims.
 - Phase 29 local/Google Drive media remains separately gated and is not part of the Phase 24–28 completion gate.
