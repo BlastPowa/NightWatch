@@ -8,6 +8,7 @@ import type {
   SelectedMedia,
 } from '@shared/mediaBridge';
 import { Icon } from '@/components/Icon';
+import { DriveRoomGuide, DriveShareActions } from '@/components/DriveShareActions';
 
 interface LibraryScreenProps {
   bridge: MediaPlatformBridge;
@@ -236,12 +237,16 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
                   <Icon name="close" size={15} />
                   Disconnect
                 </button>
+                <DriveShareActions />
               </div>
             ) : (
-              <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void connectDrive()}>
-                <Icon name="cloud" />
-                {busy === 'drive-connect' ? 'Connecting…' : 'Connect Google Drive'}
-              </button>
+              <div className="library-drive-actions">
+                <button type="button" className="button button-primary library-action" disabled={busy !== null} onClick={() => void connectDrive()}>
+                  <Icon name="cloud" />
+                  {busy === 'drive-connect' ? 'Connecting…' : 'Connect Google Drive'}
+                </button>
+                <DriveShareActions />
+              </div>
             )}
           </article>
         )}
@@ -273,6 +278,16 @@ export function LibraryScreen({ bridge, capabilities }: LibraryScreenProps): JSX
               </div>
               <span className="library-private-badge"><Icon name="lock" size={14} />Private preview</span>
             </div>
+            {active.selected.descriptor.kind === 'drive' && (
+              <div className="library-share-panel">
+                <div>
+                  <span className="eyebrow">Share for Movie Watch</span>
+                  <h3>Give every viewer access before starting the room</h3>
+                  <DriveRoomGuide role="host" />
+                </div>
+                <DriveShareActions fileId={active.selected.descriptor.fileId} mode="host" />
+              </div>
+            )}
           </>
         )}
       </section>

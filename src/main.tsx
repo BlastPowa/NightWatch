@@ -10,6 +10,7 @@ import '@/styles/phase28-controls.css';
 import '@/styles/phase28-player.css';
 import '@/styles/phase29-library.css';
 import '@/styles/phase30-guidance.css';
+import '@/styles/phase31-movie-watch.css';
 
 setPlatformBridge(typeof window.nightwatch !== 'undefined' ? electronBridge : webBridge);
 initCloudSync();

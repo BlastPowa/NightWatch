@@ -37,6 +37,8 @@ import { getPlatformBridge } from '@/platform/PlatformBridge';
 import { canonicalDiscordAvatarUrl } from '@/lib/assets';
 import type { MediaCapabilities } from '@shared/media';
 
+const NO_MEDIA_PROTOCOLS = [] as const;
+
 interface PendingVideo {
   videoId: string;
   title: string;
@@ -57,12 +59,19 @@ export function App(): JSX.Element {
   const [browseSearchRequest, setBrowseSearchRequest] = useState<{ query: string; nonce: number } | null>(null);
   const [browseSearching, setBrowseSearching] = useState(false);
   const [roomHasVideo, setRoomHasVideo] = useState(false);
+  const platformBridge = getPlatformBridge();
+  const isElectron = platformBridge.kind === 'electron';
+  const mediaBridge = platformBridge.media;
+  const [mediaCapabilities, setMediaCapabilities] = useState<MediaCapabilities | null>(null);
   const connectionStatus = useConnectionStatus();
-  const session = useRoom(roomCode, identity);
+  const session = useRoom(
+    roomCode,
+    identity,
+    mediaCapabilities?.mediaProtocolVersions ?? NO_MEDIA_PROTOCOLS,
+  );
   const settings = useSettings();
   const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [mediaCapabilities, setMediaCapabilities] = useState<MediaCapabilities | null>(null);
 
   useEffect(() => {
     return achievementTracker.onUnlock((achievement) => {
@@ -159,9 +168,6 @@ export function App(): JSX.Element {
     );
   }, [authUser]);
   const socialCapabilities = useSocialCapabilities(authUser !== null);
-  const platformBridge = getPlatformBridge();
-  const isElectron = platformBridge.kind === 'electron';
-  const mediaBridge = platformBridge.media;
   const libraryAvailable =
     mediaBridge !== null &&
     mediaCapabilities !== null &&
@@ -430,6 +436,8 @@ export function App(): JSX.Element {
             onMediaStateChange={setRoomHasVideo}
             onReturnToRoom={() => setView('main')}
             onLeave={handleLeaveRoom}
+            mediaBridge={mediaBridge}
+            mediaCapabilities={mediaCapabilities}
           />
         ) : (
           view === 'main' && (

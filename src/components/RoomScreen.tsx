@@ -9,6 +9,13 @@ import type { RoomService, RoomState } from '@/lib/room/RoomService';
 import type { RoomMeta } from '@/lib/rooms/PersistentRoomService';
 import { Icon } from '@/components/Icon';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import {
+  MovieWatchPanel,
+  type MovieWatchController,
+} from '@/components/MovieWatchPanel';
+import type { MediaCapabilities } from '@shared/media';
+import type { MediaPlatformBridge } from '@shared/mediaBridge';
+import { copyPlainText } from '@/lib/clipboard';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -23,6 +30,8 @@ interface RoomScreenProps {
   onMediaStateChange(hasVideo: boolean): void;
   onReturnToRoom(): void;
   onLeave(): void;
+  mediaBridge?: MediaPlatformBridge | null;
+  mediaCapabilities?: MediaCapabilities | null;
 }
 
 function formatScheduleBanner(iso: string): string {
@@ -52,13 +61,46 @@ export function RoomScreen({
   onMediaStateChange,
   onReturnToRoom,
   onLeave,
+  mediaBridge = null,
+  mediaCapabilities = null,
 }: RoomScreenProps): JSX.Element {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [dockTab, setDockTab] = useState<'queue' | 'chat' | 'people' | 'moments' | 'discovery'>('queue');
+  const [watchMode, setWatchMode] = useState<'youtube' | 'movie'>('youtube');
   const self = room.members.find((member) => member.id === selfId);
   const selfIsHost = self?.isHost ?? false;
   const queue = useQueue(service, selfIsHost);
   const loadVideoRef = useRef<((videoId: string, startSeconds?: number) => void) | null>(null);
+  const movieControllerRef = useRef<MovieWatchController | null>(null);
+  const movieAvailable =
+    mediaBridge !== null &&
+    mediaCapabilities !== null &&
+    mediaCapabilities.htmlMedia;
+
+  useEffect(() => {
+    if (typeof service.on !== 'function') {
+      return;
+    }
+    const stopYouTube = service.on('media:v1:load', () => {
+      setWatchMode('movie');
+      setDockTab((current) =>
+        current === 'queue' || current === 'discovery' ? 'chat' : current,
+      );
+    });
+    const stopMovie = service.on('playback:load', () => {
+      setWatchMode('youtube');
+    });
+    return () => {
+      stopYouTube();
+      stopMovie();
+    };
+  }, [service]);
+
+  useEffect(() => {
+    if (!movieAvailable && watchMode === 'movie') {
+      setWatchMode('youtube');
+    }
+  }, [movieAvailable, watchMode]);
 
   // Opt-in session insights (Phase 17, ADR-014): record only while this
   // client is host AND the room owner enabled insights.
@@ -127,16 +169,23 @@ export function RoomScreen({
     }
   }
 
-  function copyCode(): void {
-    navigator.clipboard
-      .writeText(room.code)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => {
-        // Clipboard unavailable (e.g. file:// context) — code stays visible.
-      });
+  async function copyCode(): Promise<void> {
+    const copied = await copyPlainText(room.code);
+    setCopyState(copied ? 'copied' : 'failed');
+    window.setTimeout(() => setCopyState('idle'), 1800);
+  }
+
+  function selectWatchMode(mode: 'youtube' | 'movie'): void {
+    if (mode === 'movie' && !movieAvailable) return;
+    if (mode === 'youtube' && watchMode === 'movie' && selfIsHost) {
+      movieControllerRef.current?.unload();
+    }
+    if (mode === 'movie') {
+      setDockTab((current) =>
+        current === 'queue' || current === 'discovery' ? 'chat' : current,
+      );
+    }
+    setWatchMode(mode);
   }
 
   function openMomentTools(): void {
@@ -159,12 +208,18 @@ export function RoomScreen({
           <button
             type="button"
             className="room-code"
-            onClick={copyCode}
+            onClick={() => void copyCode()}
             title="Copy room code"
             aria-label={`Copy room code ${room.code}`}
           >
-            {room.code}
-            <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
+            <span className="room-code-value">{room.code}</span>
+            <span className={`room-code-hint room-code-hint-${copyState}`}>
+              <Icon
+                name={copyState === 'copied' ? 'check' : copyState === 'failed' ? 'info' : 'send'}
+                size={13}
+              />
+              {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy code'}
+            </span>
           </button>
         </div>
         {meta !== null && (
@@ -214,6 +269,30 @@ export function RoomScreen({
             <div><span className="eyebrow">Now watching</span><h1>{meta?.name ?? 'Your watch party'}</h1></div>
             <span className={`watch-role${selfIsHost ? ' watch-role-host' : ''}`}>{selfIsHost ? 'Host controls' : 'Watching in sync'}</span>
           </div>
+          <div className="watch-mode-tabs" role="tablist" aria-label="Watch source">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={watchMode === 'youtube'}
+              className={watchMode === 'youtube' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'}
+              onClick={() => selectWatchMode('youtube')}
+            >
+              <Icon name="play-solid" size={16} />
+              <span><strong>YouTube Watch</strong><small>Official player and shared queue</small></span>
+            </button>
+            {movieAvailable && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={watchMode === 'movie'}
+                className={watchMode === 'movie' ? 'watch-mode-tab watch-mode-tab-active' : 'watch-mode-tab'}
+                onClick={() => selectWatchMode('movie')}
+              >
+                <Icon name="film" size={16} />
+                <span><strong>Movie Watch</strong><small>Local or Google Drive file</small></span>
+              </button>
+            )}
+          </div>
           <PlayerPanel
             service={service}
             isHost={selfIsHost}
@@ -223,10 +302,31 @@ export function RoomScreen({
             takeNextFromQueue={queue.popNext}
             onMediaStateChange={onMediaStateChange}
             onReturnToRoom={onReturnToRoom}
+            active={watchMode === 'youtube'}
             exposeLoadVideo={(loader) => {
-              loadVideoRef.current = loader;
+              loadVideoRef.current = (videoId, startSeconds) => {
+                if (selfIsHost) movieControllerRef.current?.unload();
+                setWatchMode('youtube');
+                loader(videoId, startSeconds);
+              };
             }}
           />
+          {movieAvailable && mediaBridge !== null && mediaCapabilities !== null && (
+            <MovieWatchPanel
+              service={service}
+              members={room.members}
+              selfId={selfId}
+              isHost={selfIsHost}
+              bridge={mediaBridge}
+              capabilities={mediaCapabilities}
+              active={watchMode === 'movie'}
+              onRequestMode={setWatchMode}
+              onMediaStateChange={onMediaStateChange}
+              exposeController={(controller) => {
+                movieControllerRef.current = controller;
+              }}
+            />
+          )}
 
         </div>
 
@@ -252,15 +352,15 @@ export function RoomScreen({
               next?.click();
             }}
           >
-            <DockTab id="queue" label="Up next" icon="play" current={dockTab} onSelect={setDockTab} />
+            {watchMode === 'youtube' && <DockTab id="queue" label="Up next" icon="play" current={dockTab} onSelect={setDockTab} />}
             <DockTab id="chat" label="Chat" icon="message" current={dockTab} onSelect={setDockTab} />
             <DockTab id="people" label="People" icon="users" current={dockTab} onSelect={setDockTab} />
             <DockTab id="moments" label="Moments" icon="clock" current={dockTab} onSelect={setDockTab} />
-            <DockTab id="discovery" label="Discover" icon="search" current={dockTab} onSelect={setDockTab} />
+            {watchMode === 'youtube' && <DockTab id="discovery" label="Discover" icon="search" current={dockTab} onSelect={setDockTab} />}
           </div>
 
           <div id={`room-dock-panel-${dockTab}`} className={`room-dock-panel room-dock-${dockTab}`} role="tabpanel" aria-labelledby={`room-dock-tab-${dockTab}`} tabIndex={0}>
-            {dockTab === 'queue' && <QueuePanel queue={queue} selfId={selfId} selfName={self?.displayName ?? 'Me'} isHost={selfIsHost} onPlayNext={handlePlayNext} />}
+            {dockTab === 'queue' && watchMode === 'youtube' && <QueuePanel queue={queue} selfId={selfId} selfName={self?.displayName ?? 'Me'} isHost={selfIsHost} onPlayNext={handlePlayNext} />}
             {dockTab === 'chat' && <div className="room-chat-section"><ChatPanel service={service} members={room.members} selfName={self?.displayName ?? 'Me'} /></div>}
             {dockTab === 'people' && (
               <ul className="member-list">
@@ -284,8 +384,8 @@ export function RoomScreen({
                 )}
               </ul>
             )}
-            {dockTab === 'moments' && <div className="dock-empty-state"><span className="dock-empty-icon"><Icon name="clock" size={24} /></span><strong>Shared moments</strong><p>Reactions and timestamp notes stay below the official player, where they never cover YouTube controls.</p><button type="button" className="button button-glow" onClick={openMomentTools}>Open moment tools</button></div>}
-            {dockTab === 'discovery' && (selfIsHost ? <SearchBox callerId={selfId} onSelect={(videoId) => loadVideoRef.current?.(videoId)} /> : <div className="dock-empty-state"><span className="dock-empty-icon"><Icon name="search" size={24} /></span><strong>Host discovery</strong><p>The host chooses what loads next. Add your pick to Up Next so everyone can vote.</p><button type="button" className="button" onClick={() => setDockTab('queue')}>Open queue</button></div>)}
+            {dockTab === 'moments' && <div className="dock-empty-state"><span className="dock-empty-icon"><Icon name="clock" size={24} /></span><strong>Shared moments</strong><p>{watchMode === 'youtube' ? 'Reactions and timestamp notes stay below the official player, where they never cover YouTube controls.' : 'Movie reactions and imported subtitles stay with each authorized copy and never expose the file itself.'}</p>{watchMode === 'youtube' && <button type="button" className="button button-glow" onClick={openMomentTools}>Open moment tools</button>}</div>}
+            {dockTab === 'discovery' && watchMode === 'youtube' && (selfIsHost ? <SearchBox callerId={selfId} onSelect={(videoId) => loadVideoRef.current?.(videoId)} /> : <div className="dock-empty-state"><span className="dock-empty-icon"><Icon name="search" size={24} /></span><strong>Host discovery</strong><p>The host chooses what loads next. Add your pick to Up Next so everyone can vote.</p><button type="button" className="button" onClick={() => setDockTab('queue')}>Open queue</button></div>)}
           </div>
 
           <button type="button" className="button room-leave-button" onClick={onLeave}>

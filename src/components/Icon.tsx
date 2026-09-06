@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 
 export type IconName =
-  | 'home' | 'play' | 'play-solid' | 'parties' | 'friends' | 'message' | 'creator'
+  | 'home' | 'play' | 'play-solid' | 'pause' | 'parties' | 'friends' | 'message' | 'creator'
   | 'profile' | 'library' | 'settings' | 'info' | 'help' | 'cloud' | 'shield'
   | 'image' | 'upload'
   | 'compass' | 'search' | 'close' | 'bell'
@@ -34,6 +34,7 @@ function glyph(name: IconName): JSX.Element {
     case 'home': return <><path d="m3 11 9-7 9 7" /><path d="M5.5 10v10h13V10" /><path d="M9.5 20v-6h5v6" /></>;
     case 'play': return <><path d="M7 4.8v14.4L19 12 7 4.8Z" /><circle cx="12" cy="12" r="10" opacity=".35" /></>;
     case 'play-solid': return <path d="M8 5.5v13l10.5-6.5L8 5.5Z" fill="currentColor" stroke="none" />;
+    case 'pause': return <><rect x="6.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none" /><rect x="13.5" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none" /></>;
     case 'parties': return <><rect x="4" y="5" width="14" height="14" rx="2" /><path d="M8 9h6M8 13h6M8 17h4" /><path d="M18 8h2v11a2 2 0 0 1-2 2H7v-2" /></>;
     case 'friends': case 'users': return <><path d="M16 20v-1.7a3.3 3.3 0 0 0-3.3-3.3H6.3A3.3 3.3 0 0 0 3 18.3V20" /><circle cx="9.5" cy="8" r="3" /><path d="M16 11a3 3 0 1 0 0-6M18 20v-1.5a3 3 0 0 0-2-2.8" /></>;
     case 'message': return <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-5 4v-4.4A2.5 2.5 0 0 1 4 13.5v-8Z" /><path d="M8 8h8M8 12h5" /></>;

@@ -27,6 +27,8 @@ interface PlayerPanelProps {
   roomCode: string;
   allowRoomMomentNotes: boolean;
   presentation: 'full' | 'mini' | 'hidden';
+  /** Keeps the existing iframe mounted while another room source is active. */
+  active?: boolean;
   /** Host auto-advance: take the next queued entry when a video ends. */
   takeNextFromQueue: () => { videoId: string } | null;
   onMediaStateChange?(hasVideo: boolean): void;
@@ -47,6 +49,7 @@ export function PlayerPanel({
   roomCode,
   allowRoomMomentNotes,
   presentation,
+  active = true,
   takeNextFromQueue,
   onMediaStateChange,
   onReturnToRoom,
@@ -182,6 +185,12 @@ export function PlayerPanel({
     playerRef.current?.setCaptionFontSize(settings.captionFontSize);
   }, [settings.captionFontSize]);
 
+  useEffect(() => {
+    if (!active && videoId !== null) {
+      playerRef.current?.pause();
+    }
+  }, [active, videoId]);
+
   // Attribute insight events to the video they happened in (Phase 21
   // highlights). A reaction position means nothing without knowing which video
   // it was in, and a session routinely spans several.
@@ -293,7 +302,10 @@ export function PlayerPanel({
   }, [onMediaStateChange]);
 
   return (
-    <div className={`player-panel player-panel-${presentation}`}>
+    <div
+      className={`player-panel player-panel-${presentation}${active ? '' : ' player-panel-source-inactive'}`}
+      aria-hidden={!active ? true : undefined}
+    >
       <div
         className={`player-frame${hasVideo ? '' : ' player-frame-empty'}`}
         style={{

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { GuestIdentity } from '@/lib/identity';
 import { realtimeService } from '@/lib/realtime/RealtimeService';
 import { RoomService, type RoomState } from '@/lib/room/RoomService';
+import type { MediaProtocolVersion } from '@shared/media';
 
 export interface RoomSession {
   state: RoomState;
@@ -13,7 +14,11 @@ export interface RoomSession {
  * unmount or when the code changes. Returns the live session, or null when
  * not in a room.
  */
-export function useRoom(code: string | null, identity: GuestIdentity | null): RoomSession | null {
+export function useRoom(
+  code: string | null,
+  identity: GuestIdentity | null,
+  mediaProtocolVersions: readonly MediaProtocolVersion[] = [],
+): RoomSession | null {
   const [session, setSession] = useState<RoomSession | null>(null);
 
   useEffect(() => {
@@ -22,18 +27,24 @@ export function useRoom(code: string | null, identity: GuestIdentity | null): Ro
       return;
     }
 
-    const service = new RoomService(realtimeService, identity, code, (state) => {
-      if (state.status !== 'left') {
-        setSession({ state, service });
-      }
-    });
+    const service = new RoomService(
+      realtimeService,
+      identity,
+      code,
+      (state) => {
+        if (state.status !== 'left') {
+          setSession({ state, service });
+        }
+      },
+      mediaProtocolVersions,
+    );
     service.join();
 
     return () => {
       setSession(null);
       void service.leave();
     };
-  }, [code, identity]);
+  }, [code, identity, mediaProtocolVersions]);
 
   return session;
 }
