@@ -61,6 +61,36 @@
 .phase26-social-hero p,
 .library-hero p { max-width: 58ch; }
 
+.library-hero h1 {
+  max-width: 16ch;
+  margin: .3rem 0 .55rem;
+  font-size: clamp(2rem, 4.5vw, 4.2rem);
+  line-height: .98;
+  letter-spacing: -.055em;
+  text-wrap: balance;
+}
+
+.library-hero-side {
+  display: grid;
+  min-width: min(420px, 38%);
+  align-content: end;
+  justify-items: end;
+  gap: .75rem;
+}
+
+.library-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
+.library-hero-actions .button {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+}
+
 .friend-summary {
   min-width: 116px;
   padding: .75rem 1rem;
@@ -289,6 +319,9 @@
   .library-page { padding: .8rem; }
   .phase26-social-hero,
   .library-hero { min-height: 0; }
+  .library-hero-side { width: 100%; min-width: 0; justify-items: stretch; }
+  .library-hero-actions { justify-content: flex-start; }
+  .library-hero-actions .button { flex: 1 1 170px; justify-content: center; }
   .friend-summary { min-width: 88px; }
   .messages-page { display: flex; min-height: calc(100dvh - 126px); flex-direction: column; gap: .75rem; }
   .messages-page .conversation-rail { max-height: 42dvh; }

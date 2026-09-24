@@ -345,13 +345,33 @@ export function LibraryScreen({ bridge, capabilities, onWatchInRoom }: LibrarySc
     <section className="library-page fade-up">
       <header className="library-hero">
         <div>
-          <span className="eyebrow">Authorized media</span>
-          <h1>Your Library</h1>
-          <p>Play a video you own from this computer or your private Google Drive. NightWatch never relays the file to other people.</p>
+          <span className="eyebrow">Library</span>
+          <h1>Your authorized media, ready for the room.</h1>
+          <p>Local files and Google Drive stay clearly separated, while both can move into Movie Watch without NightWatch relaying the media to other people.</p>
         </div>
-        <div className="library-security-note">
-          <Icon name="lock" />
-          <span>Paths, tokens, and playback leases stay on this device.</span>
+        <div className="library-hero-side">
+          <div className="library-hero-actions">
+            {capabilities.localFiles && (
+              <button type="button" className="button button-primary" disabled={busy !== null} onClick={() => void chooseLocal()}>
+                <Icon name="plus" size={16} /> Add local media
+              </button>
+            )}
+            {capabilities.googleDrive && (
+              <button
+                type="button"
+                className="button"
+                disabled={busy !== null && busy !== 'drive-connect'}
+                onClick={() => void (drive?.connected ? chooseDrive() : busy === 'drive-connect' ? cancelDriveConnect() : connectDrive())}
+              >
+                <Icon name="cloud" size={16} />
+                {drive?.connected ? 'Choose from Drive' : busy === 'drive-connect' ? 'Cancel Drive' : 'Connect Drive'}
+              </button>
+            )}
+          </div>
+          <div className="library-security-note">
+            <Icon name="lock" />
+            <span>Paths, tokens, and playback leases stay on this device.</span>
+          </div>
         </div>
       </header>
 

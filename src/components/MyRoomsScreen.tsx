@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { isValidRoomCode, normalizeRoomCode } from '@shared/room';
 import { extractVideoId } from '@shared/youtube';
 import { InsightsPanel } from '@/components/InsightsPanel';
 import { RoomMilestones } from '@/components/RoomMilestones';
@@ -39,6 +40,7 @@ function formatSchedule(iso: string | null): string {
 export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScreenProps): JSX.Element {
   const [rooms, setRooms] = useState<PersistentRoom[]>([]);
   const [name, setName] = useState('');
+  const [joinCode, setJoinCode] = useState('');
   const [schedule, setSchedule] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -48,6 +50,7 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
   const [premiereLink, setPremiereLink] = useState('');
   const [insightsCode, setInsightsCode] = useState<string | null>(null);
   const authError = useAuthError();
+  const createNameRef = useRef<HTMLInputElement>(null);
 
   async function handleToggleInsights(room: PersistentRoom): Promise<void> {
     try {
@@ -118,6 +121,34 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
     }
   }
 
+  function handleJoinByCode(event: FormEvent): void {
+    event.preventDefault();
+    const code = normalizeRoomCode(joinCode);
+    if (!isValidRoomCode(code)) {
+      setError('Room codes are 6 letters/numbers, e.g. KX3F9Q.');
+      return;
+    }
+    setError(null);
+    onJoinRoom(code);
+  }
+
+  const joinByCode = (
+    <form className="p27-join-inline" onSubmit={handleJoinByCode}>
+      <input
+        className="input input-code"
+        value={joinCode}
+        maxLength={6}
+        placeholder="ROOM CODE"
+        aria-label="Six-character room code"
+        onChange={(event) => {
+          setJoinCode(event.target.value.toUpperCase());
+          setError(null);
+        }}
+      />
+      <button type="submit" className="button">Join by code</button>
+    </form>
+  );
+
   async function handleSaveSchedule(code: string): Promise<void> {
     try {
       await setRoomSchedule(code, toIso(editSchedule));
@@ -141,7 +172,8 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
     return (
       <div className="settings-page p27-parties-page fade-up">
         <header className="p27-parties-hero">
-          <div><span className="eyebrow">Persistent watch spaces</span><h1 className="page-title">Parties</h1><p>Schedule premieres and keep one familiar room code for your community.</p></div>
+          <div><span className="eyebrow">Parties</span><h1 className="page-title">Your recurring rooms, scheduled nights and invites.</h1><p>Keep a familiar room code, schedule premieres, and jump into an invite without signing in.</p></div>
+          <div className="p27-parties-actions">{joinByCode}</div>
         </header>
         <section className="card settings-card p27-parties-signin">
           <p className="user-sub">
@@ -169,8 +201,12 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
   return (
     <div className="settings-page p27-parties-page fade-up">
       <header className="p27-parties-hero">
-        <div><span className="eyebrow">Persistent watch spaces</span><h1 className="page-title">Parties</h1><p>Schedule premieres, revisit highlights, and keep your community in one familiar room.</p></div>
-        <span className="p27-room-capacity"><strong>{rooms.length}</strong><small>of 10 rooms</small></span>
+        <div><span className="eyebrow">Parties</span><h1 className="page-title">Your recurring rooms, scheduled nights and invites.</h1><p>See what is next, resume a persistent room, or start a new watch night without rebuilding the guest list.</p></div>
+        <div className="p27-parties-actions">
+          <button type="button" className="button button-primary" onClick={() => createNameRef.current?.focus()}>Create party</button>
+          {joinByCode}
+          <span className="p27-room-capacity"><strong>{rooms.length}</strong><small>of 10 rooms</small></span>
+        </div>
       </header>
 
       <section className="card settings-card p27-party-identity">
@@ -196,6 +232,7 @@ export function MyRoomsScreen({ user, onJoinRoom, onPlayHighlight }: MyRoomsScre
         <h2 className="settings-heading">Create a room</h2>
         <form className="room-create-form" onSubmit={(e) => void handleCreate(e)}>
           <input
+            ref={createNameRef}
             className="input"
             value={name}
             maxLength={50}
