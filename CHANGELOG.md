@@ -6,10 +6,19 @@
 
 - Made the public repository genuinely open source under the MIT License and
   surfaced that status on the GitHub-connected installer page.
+- Restored the current Phase 44 browser build to Vercel Production, removed
+  project-level SSO protection so the public `vercel.app` alias is reachable,
+  and retained Git fork protection for untrusted preview branches.
+- Provisioned the dedicated `night-watch-installer` Vercel project, connected
+  it to the NightWatch GitHub repository with `docs/installer-site` as the
+  project root, and published it at `https://night-watch-installer.vercel.app`.
 - Added `npm run smoke:runtime`, a production DNS/capability/TURN preflight,
   and made it a required release-workflow gate. The 2026-09-24 probe correctly
   blocks because the configured production Supabase hostname is currently
   NXDOMAIN rather than silently treating stale deployment evidence as healthy.
+- Room-media capability retries now force a fresh manifest reachability check
+  and distinguish an unreachable backend from a signed-out session, giving
+  Voice and ScreenWatch an explicit retryable `service-unavailable` state.
 - Added CI-safe, non-secret Supabase/Discord validation configuration so
   renderer tests initialize consistently on GitHub Actions.
 - Fixed Search focus styling, Settings inner scrolling, backdrop visibility,
@@ -18,8 +27,9 @@
 - Renamed the discovery history view to `Room history` so its room-scoped
   behavior is explicit, hid duplicate thumbnail actions during hover previews,
   and added a renderer clipboard fallback for Drive links.
-- Local evidence: 492 tests across 57 files, Activity build, Electron package,
-  packaged smoke, and green PR #61 validation.
+- Local evidence: 514 tests across 65 files, strict typecheck, browser build
+  smoke, Electron/NSIS package, packaged smoke, 20/20 installer release checks,
+  and green PR #61 validation.
 
 ### Phase 35 — Discord social surface & opaque room invites (backend/platform)
 

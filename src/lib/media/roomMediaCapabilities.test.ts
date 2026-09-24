@@ -17,6 +17,7 @@ vi.mock('@/lib/platform/RuntimeCapabilityService', () => ({
     whenSessionSettled: mocks.whenSessionSettled,
     refresh: mocks.refresh,
     subscribe: mocks.subscribe,
+    onDiagnostic: vi.fn(() => () => {}),
   },
 }));
 

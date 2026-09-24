@@ -35,7 +35,7 @@ Last updated: 2026-09-24.
   mute, deafen, leave, speaking/device state, remote-audio playback, actionable
   capability diagnostics and central teardown registration. Offer glare is
   handled deterministically and duplicate peer dials are suppressed.
-- Current validation on 2026-09-24 after the page-wide visual pass: all 513 Vitest tests across 65 files pass;
+- Current validation on 2026-09-24 after the page-wide visual and deployment pass: all 514 Vitest tests across 65 files pass;
   strict TypeScript passes; `git diff --check` has no whitespace errors; browser
   build smoke passes; the full Windows Electron/NSIS build passes; packaged
   smoke passes and verifies `NightWatch-Setup-0.1.27.exe` (81.9 MB). Installer
@@ -46,12 +46,24 @@ Last updated: 2026-09-24.
   until `turn-credentials` is deployed/configured and the packaged two-client
   acceptance matrix passes. Passing local tests/builds does not enable the
   server capability flag by itself.
+- The current Phase 44 browser build is restored to Vercel Production and is
+  publicly reachable at `https://night-watch-pauls-projects-805d47bf.vercel.app`.
+  Project SSO protection is disabled for this public app while Git fork
+  protection remains enabled.
+- The installer/download page now has its own GitHub-connected Vercel project,
+  rooted at `docs/installer-site`, and is publicly reachable at
+  `https://night-watch-installer.vercel.app`. Its live release check resolves
+  the GitHub v0.1.27 Windows installer asset.
 - A fresh production-runtime probe on 2026-09-24 found that the configured
   Supabase project hostname is now NXDOMAIN, so the live backend is currently
   unreachable before TURN deployment can even be attempted. `npm run
   smoke:runtime` now makes DNS, the runtime capability RPC and the authenticated
   TURN function surface an explicit release gate instead of relying on a stale
   historical probe.
+- Room-media capability detection now maps an offline/failed runtime manifest
+  probe to `service-unavailable` and forces a real manifest fetch when the user
+  chooses Retry/Check again, avoiding misleading signed-out guidance during a
+  backend or DNS outage.
 - The page-wide revamp is committed on `fix/phase-44-reliability` on top of the
   reliability/installer work. External TURN deployment and two-client packaged
   acceptance remain the release gate rather than visual implementation.

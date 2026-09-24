@@ -58,6 +58,13 @@ describe('explainRoomMediaCapabilities', () => {
     expect(Object.values(reasons).every((reason) => reason === 'signed-out')).toBe(true);
   });
 
+  it('reports service-unavailable when capability discovery cannot reach the backend', async () => {
+    rpcMock.mockRejectedValue(new TypeError('network unavailable'));
+    await getRoomMediaCapabilities(PLATFORM);
+    const reasons = explainRoomMediaCapabilities(PLATFORM);
+    expect(Object.values(reasons).every((reason) => reason === 'service-unavailable')).toBe(true);
+  });
+
   it('reports not-deployed when the capabilities RPC is missing', async () => {
     rpcMock.mockImplementation((functionName: string) => (
       functionName === 'runtime_capabilities_v2'

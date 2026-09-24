@@ -242,7 +242,9 @@ export function ScreenWatchPanel({
   const isSharer = snapshot?.mode.mode === 'live-share' && snapshot.mode.sharerId === selfId;
   const unavailableMessage = !ShareSession.supported()
     ? 'Screen sharing needs a secure browser or the packaged Electron app.'
-    : disabledReason === 'signed-out'
+    : disabledReason === 'service-unavailable'
+      ? 'NightWatch room services could not be reached. Check your connection and try again.'
+      : disabledReason === 'signed-out'
       ? 'Connect a NightWatch account first, then the room relay can safely coordinate the share.'
       : disabledReason === 'relay-not-configured'
         ? 'Your account is connected. The room relay (TURN) still needs to be deployed before live sharing can start.'

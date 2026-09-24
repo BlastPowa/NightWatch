@@ -12,7 +12,7 @@ python -m http.server 4178 --bind 127.0.0.1 --directory docs/installer-site
 
 Open [the local preview](http://127.0.0.1:4178/). Opening `index.html` directly also retains static download links; browser security rules may restrict live fetching or storage on `file://`.
 
-The existing browser build copies this directory to `/installer/`. For independent static hosting, publish the four production files listed above, keeping the `assets/` path. Do not publish `tests/` or `.qa/`. No hosting or workflow changes are required by this implementation. This task validates the local page; it does not create a separate hosting account or deployment.
+The existing browser build also copies this directory to `/installer/` as a fallback route. The dedicated production site is the GitHub-connected Vercel project `night-watch-installer`, rooted at `docs/installer-site`, and is public at [night-watch-installer.vercel.app](https://night-watch-installer.vercel.app/). Only the four production files listed above are required at runtime; do not publish `tests/` or `.qa/`.
 
 ## Release integration
 

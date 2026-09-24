@@ -119,7 +119,9 @@ export function VoicePanel({ roomCode, selfId, members, onOpenAccount }: VoicePa
   );
   const unavailableMessage = !VoiceSession.supported()
     ? 'Voice chat needs a secure browser or the packaged Electron app with microphone access.'
-    : disabledReason === 'signed-out'
+    : disabledReason === 'service-unavailable'
+      ? 'NightWatch room services could not be reached. Check your connection and try again.'
+      : disabledReason === 'signed-out'
       ? 'Connect a NightWatch account to join room voice.'
       : disabledReason === 'relay-not-configured'
         ? 'Voice is configured, but the TURN relay still needs to be deployed for reliable calls.'

@@ -1,6 +1,6 @@
 # NightWatch development tasks
 
-Last updated: 2026-08-09 (Phase 44 reliability validation).
+Last updated: 2026-09-24 (Phase 44 reliability and deployment validation).
 
 ## Phase 44 reliability patch (`fix/phase-44-reliability`, PR #61)
 
@@ -15,29 +15,33 @@ Last updated: 2026-08-09 (Phase 44 reliability validation).
 - [x] Add a clipboard fallback for Drive folder links and unit coverage.
 - [x] Normalize/validate room codes before media and room-people RPC calls and
   cover malformed browser input without contacting Supabase.
-- [x] Pass typecheck, 499 tests, Activity build, Electron package, packaged
-  smoke, and remote Feature PR validation.
+- [x] Pass typecheck, 514 tests across 65 files, browser smoke, Electron/NSIS
+  package, packaged smoke, installer checks, and remote Feature PR validation.
 - [x] Separate the normal Vercel browser build from the Discord Activity entry;
   `build:web` uses `vite.config.browser.ts` and `build:activity` keeps the
   `frame_id`-based Activity entry.
+- [x] Restore the current Phase 44 browser build to Vercel Production and allow
+  public access while retaining Git fork protection.
+- [x] Distinguish runtime-manifest network/backend failures from signed-out
+  state and force a real capability refresh from Voice/ScreenWatch retries.
 - [ ] Owner: review and merge PR #61.
-- [ ] Owner: assign the desired production Vercel domain (for example
-  `nightwatch.vercel.app`) and allow public access on the Production
-  deployment; preview protection may show a Vercel login by design.
-- [ ] Owner: deploy `docs/installer-site/` as a separate static Vercel project
-  if the installer/download page should have its own public URL.
+- [x] Publish the browser app on the public Vercel production alias
+  `https://night-watch-pauls-projects-805d47bf.vercel.app`.
+- [x] Deploy `docs/installer-site/` as the separate GitHub-connected
+  `night-watch-installer` Vercel project at
+  `https://night-watch-installer.vercel.app`.
 - [ ] Owner: run two-account packaged social acceptance and Drive permission
   acceptance; only then trigger the intentional Release workflow.
-- [x] Owner/network: confirm the configured `VITE_SUPABASE_URL` resolves from
-  the test machine. Anonymous probe reached the project and reported schema
-  generation 34 with the expected social, room-media, and RTC functions; its
-  `authenticated: false` result is expected without a signed-in session.
+- [x] Re-run the production runtime probe from the test machine. The configured
+  `VITE_SUPABASE_URL` now fails DNS with NXDOMAIN, and the release gate blocks
+  before capability or TURN checks can be treated as healthy.
 - [ ] Owner: add `http://localhost:5173/auth/callback` and
   `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs, then
   verify two browser profiles each show a NightWatch account session.
-- [ ] Owner/platform: deploy `supabase/functions/turn-credentials` with TURN
-  provider secrets and Verify JWT enabled. The live endpoint currently returns
-  HTTP 404, so ScreenWatch and voice cannot become ready yet.
+- [ ] Owner/platform: restore or replace the production Supabase project and
+  update `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, then deploy
+  `supabase/functions/turn-credentials` with TURN provider secrets and Verify
+  JWT enabled before ScreenWatch or voice can become ready.
 
 ## Phase 34 backend lane (`backend/phase-34-production-parity`)
 
