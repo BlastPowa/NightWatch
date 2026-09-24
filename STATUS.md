@@ -35,7 +35,7 @@ Last updated: 2026-09-24.
   mute, deafen, leave, speaking/device state, remote-audio playback, actionable
   capability diagnostics and central teardown registration. Offer glare is
   handled deterministically and duplicate peer dials are suppressed.
-- Current validation on 2026-09-24 after the page-wide visual and deployment pass: all 514 Vitest tests across 65 files pass;
+- Current validation on 2026-09-25 after the backend recovery pass: all 517 Vitest tests across 65 files pass;
   strict TypeScript passes; `git diff --check` has no whitespace errors; browser
   build smoke passes; the full Windows Electron/NSIS build passes; packaged
   smoke passes and verifies `NightWatch-Setup-0.1.27.exe` (81.9 MB). Installer
@@ -43,7 +43,7 @@ Last updated: 2026-09-24.
   resolves the live v0.1.27 GitHub installer with no console/layout errors at
   320/390/768/1024/1440 px plus 200% zoom/text and reduced motion.
 - TURN-backed voice and ScreenWatch remain **capability gated in deployment**
-  until `turn-credentials` is deployed/configured and the packaged two-client
+  until `turn-credentials` is configured with a TURN provider and the packaged two-client
   acceptance matrix passes. Passing local tests/builds does not enable the
   server capability flag by itself.
 - The current Phase 44 browser build is restored to Vercel Production and is
@@ -54,22 +54,20 @@ Last updated: 2026-09-24.
   rooted at `docs/installer-site`, and is publicly reachable at
   `https://night-watch-installer.vercel.app`. Its live release check resolves
   the GitHub v0.1.27 Windows installer asset.
-- A fresh production-runtime probe on 2026-09-24 found that the configured
-  Supabase project hostname is now NXDOMAIN, so the live backend is currently
-  unreachable before TURN deployment can even be attempted. `npm run
-  smoke:runtime` now makes DNS, the runtime capability RPC and the authenticated
-  TURN function surface an explicit release gate instead of relying on a stale
-  historical probe.
-- Follow-up platform inspection on 2026-09-24 confirmed the existing Supabase
-  project `eiachttvgojmzvcecszz` still exists but is reported by Supabase as
-  `INACTIVE`. Its management plane is reachable, but an authenticated CLI
-  deploy of `turn-credentials` is rejected because inactive projects have no
-  retrievable function service. The project must be resumed in Supabase before
-  the public hostname, runtime RPC, or Edge Function deployment can recover.
-- The remote Edge Function inventory currently contains `search-youtube`,
-  `discord-token`, and `log-session`; `turn-credentials` is not deployed. The
-  project secret inventory also has no Cloudflare TURN or coturn secret names,
-  so one supported TURN provider still needs to be configured after resume.
+- The production Supabase project `eiachttvgojmzvcecszz` was restored on
+  2026-09-25 through the authenticated Supabase management route and is now
+  `ACTIVE_HEALTHY`; its public hostname resolves again and
+  `runtime_capabilities_v2` returns HTTP 200 with schema generation 34.
+- `turn-credentials` is now deployed as an ACTIVE Edge Function with Verify JWT
+  enabled. Its safe diagnostics currently return HTTP 503 because no Cloudflare
+  TURN or coturn provider secret pair is configured, so production voice/share
+  correctly remain fail-closed and capability-hidden.
+- `scripts/smoke/check-production-runtime.ps1` now works on Windows PowerShell
+  5.1 as well as newer PowerShell versions: it uses BasicParsing when available,
+  preserves non-2xx HTTP status codes, and no longer depends on
+  `-SkipHttpErrorCheck` being present. The strict production smoke now reaches
+  the intended TURN release gate; `-AllowUnavailableTurn` passes only for an
+  explicitly capability-gated build.
 - Room-media capability detection now maps an offline/failed runtime manifest
   probe to `service-unavailable` and forces a real manifest fetch when the user
   chooses Retry/Check again, avoiding misleading signed-out guidance during a

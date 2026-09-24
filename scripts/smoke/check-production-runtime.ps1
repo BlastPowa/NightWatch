@@ -39,18 +39,58 @@ function Invoke-JsonProbe {
     [string]$Body
   )
 
-  try {
-    $response = Invoke-WebRequest -Uri $Uri -Method Post -Headers @{
+  $request = @{
+    Uri = $Uri
+    Method = "Post"
+    Headers = @{
       apikey = $Key
       Authorization = "Bearer $Key"
       "Content-Type" = "application/json"
-    } -Body $Body -SkipHttpErrorCheck
+    }
+    Body = $Body
+  }
+
+  $invokeWebRequest = Get-Command Invoke-WebRequest
+  if ($invokeWebRequest.Parameters.ContainsKey("UseBasicParsing")) {
+    $request.UseBasicParsing = $true
+  }
+  if ($invokeWebRequest.Parameters.ContainsKey("SkipHttpErrorCheck")) {
+    $request.SkipHttpErrorCheck = $true
+  }
+
+  try {
+    $response = Invoke-WebRequest @request
     return @{
       StatusCode = [int]$response.StatusCode
       Content = [string]$response.Content
       NetworkError = $null
     }
   } catch {
+    $httpResponse = $_.Exception.Response
+    if ($null -ne $httpResponse -and $null -ne $httpResponse.StatusCode) {
+      $content = ""
+      try {
+        $stream = $httpResponse.GetResponseStream()
+        if ($null -ne $stream) {
+          $reader = New-Object System.IO.StreamReader($stream)
+          try {
+            $content = $reader.ReadToEnd()
+          } finally {
+            $reader.Dispose()
+            $stream.Dispose()
+          }
+        }
+      } catch {
+        $content = ""
+      }
+
+      return @{
+        StatusCode = [int]$httpResponse.StatusCode
+        Content = $content
+        NetworkError = $null
+      }
+    }
+
     return @{
       StatusCode = 0
       Content = ""

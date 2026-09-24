@@ -32,21 +32,20 @@ Last updated: 2026-09-24 (Phase 44 reliability and deployment validation).
   `https://night-watch-installer.vercel.app`.
 - [ ] Owner: run two-account packaged social acceptance and Drive permission
   acceptance; only then trigger the intentional Release workflow.
-- [x] Re-run the production runtime probe from the test machine. The configured
-  `VITE_SUPABASE_URL` now fails DNS with NXDOMAIN, and the release gate blocks
-  before capability or TURN checks can be treated as healthy.
-- [x] Identify the backend failure precisely: Supabase still lists NightWatch
-  project `eiachttvgojmzvcecszz`, but its status is `INACTIVE`. Management-plane
-  reads work; `turn-credentials` deployment is rejected while the project is
-  inactive, and no TURN-provider secrets are currently configured.
+- [x] Restore production Supabase project `eiachttvgojmzvcecszz`; status is now
+  `ACTIVE_HEALTHY`, DNS resolves, and `runtime_capabilities_v2` returns HTTP 200
+  with schema generation 34.
+- [x] Deploy `supabase/functions/turn-credentials` with Verify JWT enabled.
+- [x] Make the production runtime smoke portable across Windows PowerShell 5.1
+  and newer PowerShell versions without weakening non-2xx/error handling.
 - [ ] Owner: add `http://localhost:5173/auth/callback` and
   `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs, then
   verify two browser profiles each show a NightWatch account session.
-- [ ] Owner/platform: resume the existing production Supabase project. If the
-  same project is restored, keep the current `VITE_SUPABASE_URL` and anon key;
-  only replace those values if a new project is required. Then configure one
-  TURN provider and deploy `supabase/functions/turn-credentials` with Verify
-  JWT enabled before ScreenWatch or voice can become ready.
+- [ ] Owner/platform: configure one supported TURN provider for the deployed
+  `turn-credentials` function. Cloudflare Realtime TURN is available on the
+  connected account but is not yet subscribed/configured; coturn remains the
+  alternative. Keep ScreenWatch and voice gated until provider diagnostics and
+  two-client/two-network packaged acceptance pass.
 
 ## Phase 34 backend lane (`backend/phase-34-production-parity`)
 
