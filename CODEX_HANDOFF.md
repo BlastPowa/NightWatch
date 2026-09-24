@@ -55,4 +55,4 @@ Last updated: 2026-07-16 from public baseline `v0.1.25`.
   blockmap, and updater manifest. Future releases remain intentional; no direct
   push to `main`.
 
-Phase 29 local/Drive playback remains separately gated from this UI completion branch. Claude should follow `C:\Users\Blast\source\repos\NightWatch-fable\PHASE_29_MEDIA_LIBRARY_HANDOFF.md` on `backend/phase-29-media-library`.
+Phase 29 local/Drive playback remains separately gated from this UI completion branch. All contributors now use `C:\Users\Blast\source\repos\NightWatch`; follow `PHASE_29_MEDIA_LIBRARY_HANDOFF.md` on an approved backend branch created from current `origin/main`.

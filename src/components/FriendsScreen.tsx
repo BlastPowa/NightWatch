@@ -196,6 +196,10 @@ export function FriendsScreen({
       suggestions: select(combinedSuggestions),
     };
   }, [combinedSuggestions, graph.friends, graph.incoming, graph.outgoing, normalizedQuery]);
+  const onlineFriendCount = graph.friends.filter((person) => {
+    const activity = presence.get(person.userId);
+    return activity !== undefined && activity.status !== 'offline';
+  }).length;
 
   async function act(userId: string, action: () => Promise<{ status: string }>, success: string): Promise<void> {
     setBusyId(userId);
@@ -214,8 +218,8 @@ export function FriendsScreen({
   return (
     <section className="social-page phase26-friends fade-up" aria-labelledby="friends-title">
       <header className="social-hero phase26-social-hero">
-        <div><span className="eyebrow">Your circle</span><h1 id="friends-title">Friends</h1><p>People you choose to watch, message, and share moments with.</p></div>
-        <div className="friend-summary"><strong>{graph.friends.length}</strong><span>accepted friends</span></div>
+        <div><span className="eyebrow">Friends</span><h1 id="friends-title">See who is around before you open a room.</h1><p>Presence, co-watchers, requests and people discovery live together so a watch night can start with the people, not just the video.</p></div>
+        <div className="friend-summary friend-summary-split"><span><strong>{onlineFriendCount}</strong><small>online now</small></span><span><strong>{graph.friends.length}</strong><small>friends</small></span></div>
       </header>
 
       <label className="friend-search">

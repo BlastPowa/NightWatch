@@ -84,11 +84,10 @@ Every operation returns an explicit success or one of: `unauthorized`, `forbidde
 
 ## 6. Live frontend integration contract — Codex coordination addendum
 
-The frontend acceptance lane is active at:
-
-`C:\Users\Blast\source\repos\NightWatch-acceptance`
-
-Do not edit that worktree. Implement the backend contracts in this Fable worktree and document the exact frontend integration surface in `PHASE_32_IMPLEMENTATION_REPORT.md`.
+The former separate frontend acceptance worktree has been retired. All current
+work uses `C:\Users\Blast\source\repos\NightWatch` with branch ownership.
+Implement backend contracts on an approved `backend/**` branch and document the
+exact frontend integration surface in `PHASE_32_IMPLEMENTATION_REPORT.md`.
 
 The frontend needs these deployable, typed operations before controls are enabled:
 

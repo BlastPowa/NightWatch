@@ -128,6 +128,8 @@ export interface MediaPlatformBridge {
   cancelDriveWorkspaceUpload(uploadId: string): Promise<void>;
   onDriveWorkspaceUploadProgress(callback: (progress: DriveUploadProgress) => void): () => void;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
+  /** Re-authorize the exact video clicked in the in-app workspace listing. */
+  authorizeDriveWorkspaceEntry?(entryId: string): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;
   releasePlaybackLease(leaseId: string): Promise<void>;

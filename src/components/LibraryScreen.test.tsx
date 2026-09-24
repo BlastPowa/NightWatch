@@ -63,6 +63,11 @@ function makeBridge(): MediaPlatformBridge {
     cancelDriveWorkspaceUpload: vi.fn().mockResolvedValue(undefined),
     onDriveWorkspaceUploadProgress: vi.fn().mockReturnValue(() => {}),
     pickDriveFile: vi.fn(),
+    authorizeDriveWorkspaceEntry: vi.fn().mockResolvedValue({ ok: true, value: {
+      descriptor: { schemaVersion: 1, kind: 'drive', fileId: 'B'.repeat(12), fingerprint: `sha256:${'d'.repeat(64)}`, title: 'Feature.mp4', mimeType: 'video/mp4', size: 1024,
+      },
+      localHandle: 'B'.repeat(12),
+    } }),
     disconnectDrive: vi.fn(),
     createPlaybackLease: vi.fn().mockResolvedValue({
       ok: true,
@@ -148,6 +153,21 @@ describe('LibraryScreen', () => {
     expect(await screen.findByText('Feature.mp4')).toBeTruthy();
     expect(screen.getByRole('button', { name: /authorize shared folder/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /upload video/i })).toBeTruthy();
+  });
+
+  it('authorizes the exact Drive workspace entry that was clicked', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
+    const bridge = makeBridge();
+    bridge.getDriveConnection = vi.fn().mockResolvedValue({ connected: true, accountEmail: 'viewer@example.com', reason: null });
+    const user = userEvent.setup();
+    render(<LibraryScreen bridge={bridge} capabilities={driveCapabilities} />);
+
+    await user.click(await screen.findByRole('button', { name: /create shared folder/i }));
+    await user.click(await screen.findByRole('button', { name: /feature\.mp4/i }));
+
+    expect(bridge.authorizeDriveWorkspaceEntry).toHaveBeenCalledWith('B'.repeat(12));
+    expect(bridge.pickDriveFile).not.toHaveBeenCalled();
+    expect(await screen.findByRole('heading', { name: 'Feature.mp4' })).toBeTruthy();
   });
 
   it('appends the next authorized Drive page instead of replacing visible entries', async () => {

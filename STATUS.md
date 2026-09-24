@@ -1,6 +1,119 @@
 # NightWatch current status
 
-Last updated: 2026-07-25.
+Last updated: 2026-09-24.
+
+## NightWatch Entertainment Revamp & Completion (started 2026-09-24)
+
+- New active product goal: consolidate the shipped app into one Pandora/Reel-
+  inspired cinematic experience while completing the remaining reliability,
+  recovery, responsive and release-quality work.
+- Visual concept coverage is complete in `docs/revamp-concepts/`: Browse,
+  Watch lobby, active Watch Room, Parties, Friends, Messages, Creator Club,
+  Library, Profile, Settings, FAQ and About. Rendered desktop previews and a
+  contact sheet live in `docs/revamp-concepts/previews/`.
+- Page-wide renderer alignment is now implemented across Browse, Watch lobby,
+  active Watch Room, Parties, Library, Friends, Messages, Creator Club,
+  Profile, Settings, FAQ and About. The concept pack is no longer mock-up-only:
+  its page headings, action hierarchy and cinematic glass language are wired to
+  the existing real flows without replacing their capability gates.
+- Browse links directly into room creation and Library; the lobby exposes
+  persistent Parties; Parties adds direct join-by-code/create entry points;
+  Library exposes the real local-file/Drive actions; Friends surfaces live
+  presence; and the room header keeps secure invites, status and premiere
+  controls beside the theatre-first player workspace.
+- Reliability/collaboration batch now adds device-local MP4/WebM app backgrounds
+  backed by IndexedDB (never large blobs in localStorage), reduced-motion/
+  transparency fallbacks, bounded/retryable YouTube IFrame API startup,
+  shared-policy enforcement for host-authoritative custom-media events,
+  custom-media revision inheritance on host succession, and independent queue
+  reconciliation on reconnect/host change.
+- ScreenWatch now honours explicit viewer consent, tears down capture/viewing on
+  lifecycle exits or source changes, restores the previous YouTube room mode
+  when a host share stops, and clears stale live-share authority during host
+  migration when a fallback source exists.
+- The existing WebRTC voice engine is now exposed in the Room Lounge with join,
+  mute, deafen, leave, speaking/device state, remote-audio playback, actionable
+  capability diagnostics and central teardown registration. Offer glare is
+  handled deterministically and duplicate peer dials are suppressed.
+- Current validation on 2026-09-25 after the backend recovery pass: all 517 Vitest tests across 65 files pass;
+  strict TypeScript passes; `git diff --check` has no whitespace errors; browser
+  build smoke passes; the full Windows Electron/NSIS build passes; packaged
+  smoke passes and verifies `NightWatch-Setup-0.1.27.exe` (81.9 MB). Installer
+  release logic passes 20/20 deterministic checks, and hidden Chromium QA
+  resolves the live v0.1.27 GitHub installer with no console/layout errors at
+  320/390/768/1024/1440 px plus 200% zoom/text and reduced motion.
+- TURN-backed voice and ScreenWatch remain **capability gated in deployment**
+  until `turn-credentials` is configured with a TURN provider and the packaged two-client
+  acceptance matrix passes. Passing local tests/builds does not enable the
+  server capability flag by itself.
+- The current Phase 44 browser build is restored to Vercel Production and is
+  publicly reachable at `https://night-watch-pauls-projects-805d47bf.vercel.app`.
+  Project SSO protection is disabled for this public app while Git fork
+  protection remains enabled.
+- The installer/download page now has its own GitHub-connected Vercel project,
+  rooted at `docs/installer-site`, and is publicly reachable at
+  `https://night-watch-installer.vercel.app`. Its live release check resolves
+  the GitHub v0.1.27 Windows installer asset.
+- The production Supabase project `eiachttvgojmzvcecszz` was restored on
+  2026-09-25 through the authenticated Supabase management route and is now
+  `ACTIVE_HEALTHY`; its public hostname resolves again and
+  `runtime_capabilities_v2` returns HTTP 200 with schema generation 34.
+- `turn-credentials` is now deployed as an ACTIVE Edge Function with Verify JWT
+  enabled. Its safe diagnostics currently return HTTP 503 because no Cloudflare
+  TURN or coturn provider secret pair is configured, so production voice/share
+  correctly remain fail-closed and capability-hidden.
+- `scripts/smoke/check-production-runtime.ps1` now works on Windows PowerShell
+  5.1 as well as newer PowerShell versions: it uses BasicParsing when available,
+  preserves non-2xx HTTP status codes, and no longer depends on
+  `-SkipHttpErrorCheck` being present. The strict production smoke now reaches
+  the intended TURN release gate; `-AllowUnavailableTurn` passes only for an
+  explicitly capability-gated build.
+- Room-media capability detection now maps an offline/failed runtime manifest
+  probe to `service-unavailable` and forces a real manifest fetch when the user
+  chooses Retry/Check again, avoiding misleading signed-out guidance during a
+  backend or DNS outage.
+- The page-wide revamp is committed on `fix/phase-44-reliability` on top of the
+  reliability/installer work. External TURN deployment and two-client packaged
+  acceptance remain the release gate rather than visual implementation.
+
+## Workspace consolidation (2026-09-06)
+
+- `C:\Users\Blast\source\repos\NightWatch` is the only supported local checkout for frontend, backend, Supabase, Electron, web, installer, documentation, and release work.
+- Former linked worktree folders were retired after their clean state was verified. The only uncommitted legacy Movie Watch work was preserved at `origin/archive/phase-31-movie-watch-snapshot` before removal.
+- Use `npm run workspace:check` to verify the checkout, `npm run git:start -- -Branch <type/name>` to start from current `origin/main`, and `npm run git:finish -- -Message "..."` to validate and publish through the reviewed pull-request workflow.
+- Only one contributor or agent may edit the canonical checkout at a time.
+
+## Phase 44 reliability patch (PR #61, pending merge)
+
+- `fix/phase-44-reliability` is the active reviewed delivery branch for
+  [PR #61](https://github.com/BlastPowa/NightWatch/pull/61).
+- Fixed the inner Search focus rectangle, deterministic Settings scrolling,
+  visible backdrop/artwork layers, truthful Activity-vs-NightWatch account
+  labeling, exact Google Drive workspace entry authorization, room-people
+  fallback discovery, room heartbeat retry/status feedback, room-history
+  wording, preview action coverage, and Drive-link clipboard fallback.
+- Follow-up hardening validates and normalizes room codes before media and
+  room-people RPCs, preventing malformed browser state from producing noisy
+  PostgREST 400s. The guard is covered by dedicated service tests.
+- Evidence on 2026-08-09: strict typecheck; 499 tests across 59 files; Activity
+  build; Windows Electron/NSIS package; packaged smoke; GitHub Feature PR and
+  Workers builds all pass.
+- The code gates do not prove live Supabase/RLS, Realtime, OAuth, Drive
+  permission, or two-account behavior. Owner acceptance remains: two signed-in
+  accounts must test room chat, reactions, friend request/accept, DM/group
+  messaging, relaunch/reconnect, and Drive workspace authorization before
+  merging/releasing.
+- A read-only live probe on 2026-08-09 reached the configured Supabase project.
+  `runtime_capabilities_v2()` reported schema generation 34 and all current
+  social, room-media, and RTC function flags. The anonymous probe correctly
+  reported `authenticated: false`; repeat it while signed in during owner
+  acceptance. That historical backend is now paused/inactive as documented
+  above; ScreenWatch/voice remain gated until the project is resumed and
+  `turn-credentials` is deployed with provider secrets and Verify JWT enabled.
+- Browser Discord OAuth callback support is now in this branch. Add
+  `http://localhost:5173/auth/callback` and
+  `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs before
+  testing two browser profiles. Electron continues using its deep-link callback.
 
 ## Phase 34 backend (merged through PR #55)
 
@@ -15,9 +128,10 @@ Last updated: 2026-07-25.
 - Codex fixed the service's pre-initialization session-settle deadlock and ran
   the complete code gate: strict typecheck, 439 tests across 48 files, Activity
   build, and Windows Electron/NSIS packaging all pass.
-- The two SQL scripts remain unexecuted on this machine because no Supabase CLI
-  or owner-approved database URL is available.
-- Owner database work: deploy `supabase/migrations/0028_runtime_capabilities_v2.sql`
+- The owner reported migration `0028` deployed and both Phase 34 SQL scripts
+  passing. Codex cannot independently inspect the private SQL session, so keep
+  the successful SQL output with the release evidence.
+- Historical owner database work: deploy `supabase/migrations/0028_runtime_capabilities_v2.sql`
   (functions only — no table, RLS policy, or publication change), then run
   `supabase/tests/phase34_runtime_capabilities_test.sql` and
   `supabase/tests/phase34_social_contract_test.sql`.
@@ -34,7 +148,8 @@ Last updated: 2026-07-25.
 - Backend PR #55 is merged: migration `0028`, the versioned capability
   manifest, safe diagnostics, Drive workspace contracts, SQL/RLS verification
   scripts, and release-smoke contracts passed GitHub's complete feature gate.
-  The owner still needs to deploy `0028` and execute both Phase 34 SQL scripts.
+  The owner has since reported `0028` deployed and both Phase 34 SQL scripts
+  passing; retain that output with the release evidence.
 - Frontend capability detection now consumes one read-only versioned manifest,
   with the existing `social_diagnostics` RPC as a migration fallback. It no
   longer executes feature operations as deployment probes and rechecks after
@@ -50,6 +165,12 @@ Last updated: 2026-07-25.
 - Release validation now runs all tests, builds an unpublished Windows
   candidate, and boots the packaged main process in smoke mode before any
   version commit or tag is created.
+- Vercel now uses the normal browser renderer (`vite.config.browser.ts` and
+  `index.html`/`main.tsx`); Discord Activity keeps its separate
+  `vite.config.web.ts` and `index.discord.html` entry. This prevents a normal
+  browser deployment from requiring Discord's `frame_id` query parameter.
+- The static installer/product page is tracked under `docs/installer-site/`
+  and is intentionally a separate Vercel project/root from the browser app.
 - Frontend evidence on 2026-07-25 after rebasing onto PR #55: strict typecheck;
   all 443 tests across 49 files; Activity build (333 modules); Windows
   Electron/NSIS package (81.8 MB
@@ -69,9 +190,11 @@ Last updated: 2026-07-25.
   Previously watched fallback, group composer layout, friend activity, room
   code copying, responsive shell/settings/room behavior, movable mini-player,
   and the refreshed moon/play brand assets.
-- Phase 33 voice, screen share, and synchronized file-watch UI remains hidden:
-  TURN deployment and the packaged two-client acceptance checklist are still
-  required before those capability flags can be enabled.
+- Phase 33 voice, screen share, and synchronized file-watch capabilities remain
+  gated. The ScreenWatch room surface is now visible with a plain-language
+  explanation and retry state; TURN deployment and the packaged two-client
+  acceptance checklist are still required before live sharing or voice flags
+  can be enabled.
 
 ## Phase 33 remaining-features lane (backend implemented and validated)
 
@@ -89,7 +212,9 @@ Last updated: 2026-07-25.
   Electron/NSIS packaging pass. PR #53 merged after green GitHub Actions.
 - Voice, screen sharing, and shared file playback are **not complete** and
   their flags stay false until TURN is deployed and the packaged two-client
-  checklist passes across different networks.
+  checklist passes across different networks. Browser builds intentionally keep
+  local/Drive playback unavailable because the secure Electron media bridge
+  owns file paths and encrypted Drive tokens.
 
 ## Phase 32 room media & comms (merged; database verified; RTC gated)
 
@@ -186,7 +311,7 @@ Last updated: 2026-07-25.
 
 ## Release baseline
 
-- Current public release: `v0.1.25`.
+- Current public release: `v0.1.27`.
 - Phase 24 frontend merged through PR #35, Phase 24 backend support merged through PR #34, and the complete Phase 25–28 frontend overhaul merged through PR #36.
 - Migration `0021`, privacy-safe media presence, canonical Discord avatars, deeper Browse paging, and `search-youtube` details mode are present on `main`; database/function deployment still requires the owner environment.
 - Releases remain intentional GitHub Actions runs after reviewed feature PRs; no direct push to `main`.
@@ -222,5 +347,5 @@ Last updated: 2026-07-25.
 - Verify real Discord Activity avatar URL mappings and launch behavior.
 - Verify the installed updater round-trip from `v0.1.23` to the next approved release.
 - Verify the same-instance mini-player with two packaged clients and real YouTube caption tracks/languages; automated tests cover presentation continuity and official caption parameters, but live provider behavior remains an owner acceptance item.
-- Claude's separately gated Phase 29 handoff is ready at `C:\Users\Blast\source\repos\NightWatch-fable\PHASE_29_MEDIA_LIBRARY_HANDOFF.md` for `backend/phase-29-media-library`; it explicitly excludes protected-service downloads, DRM extraction, media relays, and free-unlimited-cloud claims.
+- The separately gated Phase 29 handoff is stored in the canonical checkout at `PHASE_29_MEDIA_LIBRARY_HANDOFF.md`; it explicitly excludes protected-service downloads, DRM extraction, media relays, and free-unlimited-cloud claims.
 - Phase 29 local/Google Drive media remains separately gated and is not part of the Phase 24–28 completion gate.

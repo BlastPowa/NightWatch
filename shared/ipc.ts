@@ -74,6 +74,7 @@ export const IpcChannel = {
   MediaCancelDriveWorkspaceUpload: 'media:cancel-drive-workspace-upload',
   MediaDriveWorkspaceUploadProgress: 'media:drive-workspace-upload-progress',
   MediaPickDriveFile: 'media:pick-drive-file',
+  MediaAuthorizeDriveWorkspaceEntry: 'media:authorize-drive-workspace-entry',
   MediaDisconnectDrive: 'media:disconnect-drive',
   MediaCreateLease: 'media:create-lease',
   MediaReleaseLease: 'media:release-lease',
@@ -255,6 +256,10 @@ export interface IpcInvokeContract {
     args: [];
     result: MediaResult<SelectedMedia>;
   };
+  [IpcChannel.MediaAuthorizeDriveWorkspaceEntry]: {
+    args: [string];
+    result: MediaResult<SelectedMedia>;
+  };
   [IpcChannel.MediaDisconnectDrive]: {
     args: [];
     result: MediaResult<void>;
@@ -362,6 +367,7 @@ export interface NightWatchMediaBridge {
   cancelDriveWorkspaceUpload(uploadId: string): Promise<void>;
   onDriveWorkspaceUploadProgress(callback: (progress: DriveUploadProgress) => void): () => void;
   pickDriveFile(): Promise<MediaResult<SelectedMedia>>;
+  authorizeDriveWorkspaceEntry(entryId: string): Promise<MediaResult<SelectedMedia>>;
   disconnectDrive(): Promise<MediaResult<void>>;
   createPlaybackLease(descriptor: HtmlMediaSourceDescriptor): Promise<MediaResult<PlaybackLease>>;
   releasePlaybackLease(leaseId: string): Promise<void>;

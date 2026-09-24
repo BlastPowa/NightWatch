@@ -16,6 +16,8 @@ interface DiscoveryPanelProps {
   resetNonce?: number;
   friendMediaPresence: boolean;
   onSearchBusyChange?(busy: boolean): void;
+  onStartRoom?(): void;
+  onOpenLibrary?(): void;
   onPlayNow(videoId: string, title: string): void;
   onQueueAdd(videoId: string, title: string): boolean;
 }
@@ -59,7 +61,7 @@ const OUTCOME_MESSAGE: Record<string, string> = {
   error: 'Videos could not be loaded. Check your connection and retry.',
 };
 
-export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, resetNonce = 0, friendMediaPresence, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
+export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, resetNonce = 0, friendMediaPresence, onSearchBusyChange, onStartRoom, onOpenLibrary, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
   const [mode, setMode] = useState<BrowseMode>('trending');
   const [activeQuery, setActiveQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -200,7 +202,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
       const refreshedHistory = await loadHistory();
       if (generation !== requestGenerationRef.current) return;
       setLoading(false);
-      setMessage(refreshedHistory.length === 0 ? 'This room has no watch history yet.' : null);
+      setMessage(refreshedHistory.length === 0 ? (roomCode === '' ? 'Join a room to see its watch history.' : 'This room has no watch history yet.') : null);
       return;
     }
     await loadTrending(category);
@@ -212,7 +214,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
     setLoading(false);
     setLoadingMore(false);
     setNextToken(null);
-    setMessage(history.length === 0 ? 'This room has no watch history yet.' : null);
+    setMessage(history.length === 0 ? (roomCode === '' ? 'Join a room to see its watch history.' : 'This room has no watch history yet.') : null);
   }
 
   function showFriends(): void {
@@ -296,6 +298,20 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
 
   return (
     <div className="browse-hub">
+      <header className="browse-page-heading">
+        <div className="browse-page-heading-copy">
+          <span className="eyebrow">Browse</span>
+          <h1>Pick the vibe. NightWatch handles the sync.</h1>
+          <p>Find something worth sharing, resume a recent room, or jump from discovery straight into a synchronized watch party.</p>
+        </div>
+        {(onStartRoom !== undefined || onOpenLibrary !== undefined) && (
+          <div className="browse-page-actions">
+            {onStartRoom !== undefined && <button type="button" className="button button-primary" onClick={onStartRoom}><Icon name="play" size={16} />Start a room</button>}
+            {onOpenLibrary !== undefined && <button type="button" className="button" onClick={onOpenLibrary}><Icon name="library" size={16} />My library</button>}
+          </div>
+        )}
+      </header>
+
       <div className="browse-category-row">
         <button type="button" className="category-scroll category-scroll-left" disabled={!categoryEdges.left} onClick={() => moveCategories(-1)} aria-label="Scroll video categories left"><Icon name="chevron-left" /></button>
         <nav className="browse-categories" ref={categoryRef} aria-label="Video categories">
@@ -329,7 +345,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
         >
           <button type="button" role="tab" aria-selected={mode === 'trending' || mode === 'search'} className={mode === 'trending' || mode === 'search' ? 'browse-view-active' : ''} onClick={() => void loadTrending(category)}>Discover</button>
           {friendMediaPresence && <button type="button" role="tab" aria-selected={mode === 'friends'} className={mode === 'friends' ? 'browse-view-active' : ''} onClick={showFriends}>Friends watching</button>}
-          <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={showHistory}>Previously watched</button>
+          <button type="button" role="tab" aria-selected={mode === 'history'} className={mode === 'history' ? 'browse-view-active' : ''} onClick={showHistory}>Room history</button>
         </div>
         {(mode === 'trending' || mode === 'search') && (
           <button type="button" className="browse-refresh" onClick={() => void retryCurrentView()} disabled={loading} aria-label="Refresh Discover videos">
@@ -344,7 +360,7 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
 
       {!loading && friendResults.length > 0 && mode !== 'history' && <VideoShelf title="Friends are watching" eyebrow="Shared by friends" items={friendResults} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 
-      {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Previously watched" eyebrow="Your room history" items={history} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
+      {!loading && mode === 'history' && history.length > 0 && <VideoShelf title="Room history" eyebrow="Videos watched in this room" items={history} isHost={isHost} queuedId={queuedId} previewAllowed={previewAllowed} onPlay={onPlayNow} onQueue={queue} onImageError={thumbnailError} />}
 
       {!loading && (mode === 'trending' || mode === 'search') && results.length > 0 && (
         <div className="browse-results">
@@ -495,10 +511,10 @@ function MediaCard({ result, isHost, queued, previewAllowed, onPlay, onQueue, on
       )}
       {result.durationText !== '' && <span className="duration-badge">{result.durationText}</span>}
       {result.friendActivity !== undefined && <span className="friend-watch-chip"><ProfileAvatar src={result.friendActivity.avatarUrl} name={result.friendActivity.displayName} className={result.friendActivity.selectedBorderId !== null ? `friend-watch-avatar border-${result.friendActivity.selectedBorderId}` : 'friend-watch-avatar'} /><span><strong>{result.friendActivity.displayName}</strong><small>watching now</small></span></span>}
-      <div className="media-card-actions">
+      {!previewing && <div className="media-card-actions">
         {isHost && <button type="button" className="media-play" onClick={() => onPlay(result.videoId, result.title)} aria-label={`Play ${result.title}`}><Icon name="play" size={15} />Play now</button>}
         <button type="button" className="media-queue" onClick={() => onQueue(result)}>{queued ? <><Icon name="check" size={15} />Queued</> : <><Icon name="plus" size={15} />Queue</>}</button>
-      </div>
+      </div>}
     </div>
     <div className={`media-card-copy${previewing ? ' media-card-copy-previewing' : ''}`}>
       {previewing ? (

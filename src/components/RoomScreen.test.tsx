@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { RoomService, RoomState } from '@/lib/room/RoomService';
 
-vi.mock('@/components/PlayerPanel', () => ({ PlayerPanel: () => <div>Official player stage</div> }));
+vi.mock('@/components/PlayerPanel', () => ({ PlayerPanel: ({ active = true }: { active?: boolean }) => <div data-active={active}>Official player stage</div> }));
 vi.mock('@/components/QueuePanel', () => ({ QueuePanel: () => <div>Queue content</div> }));
 vi.mock('@/components/ChatPanel', () => ({ ChatPanel: () => <div>Chat content</div> }));
 vi.mock('@/components/SearchBox', () => ({ SearchBox: () => <div>Discovery content</div> }));
@@ -15,15 +15,17 @@ vi.mock('@/hooks/useQueue', () => ({
 vi.mock('@/lib/analytics/SessionRecorder', () => ({
   sessionRecorder: { configure: vi.fn(), end: vi.fn(), members: vi.fn() },
 }));
-const { getRoomPeople, sendFriendRequest } = vi.hoisted(() => ({
+const { getRoomPeople, sendFriendRequest, listLiveRoomCoWatchers } = vi.hoisted(() => ({
   getRoomPeople: vi.fn().mockResolvedValue({
     ok: true,
     value: [{ userId: 'user-2', handle: 'luna', displayName: 'Luna', avatarUrl: null, border: null, relationship: 'none' }],
   }),
   sendFriendRequest: vi.fn().mockResolvedValue({ status: 'ok', data: undefined }),
+  listLiveRoomCoWatchers: vi.fn().mockResolvedValue({ status: 'ok', data: [] }),
 }));
 vi.mock('@/lib/people/PeopleService', () => ({ getRoomPeople }));
 vi.mock('@/lib/social/FriendService', () => ({ sendFriendRequest }));
+vi.mock('@/lib/social/LiveRoomSocialService', () => ({ listLiveRoomCoWatchers }));
 
 import { RoomScreen } from '@/components/RoomScreen';
 
@@ -125,5 +127,34 @@ describe('RoomScreen companion dock', () => {
     expect(getRoomPeople).toHaveBeenCalledWith('ABC234');
     expect(sendFriendRequest).toHaveBeenCalledWith('user-2');
     expect(await screen.findByText(/friend request sent to luna/i)).toBeTruthy();
+  });
+
+  it('keeps the YouTube stage mounted while switching room sources', async () => {
+    const user = userEvent.setup();
+    render(<RoomScreen room={ROOM} service={{} as RoomService} selfId="self" presentation="full" meta={null} pendingVideo={null} onPendingHandled={vi.fn()} onMediaStateChange={vi.fn()} onReturnToRoom={vi.fn()} onLeave={vi.fn()} />);
+    const stage = screen.getByText('Official player stage');
+
+    await user.click(screen.getByRole('tab', { name: 'ScreenWatch' }));
+    expect(screen.getByText('Official player stage')).toBe(stage);
+    expect(stage.getAttribute('data-active')).toBe('false');
+
+    await user.click(screen.getByRole('tab', { name: 'YouTube Watch' }));
+    expect(screen.getByText('Official player stage')).toBe(stage);
+    expect(stage.getAttribute('data-active')).toBe('true');
+  });
+
+  it('keeps the People dock useful while the newer room RPC is unavailable', async () => {
+    const user = userEvent.setup();
+    getRoomPeople.mockResolvedValueOnce({ ok: false, message: 'RPC deployment is catching up.' });
+    listLiveRoomCoWatchers.mockResolvedValueOnce({
+      status: 'ok',
+      data: [{ userId: 'user-3', displayName: 'Orbit', avatarUrl: null, selectedBorderId: 'first-night' }],
+    });
+
+    render(<RoomScreen room={ROOM} service={{} as RoomService} selfId="self" presentation="full" meta={null} pendingVideo={null} onPendingHandled={vi.fn()} onMediaStateChange={vi.fn()} onReturnToRoom={vi.fn()} onLeave={vi.fn()} />);
+    await user.click(screen.getByRole('tab', { name: 'People' }));
+
+    expect(await screen.findByText('Orbit')).toBeTruthy();
+    expect(listLiveRoomCoWatchers).toHaveBeenCalledWith('ABC234');
   });
 });

@@ -1,6 +1,51 @@
 # NightWatch development tasks
 
-Last updated: 2026-07-25 (Phase 34 backend validation).
+Last updated: 2026-09-24 (Phase 44 reliability and deployment validation).
+
+## Phase 44 reliability patch (`fix/phase-44-reliability`, PR #61)
+
+- [x] Fix Search inner focus styling, Settings inner scroll sizing, and
+  backdrop/custom-art visibility.
+- [x] Distinguish Activity identity from an authenticated NightWatch account.
+- [x] Authorize the exact clicked Google Drive workspace entry.
+- [x] Preserve room-person discovery through fallback and retry room heartbeat
+  after transient auth/network/RPC failures.
+- [x] Make room-scoped history wording explicit and hide duplicate hover-card
+  actions while the official preview iframe is active.
+- [x] Add a clipboard fallback for Drive folder links and unit coverage.
+- [x] Normalize/validate room codes before media and room-people RPC calls and
+  cover malformed browser input without contacting Supabase.
+- [x] Pass typecheck, 514 tests across 65 files, browser smoke, Electron/NSIS
+  package, packaged smoke, installer checks, and remote Feature PR validation.
+- [x] Separate the normal Vercel browser build from the Discord Activity entry;
+  `build:web` uses `vite.config.browser.ts` and `build:activity` keeps the
+  `frame_id`-based Activity entry.
+- [x] Restore the current Phase 44 browser build to Vercel Production and allow
+  public access while retaining Git fork protection.
+- [x] Distinguish runtime-manifest network/backend failures from signed-out
+  state and force a real capability refresh from Voice/ScreenWatch retries.
+- [ ] Owner: review and merge PR #61.
+- [x] Publish the browser app on the public Vercel production alias
+  `https://night-watch-pauls-projects-805d47bf.vercel.app`.
+- [x] Deploy `docs/installer-site/` as the separate GitHub-connected
+  `night-watch-installer` Vercel project at
+  `https://night-watch-installer.vercel.app`.
+- [ ] Owner: run two-account packaged social acceptance and Drive permission
+  acceptance; only then trigger the intentional Release workflow.
+- [x] Restore production Supabase project `eiachttvgojmzvcecszz`; status is now
+  `ACTIVE_HEALTHY`, DNS resolves, and `runtime_capabilities_v2` returns HTTP 200
+  with schema generation 34.
+- [x] Deploy `supabase/functions/turn-credentials` with Verify JWT enabled.
+- [x] Make the production runtime smoke portable across Windows PowerShell 5.1
+  and newer PowerShell versions without weakening non-2xx/error handling.
+- [ ] Owner: add `http://localhost:5173/auth/callback` and
+  `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs, then
+  verify two browser profiles each show a NightWatch account session.
+- [ ] Owner/platform: configure one supported TURN provider for the deployed
+  `turn-credentials` function. Cloudflare Realtime TURN is available on the
+  connected account but is not yet subscribed/configured; coturn remains the
+  alternative. Keep ScreenWatch and voice gated until provider diagnostics and
+  two-client/two-network packaged acceptance pass.
 
 ## Phase 34 backend lane (`backend/phase-34-production-parity`)
 
@@ -21,7 +66,7 @@ Last updated: 2026-07-25 (Phase 34 backend validation).
 - [x] Codex: review the lane, repair the session-settle test deadlock, and pass
   strict typecheck, 439 tests, Activity build, and Windows packaging.
 - [x] Codex: commit, push, validate, and merge reviewed backend PR #55.
-- [ ] Owner: deploy migration `0028` and run both Phase 34 SQL tests.
+- [x] Owner-reported: deploy migration `0028` and run both Phase 34 SQL tests.
 
 ## Phase 34 frontend production parity
 
@@ -46,7 +91,7 @@ Last updated: 2026-07-25 (Phase 34 backend validation).
   rendered-browser checks.
 - [x] Codex: deliver and verify reviewed frontend PR #56 after the complete
   GitHub feature gate, including packaged smoke.
-- [ ] Owner: deploy migration `0028` and run both Phase 34 SQL scripts.
+- [x] Owner-reported: deploy migration `0028` and run both Phase 34 SQL scripts.
 - [ ] Owner: complete two-account packaged acceptance before any v0.1.28
   Release workflow run.
 
@@ -82,9 +127,10 @@ Last updated: 2026-07-25 (Phase 34 backend validation).
   (`PHASE_33_PACKAGED_ACCEPTANCE.md`).
 - [x] Codex: reviewed the implementation, fixed lifecycle reason mapping, ran
   all five gates, and merged PR #53 on green.
-- [ ] Owner: TURN credentials + redeploy `turn-credentials`; run the packaged
-  checklist before any of `fileWatch`/`driveWorkspace`/`voiceChat`/`liveShare`
-  is enabled; Google OAuth verification assets; SFU approval for >8 peers.
+- [ ] Owner: configure and deploy `turn-credentials`; the ScreenWatch surface
+  is visible and capability-gated, but run the packaged two-client checklist
+  before enabling any of `fileWatch`/`driveWorkspace`/`voiceChat`/`liveShare`;
+  Google OAuth verification assets; SFU approval for >8 peers.
 
 ## Phase 32 backend lane (`backend/phase-32-room-media-comms`)
 

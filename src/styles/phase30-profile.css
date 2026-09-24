@@ -79,6 +79,14 @@
   text-shadow: 0 8px 24px rgba(0, 0, 0, .5);
 }
 
+.profile-purpose {
+  display: block;
+  margin: 0 0 .3rem;
+  color: var(--nw-text);
+  font-size: clamp(.82rem, 1.4vw, 1rem);
+  font-weight: 700;
+}
+
 .profile-showcase-page .profile-banner-copy p {
   color: color-mix(in srgb, var(--nw-text) 72%, transparent);
 }

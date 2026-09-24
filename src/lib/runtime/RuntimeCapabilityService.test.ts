@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rpc = vi.fn();
 vi.mock('@/lib/supabase', () => ({
+  supabaseConfigured: true,
   supabase: { rpc: (...args: unknown[]) => rpc(...args) },
 }));
 

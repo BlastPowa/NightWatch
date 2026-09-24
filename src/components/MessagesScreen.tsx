@@ -282,7 +282,7 @@ export function MessagesScreen({ initialConversationId, currentUserId }: Message
     <section className="messages-page fade-up" aria-labelledby="messages-title">
       <aside className="conversation-rail">
         <header className="conversation-rail-header">
-          <div><span className="eyebrow">Your circle</span><h1 id="messages-title">Messages</h1></div>
+          <div><span className="eyebrow">Messages</span><h1 id="messages-title">Messages</h1><p className="conversation-rail-tagline">Conversation stays beside the watch party.</p></div>
           <button type="button" className="conversation-new" onClick={() => setShowGroupComposer((value) => !value)} aria-label="Create a group conversation" aria-expanded={showGroupComposer}><Icon name={showGroupComposer ? 'close' : 'plus'} /></button>
         </header>
 

@@ -192,7 +192,7 @@ export function CreatorClubScreen({ discoveryEnabled }: CreatorClubScreenProps):
   return (
     <div className="creator-page fade-up">
       <header className="creator-hero">
-        <div><span className="eyebrow">Community studio</span><h1>Creator Club</h1><p>Turn watch-party ideas into community challenges, vote on submissions, and celebrate the videos people make together.</p></div>
+        <div><span className="eyebrow">Creator Club</span><h1>Run a club like a tiny studio.</h1><p>Club identity, active bounties, submissions, voting and moderation share one workspace, with public discovery kept secondary.</p></div>
         <div className="creator-hero-actions">{discoveryEnabled && <button type="button" className={view === 'discover' ? 'button button-primary' : 'button'} onClick={() => setView(view === 'discover' ? 'board' : 'discover')}><Icon name={view === 'discover' ? 'creator' : 'search'} size={16} />{view === 'discover' ? 'My clubs' : 'Discover clubs'}</button>}<button type="button" className="button button-primary" onClick={() => setShowClubComposer((value) => !value)}><Icon name="plus" size={16} />New club</button></div>
       </header>
 

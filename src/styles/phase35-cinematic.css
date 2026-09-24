@@ -1,11 +1,13 @@
 /* Phase 35: full-bleed discovery, player deck, startup-adjacent polish. */
 
 .app-view-settings .content {
-  /* Keep the shell fixed. The settings workspace, rather than the entire
-   * application page, owns the remaining block space and its own scroll. */
-  display: flex;
+  /* The application shell owns the viewport.  Only the right-hand settings
+   * pane scrolls, so short Windows windows never hide the final Appearance
+   * cards below an inaccessible page scrollbar. */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
   min-height: 0;
-  flex-direction: column;
   overflow: hidden;
 }
 
@@ -13,11 +15,8 @@
   /* The application shell owns the viewport.  The workspace must not grow
    * past it or the final Appearance cards end up below an inaccessible page
    * scroll area on short Windows windows. */
-  flex: 1 1 0;
-  height: auto !important;
-  /* Do not use 100% here: the workspace sits below the sticky top bar, so
-   * 100% makes the final Appearance cards extend below the viewport. */
-  block-size: auto !important;
+  height: 100% !important;
+  block-size: 100% !important;
   min-height: 0 !important;
   max-height: none !important;
   align-self: stretch;
@@ -27,7 +26,7 @@
 .app-view-settings .settings-content {
   height: 100%;
   min-height: 0;
-  max-height: 100%;
+  max-height: none;
   overflow-y: auto !important;
   overscroll-behavior: contain;
   padding-bottom: calc(5rem + env(safe-area-inset-bottom));
@@ -41,14 +40,17 @@
 /* Personal artwork and Backdrop are separate controls. The artwork is the
  * fixed image layer; the selected backdrop remains a visible colour wash,
  * vignette and motion layer above it. */
-html[data-custom-background='true'] .app-cinematic-shell {
+/* One fixed backdrop layer owns the visual background for every screen. It
+ * stays present without custom artwork so changing Backdrop is visible
+ * behind Browse, Settings, Library, and Room surfaces. */
+.app-cinematic-shell {
   position: relative;
   isolation: isolate;
   background: transparent;
 }
 
-html[data-custom-background='true'] .app-cinematic-shell::before,
-html[data-custom-background='true'] .app-cinematic-shell::after {
+.app-cinematic-shell::before,
+.app-cinematic-shell::after {
   position: fixed;
   inset: var(--nw-titlebar-h, 0px) 0 0;
   /* Keep the artwork and selected backdrop inside the shell stacking
@@ -59,22 +61,22 @@ html[data-custom-background='true'] .app-cinematic-shell::after {
   content: '';
 }
 
-html[data-custom-background='true'] .app-cinematic-shell::before {
-  background: var(--nw-custom-background-image) center / cover no-repeat;
+.app-cinematic-shell::before {
+  background: var(--nw-custom-background-image, none) center / cover no-repeat;
   filter: saturate(.94) contrast(1.03);
 }
 
-html[data-custom-background='true'] .app-cinematic-shell::after {
+.app-cinematic-shell::after {
   z-index: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 30%,transparent), color-mix(in srgb,var(--nw-bg) 68%,transparent)),
-    radial-gradient(75% 68% at 82% 3%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 34%,transparent), transparent 70%),
-    radial-gradient(72% 66% at 8% 96%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 30%,transparent), transparent 72%);
+    linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 24%,transparent), color-mix(in srgb,var(--nw-bg) 62%,transparent)),
+    radial-gradient(75% 68% at 82% 3%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 48%,transparent), transparent 70%),
+    radial-gradient(72% 66% at 8% 96%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 42%,transparent), transparent 72%);
   background-size: auto, 122% 122%, 126% 126%;
   animation: nw-artwork-backdrop 20s ease-in-out infinite alternate;
 }
 
-html[data-custom-background='true'][data-background='aurora'] .app-cinematic-shell::after {
+html[data-background='aurora'] .app-cinematic-shell::after {
   background:
     linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 26%,transparent), color-mix(in srgb,var(--nw-bg) 74%,transparent)),
     radial-gradient(82% 74% at 94% -4%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 56%,transparent), transparent 66%),
@@ -82,40 +84,62 @@ html[data-custom-background='true'][data-background='aurora'] .app-cinematic-she
   animation-duration: 14s;
 }
 
-html[data-custom-background='true'][data-background='studio'] .app-cinematic-shell::after {
+html[data-background='studio'] .app-cinematic-shell::after {
   background: linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 58%,transparent), color-mix(in srgb,var(--nw-bg) 88%,transparent));
   animation: none;
 }
 
-html[data-custom-background='true'][data-background='nebula'] .app-cinematic-shell::after {
+html[data-background='nebula'] .app-cinematic-shell::after {
   background:
     linear-gradient(180deg, color-mix(in srgb,var(--nw-bg) 34%,transparent), color-mix(in srgb,var(--nw-bg) 80%,transparent)),
     radial-gradient(72% 76% at 12% 4%, color-mix(in srgb,var(--nw-backdrop-secondary,#6d5dfc) 48%,transparent), transparent 68%),
     radial-gradient(76% 68% at 90% 46%, color-mix(in srgb,var(--nw-backdrop-primary,var(--nw-accent)) 42%,transparent), transparent 70%);
 }
 
-html[data-custom-background='true'][data-background='ember'] .app-cinematic-shell::after {
+html[data-background='ember'] .app-cinematic-shell::after {
   background:
     linear-gradient(180deg, color-mix(in srgb,#160500 38%,transparent), color-mix(in srgb,var(--nw-bg) 84%,transparent)),
     radial-gradient(84% 74% at 50% 108%, color-mix(in srgb,#ff5b1f 48%,transparent), transparent 68%);
 }
 
-html[data-custom-background='true'][data-background='frost'] .app-cinematic-shell::after {
+html[data-background='frost'] .app-cinematic-shell::after {
   background:
     linear-gradient(180deg, color-mix(in srgb,#dff7ff 9%,transparent), color-mix(in srgb,var(--nw-bg) 78%,transparent)),
     radial-gradient(80% 72% at 78% 0, color-mix(in srgb,#8eddff 42%,transparent), transparent 68%);
 }
 
-html[data-custom-background='true'][data-background='cinema'] .app-cinematic-shell::after {
+html[data-background='cinema'] .app-cinematic-shell::after {
   background:
     radial-gradient(120% 96% at 50% 42%, transparent 20%, rgba(0,0,0,.62) 100%),
     radial-gradient(72% 58% at 50% 14%, color-mix(in srgb,#ffbb60 22%,transparent), transparent 72%);
   animation: none;
 }
 
-html[data-custom-background='true'] .app-cinematic-shell .content {
+/* Personal artwork must not make the selected backdrop cosmetic.  These
+ * named washes deliberately remain distinct and sit above the image, while
+ * all application panels retain their normal readable surface treatment. */
+html[data-background='midnight'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,#020613 18%,transparent), color-mix(in srgb,#020613 76%,transparent)),
+    radial-gradient(78% 72% at 84% 2%, color-mix(in srgb,#315cc7 48%,transparent), transparent 68%),
+    radial-gradient(70% 68% at 8% 96%, color-mix(in srgb,#7458d8 40%,transparent), transparent 70%);
+}
+
+html[data-background='frost'] .app-cinematic-shell::after {
+  background:
+    linear-gradient(180deg, color-mix(in srgb,#dff7ff 18%,transparent), color-mix(in srgb,#061521 72%,transparent)),
+    radial-gradient(86% 76% at 76% 0, color-mix(in srgb,#8eddff 58%,transparent), transparent 66%),
+    radial-gradient(70% 64% at 10% 100%, color-mix(in srgb,#4a7eff 38%,transparent), transparent 70%);
+}
+
+html .app-cinematic-shell .content {
   z-index: 1;
   background: transparent !important;
+}
+
+.app-cinematic-shell .sidebar {
+  position: relative;
+  z-index: 1;
 }
 
 @keyframes nw-artwork-backdrop {
@@ -123,7 +147,7 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
   to { background-position: 0 0, 28% 12%, 76% 72%; }
 }
 
-[data-reduce-motion='true'][data-custom-background='true'] .app-cinematic-shell::after {
+[data-reduce-motion='true'] .app-cinematic-shell::after {
   animation: none !important;
 }
 
@@ -187,6 +211,8 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
  * untouched in the YouTube Watch tab. */
 .watch-mode-tabs { display: inline-flex; gap: .35rem; margin: -.15rem 0 .85rem; padding: .25rem; border: 1px solid var(--nw-border); border-radius: 999px; background: color-mix(in srgb,var(--nw-bg-sunken) 78%,transparent); }
 .watch-mode-tab { display: inline-flex; min-height: 34px; align-items: center; gap: .4rem; padding: .35rem .72rem; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--nw-text-muted); cursor: pointer; font-size: .75rem; font-weight: 750; }
+.watch-mode-tab-disabled { cursor: not-allowed; opacity: .58; }
+.watch-mode-tab-hint { font-size: .6rem; font-weight: 650; opacity: .78; }
 .watch-mode-tab:hover { color: var(--nw-text); background: color-mix(in srgb,var(--nw-text) 6%,transparent); }
 .watch-mode-tab-active { border-color: color-mix(in srgb,var(--nw-accent) 48%,var(--nw-border)); background: color-mix(in srgb,var(--nw-accent) 16%,var(--nw-bg-raised)); color: var(--nw-text); box-shadow: 0 0 18px color-mix(in srgb,var(--nw-accent) 13%,transparent); }
 .movie-watch-panel { display: grid; gap: 1rem; min-height: 420px; padding: clamp(1rem,2vw,1.5rem); border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border)); border-radius: calc(var(--nw-radius-lg) + 3px); background: linear-gradient(135deg,color-mix(in srgb,var(--nw-accent) 8%,var(--nw-bg-raised)),var(--nw-bg-raised)); box-shadow: inset 0 1px color-mix(in srgb,white 5%,transparent),0 18px 42px rgba(0,0,0,.22); }
@@ -333,11 +359,98 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 
 .player-panel-full .player-media-info { margin-top: .85rem; padding: 1rem 1.1rem; border-radius: calc(var(--nw-radius-lg) + 3px) calc(var(--nw-radius-lg) + 3px) var(--nw-radius) var(--nw-radius); }
 .player-panel-full .player-source-mark { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(145deg,color-mix(in srgb,var(--nw-accent) 72%,#ff334a),color-mix(in srgb,var(--nw-accent) 42%,#e51c3a)); box-shadow: 0 12px 28px color-mix(in srgb,var(--nw-accent) 26%,transparent); }
+.player-theater-button { min-height: 30px; padding: .32rem .55rem; font-size: .68rem; white-space: nowrap; }
+.player-theater-button[aria-pressed='true'] { border-color: color-mix(in srgb,var(--nw-accent) 62%,var(--nw-border)); background: color-mix(in srgb,var(--nw-accent) 16%,var(--nw-bg-sunken)); color: var(--nw-accent); }
+.room-view-full:has(.player-panel-theater) .room-body { grid-template-columns: minmax(0,1fr); }
+.room-view-full:has(.player-panel-theater) .room-aside { display: none; }
+.room-view-full:has(.player-panel-theater) .room-main { width: min(1200px,100%); margin-inline: auto; }
+.player-panel-theater .player-frame { aspect-ratio: 2 / 1; }
 .player-panel-full .player-command-bar { margin-top: .45rem; padding: .7rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 18%,var(--nw-border)); border-radius: var(--nw-radius); }
 .player-panel-full .player-form { gap: .55rem; }
 .player-panel-full .player-form .input { min-height: 44px; border-color: color-mix(in srgb,var(--nw-accent) 20%,var(--nw-border)); background: color-mix(in srgb,var(--nw-bg-sunken) 82%,transparent); }
+.player-error { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin-top: .55rem; }
+.player-error .form-error { margin: 0; }
+.player-error-link { color: var(--nw-accent); font-size: .8rem; font-weight: 750; text-decoration: underline; text-underline-offset: .18em; }
+.player-error-link:hover, .player-error-link:focus-visible { color: var(--nw-text); }
 .player-panel-full .player-community-module { margin-top: .7rem; border-radius: var(--nw-radius-lg); }
 .player-panel-full .player-community-bar { margin: 0; border: 0; background: transparent; box-shadow: none; }
+
+/* Keep the official YouTube iframe mounted when Movie Watch or ScreenWatch is
+   selected. The sync engine therefore keeps its room state and playback
+   position; the inactive stage is simply removed from the visual/focus flow. */
+.player-panel-inactive {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Up Next: a dedicated queue surface with readable thumbnails and vote context. */
+.room-dock-queue .queue-panel {
+  gap: .8rem;
+  margin: 0;
+  padding: .9rem;
+  border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border));
+  border-radius: calc(var(--nw-radius-lg) + 2px);
+  background:
+    radial-gradient(260px 150px at 0 0,color-mix(in srgb,var(--nw-accent) 12%,transparent),transparent 76%),
+    color-mix(in srgb,var(--nw-bg-raised) 88%,transparent);
+  box-shadow: inset 0 1px color-mix(in srgb,white 6%,transparent), 0 16px 38px rgba(0,0,0,.16);
+}
+.room-dock-queue .queue-header { align-items: flex-start; gap: .8rem; }
+.queue-heading { display: grid; min-width: 0; gap: .12rem; }
+.queue-heading h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.02em; }
+.queue-heading .eyebrow { color: var(--nw-accent); }
+.queue-guidance { max-width: 28ch; margin: .18rem 0 0; color: var(--nw-text-muted); font-size: .72rem; line-height: 1.4; }
+.queue-header-tools { display: flex; flex: 0 0 auto; align-items: center; gap: .45rem; }
+.queue-count { padding: .28rem .5rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 28%,var(--nw-border)); border-radius: 999px; color: var(--nw-text-muted); font-size: .68rem; white-space: nowrap; }
+.queue-play-next { display: inline-flex; align-items: center; gap: .3rem; min-height: 32px; padding: .35rem .6rem; font-size: .7rem; }
+.room-dock-queue .queue-form { gap: .45rem; margin: .05rem 0; }
+.room-dock-queue .queue-form .input { min-height: 40px; background: color-mix(in srgb,var(--nw-bg-sunken) 86%,transparent); }
+.room-dock-queue .queue-form .button { min-height: 40px; padding-inline: .85rem; }
+.queue-empty { display: grid; justify-items: center; gap: .25rem; min-height: 160px; padding: 1.2rem .8rem; place-content: center; border: 1px dashed color-mix(in srgb,var(--nw-accent) 23%,var(--nw-border)); border-radius: var(--nw-radius); background: color-mix(in srgb,var(--nw-bg-sunken) 55%,transparent); text-align: center; }
+.queue-empty strong { font-size: .82rem; }
+.queue-empty small { max-width: 26ch; color: var(--nw-text-muted); font-size: .7rem; line-height: 1.4; }
+.queue-empty-icon { display: grid; width: 36px; height: 36px; place-items: center; margin-bottom: .15rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 38%,var(--nw-border)); border-radius: 50%; color: var(--nw-accent); background: color-mix(in srgb,var(--nw-accent) 12%,transparent); }
+.room-dock-queue .queue-list { gap: .55rem; max-height: 310px; padding: .1rem .08rem .2rem; }
+.room-dock-queue .queue-entry { position: relative; display: grid; grid-template-columns: 1.25rem 72px minmax(0,1fr) auto auto; align-items: center; gap: .55rem; min-height: 66px; padding: .4rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 20%,var(--nw-border)); border-radius: var(--nw-radius); background: color-mix(in srgb,var(--nw-bg-sunken) 86%,transparent); transition: transform .18s var(--nw-ease),border-color .18s var(--nw-ease),background .18s var(--nw-ease); }
+.room-dock-queue .queue-entry:hover,.room-dock-queue .queue-entry:focus-within { transform: translateY(-1px); border-color: color-mix(in srgb,var(--nw-accent) 56%,var(--nw-border)); background: color-mix(in srgb,var(--nw-accent) 7%,var(--nw-bg-sunken)); }
+.room-dock-queue .queue-pos { width: auto; font-size: .68rem; font-weight: 800; color: var(--nw-text-muted); }
+.queue-thumbnail { position: relative; display: grid; width: 72px; aspect-ratio: 16/9; place-items: center; overflow: hidden; border: 1px solid color-mix(in srgb,var(--nw-accent) 20%,var(--nw-border)); border-radius: calc(var(--nw-radius) - 2px); background: linear-gradient(135deg,color-mix(in srgb,var(--nw-accent) 17%,var(--nw-bg-sunken)),var(--nw-bg-sunken)); color: var(--nw-text); }
+.queue-thumbnail img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.queue-thumbnail > svg { position: absolute; opacity: .9; filter: drop-shadow(0 2px 6px rgba(0,0,0,.6)); }
+.queue-thumbnail-missing img { display: none; }
+.queue-entry-copy { display: grid; min-width: 0; gap: .22rem; }
+.room-dock-queue .queue-title { overflow: hidden; color: var(--nw-text); font-size: .75rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.room-dock-queue .queue-by { overflow: hidden; color: var(--nw-text-muted); font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.queue-vote-wrap { position: relative; display: inline-flex; align-items: center; }
+.room-dock-queue .queue-vote { display: inline-flex; align-items: center; gap: .18rem; min-width: 42px; justify-content: center; padding: .34rem .46rem; border-color: color-mix(in srgb,var(--nw-accent) 32%,var(--nw-border)); background: color-mix(in srgb,var(--nw-bg-raised) 76%,transparent); color: var(--nw-text-muted); font-weight: 800; }
+.room-dock-queue .queue-vote:hover,.room-dock-queue .queue-vote:focus-visible { color: var(--nw-accent); box-shadow: 0 0 16px color-mix(in srgb,var(--nw-accent) 22%,transparent); }
+.room-dock-queue .queue-vote-active { color: var(--nw-accent); background: color-mix(in srgb,var(--nw-accent) 15%,transparent); }
+.queue-voter-popover { position: absolute; z-index: 5; right: 0; bottom: calc(100% + .45rem); display: grid; width: max-content; max-width: 190px; gap: .2rem; padding: .55rem .65rem; border: 1px solid color-mix(in srgb,var(--nw-accent) 45%,var(--nw-border)); border-radius: var(--nw-radius); background: color-mix(in srgb,var(--nw-bg-raised) 96%,#000); box-shadow: 0 12px 30px rgba(0,0,0,.42); color: var(--nw-text); font-size: .66rem; line-height: 1.35; opacity: 0; pointer-events: none; transform: translateY(3px); transition: opacity .16s var(--nw-ease),transform .16s var(--nw-ease); }
+.queue-voter-popover strong { color: var(--nw-accent); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; }
+.queue-voter-popover span { overflow-wrap: anywhere; }
+.queue-vote-wrap:hover .queue-voter-popover,.queue-vote-wrap:focus-within .queue-voter-popover { opacity: 1; transform: translateY(0); }
+.room-dock-queue .queue-remove { width: 25px; height: 25px; padding: 0; border: 1px solid transparent; border-radius: 50%; }
+.room-dock-queue .queue-remove:hover,.room-dock-queue .queue-remove:focus-visible { border-color: color-mix(in srgb,var(--nw-danger) 55%,transparent); background: color-mix(in srgb,var(--nw-danger) 12%,transparent); }
+
+@media (max-width: 700px) {
+  .player-panel-theater .player-frame { aspect-ratio: 16 / 9; }
+  .player-theater-button { min-height: 36px; }
+  .room-dock-queue .queue-header { flex-direction: column; }
+  .queue-header-tools { width: 100%; justify-content: space-between; }
+  .room-dock-queue .queue-entry { grid-template-columns: 1.1rem 58px minmax(0,1fr) auto; }
+  .queue-thumbnail { width: 58px; }
+  .room-dock-queue .queue-remove { display: none; }
+}
 
 .room-join-toast {
   position: fixed;
@@ -378,4 +491,39 @@ html[data-custom-background='true'] .app-cinematic-shell .content {
 
 @media (prefers-reduced-motion: reduce) {
   .browse-refresh svg,.room-join-toast { animation: none !important; }
+}
+
+/* ScreenWatch: a capability-gated direct WebRTC surface. The room still
+   owns the surrounding layout; only the selected source panel is shown. */
+.screen-watch-panel { display: grid; gap: 1rem; padding: clamp(1rem,2vw,1.5rem); border: 1px solid color-mix(in srgb,var(--nw-accent) 38%,var(--nw-border)); border-radius: var(--nw-radius-lg); background: linear-gradient(145deg,color-mix(in srgb,var(--nw-bg-raised) 94%,transparent),color-mix(in srgb,var(--nw-bg-sunken) 86%,transparent)); box-shadow: inset 0 1px color-mix(in srgb,white 7%,transparent), 0 20px 60px rgba(0,0,0,.2); }
+.screen-watch-panel-hidden { display: none; }
+.screen-watch-header { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; }
+.screen-watch-header h2 { margin:.2rem 0 .35rem; font-size:clamp(1.35rem,2vw,1.8rem); }
+.screen-watch-header p { max-width:58ch; margin:0; color:var(--nw-text-muted); line-height:1.5; }
+.screen-watch-status { display:inline-flex; align-items:center; gap:.4rem; flex:none; padding:.4rem .65rem; border:1px solid var(--nw-border); border-radius:999px; color:var(--nw-text-muted); font-size:.72rem; font-weight:800; white-space:nowrap; }
+.screen-watch-status-sharing { color:var(--nw-accent); border-color:color-mix(in srgb,var(--nw-accent) 55%,var(--nw-border)); box-shadow:0 0 18px color-mix(in srgb,var(--nw-accent) 18%,transparent); }
+.screen-watch-help { border:1px solid color-mix(in srgb,var(--nw-accent) 26%,var(--nw-border)); border-radius:var(--nw-radius); background:color-mix(in srgb,var(--nw-bg-sunken) 46%,transparent); }
+.screen-watch-help summary { display:flex; align-items:center; gap:.5rem; padding:.75rem .9rem; color:var(--nw-text); font-weight:800; cursor:pointer; list-style:none; }
+.screen-watch-help summary::-webkit-details-marker { display:none; }
+.screen-watch-help summary::after { content:'+'; margin-left:auto; color:var(--nw-accent); font-size:1.1rem; }
+.screen-watch-help[open] summary::after { content:'−'; }
+.screen-watch-help-body { display:grid; gap:.45rem; padding:0 .9rem .85rem; color:var(--nw-text-muted); font-size:.82rem; line-height:1.5; }
+.screen-watch-help-body p { margin:0; }
+.screen-watch-help-body strong { color:var(--nw-text); }
+.screen-watch-help-body em { color:var(--nw-accent); font-style:normal; font-weight:700; }
+.screen-watch-state,.screen-watch-actions { display:grid; place-items:center; gap:.5rem; min-height:230px; padding:2rem; text-align:center; border:1px dashed color-mix(in srgb,var(--nw-accent) 42%,var(--nw-border)); border-radius:var(--nw-radius); background:color-mix(in srgb,var(--nw-bg-sunken) 72%,transparent); }
+.screen-watch-state strong,.screen-watch-prompt strong { font-size:1.05rem; }
+.screen-watch-state p,.screen-watch-prompt span { max-width:52ch; margin:0; color:var(--nw-text-muted); line-height:1.45; }
+.screen-watch-state-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:.6rem; margin-top:.25rem; }
+.screen-watch-actions { grid-template-columns:minmax(0,1fr) auto; place-items:center start; min-height:0; text-align:left; border-style:solid; }
+.screen-watch-prompt { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; column-gap:.75rem; }
+.screen-watch-prompt svg { grid-row:span 2; color:var(--nw-accent); }
+.screen-watch-video { display:block; width:100%; max-height:min(70vh,720px); aspect-ratio:16/9; border:1px solid var(--nw-border); border-radius:var(--nw-radius); background:#000; object-fit:contain; }
+.screen-watch-viewers,.screen-watch-message { margin:0; color:var(--nw-text-muted); font-size:.82rem; }
+.screen-watch-message { color:var(--nw-danger); }
+@media (max-width:700px) {
+  .screen-watch-header,.screen-watch-actions { grid-template-columns:1fr; flex-direction:column; align-items:stretch; }
+  .screen-watch-status { justify-self:start; }
+  .screen-watch-actions { place-items:stretch; }
+  .screen-watch-prompt { margin-bottom:.35rem; }
 }

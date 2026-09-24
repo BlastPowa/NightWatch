@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import type { AppInfo } from '@shared/ipc';
 import type { ConnectionStatus } from '@/lib/realtime/types';
 import { BrandMark } from '@/components/BrandMark';
@@ -44,6 +44,7 @@ interface AppShellProps {
     name: string;
     avatarUrl: string | null;
     connected: boolean;
+    connectionLabel?: string;
   };
   runtime: {
     connectionStatus: ConnectionStatus;
@@ -84,6 +85,9 @@ export function AppShell({
   search,
 }: AppShellProps): JSX.Element {
   const [friendActivityOpen, setFriendActivityOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const mobileMoreButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileMoreMenuRef = useRef<HTMLDivElement>(null);
   const watchItems: NavItem[] = [
     { view: 'discover', label: 'Browse', icon: 'home', visible: true },
     { view: 'main', label: room.active ? 'Room' : 'Join', icon: 'play', visible: true },
@@ -100,6 +104,30 @@ export function AppShell({
     { view: 'faq', label: 'FAQ', icon: 'help', visible: true },
     { view: 'about', label: 'About', icon: 'info', visible: true },
   ];
+  const visibleItems = [...watchItems, ...userItems].filter((item) => item.visible);
+  const mobilePreferredViews: readonly AppView[] = ['discover', 'main', 'friends', 'messages'];
+  const mobilePrimaryItems = [
+    ...mobilePreferredViews
+      .map((primaryView) => visibleItems.find((item) => item.view === primaryView))
+      .filter((item): item is NavItem => item !== undefined),
+    ...visibleItems.filter((item) => !mobilePreferredViews.includes(item.view)),
+  ].slice(0, 4);
+  const mobilePrimaryViews = mobilePrimaryItems.map((item) => item.view);
+  const mobileMoreItems = visibleItems.filter((item) => !mobilePrimaryViews.includes(item.view));
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return undefined;
+
+    const handlePointerDown = (event: PointerEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (mobileMoreMenuRef.current?.contains(target) || mobileMoreButtonRef.current?.contains(target)) return;
+      setMobileMoreOpen(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [mobileMoreOpen]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -108,8 +136,9 @@ export function AppShell({
   }
 
   return (
-    <div className={`app app-cinematic-shell app-view-${view}`}>
+    <div className={`app app-cinematic-shell app-view-${view}`} data-revamp="entertainment">
       <TitleBar subtitle={room.active ? room.name : undefined} />
+      <div className="cinematic-ambient" aria-hidden="true" />
       <aside className="sidebar">
         <div className="brand">
           <BrandMark />
@@ -119,6 +148,63 @@ export function AppShell({
         <nav className="side-nav" aria-label="NightWatch">
           <NavSection label="Watch" items={watchItems} active={view} onNavigate={onNavigate} />
           <NavSection label="You" items={userItems} active={view} onNavigate={onNavigate} />
+        </nav>
+
+        <nav className="mobile-nav" aria-label="Primary mobile navigation">
+          {mobilePrimaryItems.map((item) => (
+            <MobileNavButton key={item.view} item={item} active={view === item.view} onNavigate={onNavigate} />
+          ))}
+          <div className="mobile-nav-more">
+            <button
+              ref={mobileMoreButtonRef}
+              type="button"
+              className={`mobile-nav-button${mobileMoreOpen || mobileMoreItems.some((item) => item.view === view) ? ' mobile-nav-button-active' : ''}`}
+              aria-label="More navigation options"
+              aria-haspopup="menu"
+              aria-expanded={mobileMoreOpen}
+              aria-controls="mobile-navigation-more-menu"
+              onClick={() => setMobileMoreOpen((open) => !open)}
+              onKeyDown={(event) => {
+                if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+                event.preventDefault();
+                setMobileMoreOpen(true);
+                requestAnimationFrame(() => focusMobileMenuItem(mobileMoreMenuRef.current, event.key === 'ArrowUp' ? 'last' : 'first'));
+              }}
+            >
+              <span className="mobile-nav-more-glyph" aria-hidden="true"><span /><span /><span /></span>
+              <span className="mobile-nav-label">More</span>
+            </button>
+            {mobileMoreOpen && (
+              <div
+                ref={mobileMoreMenuRef}
+                id="mobile-navigation-more-menu"
+                className="mobile-nav-more-menu"
+                role="menu"
+                aria-label="More navigation"
+                onKeyDown={(event) => handleMobileMenuKeyDown(event, mobileMoreMenuRef.current, () => {
+                  setMobileMoreOpen(false);
+                  mobileMoreButtonRef.current?.focus();
+                })}
+              >
+                {mobileMoreItems.map((item) => (
+                  <button
+                    key={item.view}
+                    type="button"
+                    role="menuitem"
+                    className={`mobile-nav-more-item${view === item.view ? ' mobile-nav-more-item-active' : ''}`}
+                    aria-current={view === item.view ? 'page' : undefined}
+                    onClick={() => {
+                      setMobileMoreOpen(false);
+                      onNavigate(item.view);
+                    }}
+                  >
+                    <span className="nav-icon"><Icon name={item.icon} /></span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </nav>
 
         {room.active && (
@@ -176,7 +262,7 @@ export function AppShell({
             {capabilities.notifications && <NotificationCenter />}
             <button type="button" className="profile-chip" data-tour="profile" onClick={() => onNavigate('card')} aria-label="Open your profile">
               <ProfileAvatar src={identity.avatarUrl} name={identity.name} />
-              <span className="profile-chip-copy"><strong>{identity.name}</strong><small>{identity.connected ? 'Discord connected' : 'Local profile'}</small></span>
+              <span className="profile-chip-copy"><strong>{identity.name}</strong><small>{identity.connectionLabel ?? (identity.connected ? 'NightWatch account' : 'Local profile')}</small></span>
             </button>
           </div>
         </header>
@@ -213,10 +299,58 @@ function CinemaDockButton({ view, label, icon, active = false, onNavigate }: { v
   return <button type="button" className={active ? 'cinema-dock-button cinema-dock-button-active' : 'cinema-dock-button'} onClick={() => onNavigate(view)} aria-label={`Quick navigation: ${label}`} title={label}><Icon name={icon} size={18} /></button>;
 }
 
+function MobileNavButton({ item, active, onNavigate }: { item: NavItem; active: boolean; onNavigate(view: AppView): void }): JSX.Element {
+  return (
+    <button
+      type="button"
+      className={`mobile-nav-button${active ? ' mobile-nav-button-active' : ''}`}
+      aria-label={item.label}
+      aria-current={active ? 'page' : undefined}
+      onClick={() => onNavigate(item.view)}
+    >
+      <span className="nav-icon"><Icon name={item.icon} /></span>
+      <span className="mobile-nav-label">{item.label}</span>
+    </button>
+  );
+}
+
+function focusMobileMenuItem(menu: HTMLDivElement | null, target: 'first' | 'last'): void {
+  const items = Array.from(menu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+  if (items.length === 0) return;
+  items[target === 'first' ? 0 : items.length - 1]?.focus();
+}
+
+function handleMobileMenuKeyDown(event: KeyboardEvent<HTMLDivElement>, menu: HTMLDivElement | null, closeMenu: () => void): void {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeMenu();
+    return;
+  }
+
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+  const items = Array.from(menu?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+  if (items.length === 0) return;
+
+  event.preventDefault();
+  const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+  if (event.key === 'Home') {
+    items[0]?.focus();
+    return;
+  }
+  if (event.key === 'End') {
+    items[items.length - 1]?.focus();
+    return;
+  }
+
+  const step = event.key === 'ArrowDown' ? 1 : -1;
+  const nextIndex = currentIndex < 0 ? (step > 0 ? 0 : items.length - 1) : (currentIndex + step + items.length) % items.length;
+  items[nextIndex]?.focus();
+}
+
 function NavSection({ label, items, active, onNavigate }: { label: string; items: readonly NavItem[]; active: AppView; onNavigate(view: AppView): void }): JSX.Element {
   return <>
     <span className="nav-section-label">{label}</span>
-    {items.filter((item) => item.visible).map((item) => <button key={item.view} type="button" data-tour={`nav-${item.view}`} className={`nav-item${active === item.view ? ' nav-item-active' : ''}`} onClick={() => onNavigate(item.view)} title={item.label}><span className="nav-icon"><Icon name={item.icon} /></span><span className="nav-label">{item.label}</span></button>)}
+    {items.filter((item) => item.visible).map((item) => <button key={item.view} type="button" data-tour={`nav-${item.view}`} className={`nav-item${active === item.view ? ' nav-item-active' : ''}`} onClick={() => onNavigate(item.view)} aria-label={item.label} aria-current={active === item.view ? 'page' : undefined} title={item.label}><span className="nav-icon"><Icon name={item.icon} /></span><span className="nav-label">{item.label}</span></button>)}
   </>;
 }
 

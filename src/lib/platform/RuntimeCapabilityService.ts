@@ -11,7 +11,7 @@ import {
   type SafeActionDiagnostic,
 } from '@shared/safeDiagnostics';
 import { log } from '@/lib/log';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 
 /**
  * Phase 34 — the renderer's single source of truth for "what does the server
@@ -59,6 +59,12 @@ class RuntimeCapabilityService {
       return;
     }
     this.initialized = true;
+
+    if (!supabaseConfigured) {
+      this.publish(emptyManifest());
+      this.resolveSettled();
+      return;
+    }
 
     // The initial getSession() resolves AFTER Supabase reads persisted
     // storage — that resolution is the signal detection was missing.
@@ -175,6 +181,10 @@ class RuntimeCapabilityService {
 
   private async fetchManifest(feature: string): Promise<RuntimeCapabilityManifestV2> {
     await this.settledPromise;
+    if (!supabaseConfigured) {
+      this.publish(emptyManifest());
+      return this.manifest;
+    }
     const operationId = newOperationId();
     const online = typeof navigator === 'undefined' || navigator.onLine;
 

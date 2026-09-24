@@ -18,6 +18,7 @@ export function useQueue(service: RoomService, isHost: boolean): QueueBinding {
   const [entries, setEntries] = useState<readonly QueueEntry[]>([]);
   const queueRef = useRef<QueueService | null>(null);
   const isHostRef = useRef(isHost);
+  const previousIsHostRef = useRef(isHost);
   isHostRef.current = isHost;
 
   useEffect(() => {
@@ -30,6 +31,14 @@ export function useQueue(service: RoomService, isHost: boolean): QueueBinding {
       setEntries([]);
     };
   }, [service]);
+
+  useEffect(() => {
+    const wasHost = previousIsHostRef.current;
+    previousIsHostRef.current = isHost;
+    if (isHost && !wasHost) {
+      queueRef.current?.announceHostState();
+    }
+  }, [isHost]);
 
   const add = useCallback((videoId: string, title: string, selfName: string): boolean => {
     return queueRef.current?.add(videoId, title, selfName) ?? false;

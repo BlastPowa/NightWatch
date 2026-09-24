@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#090b11" />
+    <meta name="description" content="Make tonight a watch party. Download NightWatch for Windows, explore synchronized YouTube rooms, and get the latest release straight from GitHub." />
+    <title>NightWatch — Your next watch night starts here</title>
+    <link rel="icon" href="assets/nightwatch-mark.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="releases.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+      <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10" /></symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" /></symbol>
+      <symbol id="icon-play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7Z" /></symbol>
+      <symbol id="icon-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3" /><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m3 10v-3a6 6 0 0 0-2-4" /></symbol>
+      <symbol id="icon-queue" viewBox="0 0 24 24"><path d="M4 6h16M4 12h9M4 18h9m4-5 5 3-5 3Z" /></symbol>
+      <symbol id="icon-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8m-4-4v4" /></symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5 8a8 8 0 0 1 13-3l2 3M4 16l2 3a8 8 0 0 0 13-3" /></symbol>
+    </svg>
+
+    <header class="site-header wrap">
+      <a class="brand" href="#main" aria-label="NightWatch home"><img src="assets/nightwatch-mark.svg" alt="" width="36" height="36" /><span>NightWatch</span></a>
+      <nav aria-label="Primary navigation"><a href="#experience">The experience</a><a href="#install">Install</a><a href="#updates">Release notes</a></nav>
+      <a class="header-download" href="#download">Get NightWatch <svg class="icon" aria-hidden="true"><use href="#icon-download" /></svg></a>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="hero wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> A little closer, wherever you are</p>
+          <h1 id="hero-title">Make tonight<br />a <span>watch party.</span></h1>
+          <p class="hero-lede">Your videos. Your people. One shared moment.<br class="desktop-break" /> Bring everyone into a room and let the night unfold.</p>
+          <a class="text-link hero-link" href="#experience">Meet your new hangout <svg class="icon" aria-hidden="true"><use href="#icon-arrow" /></svg></a>
+          <ul class="hero-highlights" aria-label="Room features">
+            <li><svg class="icon" aria-hidden="true"><use href="#icon-play" /></svg> YouTube in sync</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#icon-queue" /></svg> Shared queues</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#icon-people" /></svg> Chat &amp; reactions</li>
+          </ul>
+        </div>
+
+        <aside class="download-card" id="download" aria-labelledby="download-title">
+          <div class="download-card-top"><img src="assets/nightwatch-mark.svg" alt="" width="56" height="56" /><span class="pill">Windows desktop</span></div>
+          <h2 id="download-title">Your seat is ready.</h2>
+          <p>Install NightWatch. Make a night of it.</p>
+          <dl class="release-facts">
+            <div><dt>Version</dt><dd data-release-version>Latest public release</dd></div>
+            <div><dt>Released</dt><dd><time data-release-date>See GitHub for date</time></dd></div>
+            <div><dt>Installer</dt><dd data-release-size>Windows .exe</dd></div>
+          </dl>
+          <a class="button button-primary download-button" href="https://github.com/BlastPowa/NightWatch/releases/latest" data-download><svg class="icon" aria-hidden="true"><use href="#icon-download" /></svg><span data-download-label>Get Windows installer</span></a>
+          <p class="download-help" id="download-help">Choose the NightWatch Setup .exe on GitHub Releases.</p>
+          <div class="download-card-footer"><span>Windows 10 / 11 · 64-bit</span><a href="https://github.com/BlastPowa/NightWatch/releases" class="text-link">All releases <svg class="icon" aria-hidden="true"><use href="#icon-arrow" /></svg></a></div>
+        </aside>
+      </section>
+
+      <section class="experience wrap section" id="experience" aria-labelledby="experience-title">
+        <div class="section-heading"><div><p class="eyebrow">Less coordinating. More watching.</p><h2 id="experience-title">The best part is<br />who you watch with.</h2></div><p>Keep the picture front and center.<br />Keep your people right beside it.</p></div>
+        <figure class="room-preview">
+          <div class="room-topbar" aria-hidden="true"><span class="room-label"><img src="assets/nightwatch-mark.svg" alt="" width="24" height="24" /> Friday night crew</span><span class="room-label room-code">ROOM / NW-FRIDAY</span></div>
+          <div class="room-body" aria-hidden="true">
+            <div class="preview-player">
+              <div class="preview-player-heading"><span class="preview-kicker">YOU PICK THE VIDEO</span><span class="pill">YouTube</span></div>
+              <div class="preview-title">One more<br /><span>“one more.”</span></div><p>For the nights nobody wants to end.</p>
+              <div class="preview-controls"><svg class="icon" aria-hidden="true"><use href="#icon-play" /></svg><span class="preview-timeline"></span><span>12:48</span><svg class="icon" aria-hidden="true"><use href="#icon-screen" /></svg></div>
+            </div>
+            <div class="preview-dock">
+              <div class="dock-heading"><strong>In the room</strong><svg class="icon" aria-hidden="true"><use href="#icon-people" /></svg></div>
+              <div class="preview-members"><span class="avatar avatar-you">Y</span><span class="avatar avatar-a">A</span><span class="avatar avatar-j">J</span><span>You + your people</span></div>
+              <div class="preview-message"><span class="avatar avatar-a">A</span><p><b>Alex</b>Okay, this is going on the list.</p></div>
+              <div class="preview-message"><span class="avatar avatar-j">J</span><p><b>Jamie</b>Already queued the next one.</p></div>
+              <div class="preview-next"><svg class="icon" aria-hidden="true"><use href="#icon-queue" /></svg><div><span>UP NEXT</span><strong>Everyone gets a pick.</strong></div></div>
+            </div>
+          </div>
+          <figcaption><span class="preview-caption">A room at a glance</span><span>Illustrated preview · the app may look different</span></figcaption>
+        </figure>
+        <div class="feature-grid">
+          <article class="feature"><span class="feature-icon"><svg class="icon" aria-hidden="true"><use href="#icon-play" /></svg></span><h3>Same video. Same moment.</h3><p>Watch embeddable YouTube videos together, with room playback and a shared queue to keep the night moving.</p></article>
+          <article class="feature"><span class="feature-icon"><svg class="icon" aria-hidden="true"><use href="#icon-people" /></svg></span><h3>Make room for your people.</h3><p>Invite friends with a room code. Chat, react, and decide what to watch next without juggling another conversation.</p></article>
+          <article class="feature"><span class="feature-icon"><svg class="icon" aria-hidden="true"><use href="#icon-screen" /></svg></span><h3>Settle into your space.</h3><p>Browse on your own, revisit what you watched, and adjust themes, contrast, text size, and motion to feel at home.</p></article>
+        </div>
+        <p class="feature-note">Looking for personal-video parties, voice, or screen sharing? Availability depends on the release and service setup. Check the <a href="#updates">release notes</a> before planning your night.</p>
+      </section>
+
+      <section class="install-section section" id="install" aria-labelledby="install-title">
+        <div class="wrap install-layout">
+          <div><p class="eyebrow">From here to “press play”</p><h2 id="install-title">Three steps.<br />One good night.</h2><a class="text-link" href="#download">Get the Windows app <svg class="icon" aria-hidden="true"><use href="#icon-arrow" /></svg></a></div>
+          <ol class="steps">
+            <li><span class="step-number" aria-hidden="true">01</span><div><h3>Download &amp; install</h3><p>Get the NightWatch Setup .exe from the official GitHub release. Run it, choose your install location, and finish setup.</p></div><svg class="icon step-icon" aria-hidden="true"><use href="#icon-download" /></svg></li>
+            <li><span class="step-number" aria-hidden="true">02</span><div><h3>Find your room</h3><p>Open NightWatch, create a room, and share its code. Joining friends? Enter their room code to meet them there.</p></div><svg class="icon step-icon" aria-hidden="true"><use href="#icon-people" /></svg></li>
+            <li><span class="step-number" aria-hidden="true">03</span><div><h3>Pick something. Press play.</h3><p>Add an embeddable YouTube video, line up the next one, and enjoy the chat as much as the show.</p></div><svg class="icon step-icon" aria-hidden="true"><use href="#icon-play" /></svg></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="updates section wrap" id="updates" aria-labelledby="updates-title">
+        <div class="section-heading"><div><p class="eyebrow">Fresh from GitHub</p><h2 id="updates-title">A better next watch.</h2></div><a class="text-link" href="https://github.com/BlastPowa/NightWatch/releases">Browse every release <svg class="icon" aria-hidden="true"><use href="#icon-arrow" /></svg></a></div>
+        <article class="release-panel" aria-labelledby="release-title">
+          <div class="release-panel-heading"><div><span class="pill" id="release-source">GitHub Releases</span><h3 id="release-title">The latest NightWatch release</h3></div><button class="button button-quiet" id="refresh-release" type="button" hidden><svg class="icon" aria-hidden="true"><use href="#icon-refresh" /></svg><span>Refresh release</span></button></div>
+          <p id="release-status" role="status" aria-live="polite" aria-atomic="true">Version details and release notes are available on GitHub.</p>
+          <details class="release-details" open><summary>What’s changed</summary><div id="release-notes"><p>Open the latest release for improvements, fixes, and feature availability. GitHub remains the source for the installer and full release notes.</p></div></details>
+          <div class="release-panel-footer"><a class="text-link" href="https://github.com/BlastPowa/NightWatch/releases/latest" data-release-link>Full release on GitHub <svg class="icon" aria-hidden="true"><use href="#icon-arrow" /></svg></a><a class="button button-quiet" href="https://github.com/BlastPowa/NightWatch/releases/latest" data-download><svg class="icon" aria-hidden="true"><use href="#icon-download" /></svg><span data-download-label>Get Windows installer</span></a></div>
+          <noscript><p class="noscript-note">JavaScript is off. The download links still take you to the latest release on GitHub.</p></noscript>
+        </article>
+        <div class="install-help" aria-labelledby="help-title"><h3 id="help-title">Before you settle in</h3><div class="help-items">
+          <details><summary>Which file should I download?</summary><p>Choose <code>NightWatch-Setup-&lt;version&gt;.exe</code>. The .blockmap and latest.yml files are for the app’s updater; the source-code archives are not Windows installers.</p></details>
+          <details><summary>What if Windows shows a publisher warning?</summary><p>Current NightWatch builds are unsigned, so Windows may show an unknown-publisher warning. Verify that your download came from <a href="https://github.com/BlastPowa/NightWatch/releases/latest">BlastPowa/NightWatch on GitHub</a> before deciding whether to run it.</p></details>
+          <details><summary>Can I use this on Mac, Linux, or a phone?</summary><p>This page provides the Windows desktop installer. It does not offer a Mac, Linux, or mobile package. Check <a href="https://github.com/BlastPowa/NightWatch">the project on GitHub</a> for other ways to use NightWatch.</p></details>
+          <details><summary>How do I get updates?</summary><p>The desktop app checks GitHub Releases for updates. You can also return here for the current installer and its release notes.</p></details>
+          <details><summary>Is NightWatch open source?</summary><p>Yes. NightWatch is free and open-source software under the MIT License. Source code and the license are available in the <a href="https://github.com/BlastPowa/NightWatch">NightWatch GitHub repository</a>.</p></details>
+        </div></div>
+      </section>
+    </main>
+    <footer class="site-footer wrap"><a class="brand" href="#main"><img src="assets/nightwatch-mark.svg" alt="" width="32" height="32" /><span>NightWatch</span></a><p>Good nights deserve good company.</p><a class="text-link" href="https://github.com/BlastPowa/NightWatch">Made on GitHub <svg class="icon" aria-hidden="true"><use href="#icon-arrow" /></svg></a></footer>
+  </body>
+</html>

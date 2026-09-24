@@ -1,5 +1,43 @@
 # NightWatch Development Roadmap
 
+## NightWatch Entertainment Revamp & Completion
+
+Status: **In progress — concept set and page-wide renderer revamp complete; external TURN/two-client acceptance remains.**
+
+Goal: consolidate the shipped NightWatch feature set into one Pandora/Reel-inspired
+cinematic product language while finishing reliability, recovery, responsive and
+release-quality gaps rather than restarting the application.
+
+- Visual concepts: `docs/revamp-concepts/` covers Browse, Watch lobby, active
+  Watch Room, Parties, Friends, Messages, Creator Club, Library, FAQ, Settings,
+  Profile and About.
+- Batch 1: shared shell/tokens/backdrop/navigation plus Browse + lobby are in.
+  Browse now has direct room/Library entry points and the lobby exposes Parties.
+- Batch 2: player-first room layout, queue/chat/people/moments/discovery dock.
+  Reliability work now includes YouTube startup retry/timeout, custom-media
+  host-authority enforcement, queue/host-migration reconciliation, explicit
+  ScreenWatch consent/recovery and the Room Lounge voice controls.
+- Batch 3: Parties + Library are implemented, preserving capability gating and
+  authorized-media boundaries while adding direct create/join/local/Drive entry points.
+- Batch 4: Friends + Messages + Creator Club are implemented with presence-aware
+  friend summary, watch-party messaging context and studio-style creator hierarchy.
+- Batch 5: Profile + Settings + FAQ + About are implemented, including custom
+  background/video treatment that respects reduced motion/transparency and the
+  concept pack's page hierarchy/copy.
+- Local completion gate now passes: reconnect/host-migration/queue recovery
+  tests, focused page tests, `npm test`, strict TypeScript, web build/smoke,
+  Windows Electron/NSIS build, packaged smoke, installer deterministic tests and
+  final diff review. Release remains blocked on the external packaged acceptance
+  matrix below rather than code/build verification.
+- Latest automated gate (2026-09-24): 513/513 tests, strict TypeScript, web
+  smoke, full Electron/NSIS build, packaged smoke, installer 20/20 deterministic
+  checks and live hidden-Chromium installer QA all pass. TURN deployment and
+  real two-client/two-network acceptance remain external release gates.
+- Production backend preflight now has a dedicated `npm run smoke:runtime`
+  command. On 2026-09-24 it correctly blocks because the configured Supabase
+  hostname no longer resolves; restore/update that deployment before continuing
+  TURN and two-network acceptance.
+
 ## Phase 34 — Production reliability and v0.1.28 recovery
 
 Status: **Code and build validated from public v0.1.27; owner acceptance remains.**

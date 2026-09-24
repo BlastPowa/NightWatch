@@ -22,6 +22,7 @@ const media: MediaPlatformBridge = {
   cancelDriveWorkspaceUpload: (uploadId) => window.nightwatch.media.cancelDriveWorkspaceUpload(uploadId),
   onDriveWorkspaceUploadProgress: (callback) => window.nightwatch.media.onDriveWorkspaceUploadProgress(callback),
   pickDriveFile: () => window.nightwatch.media.pickDriveFile(),
+  authorizeDriveWorkspaceEntry: (entryId: string) => window.nightwatch.media.authorizeDriveWorkspaceEntry(entryId),
   disconnectDrive: () => window.nightwatch.media.disconnectDrive(),
   createPlaybackLease: (descriptor) => window.nightwatch.media.createPlaybackLease(descriptor),
   releasePlaybackLease: (leaseId) => window.nightwatch.media.releasePlaybackLease(leaseId),

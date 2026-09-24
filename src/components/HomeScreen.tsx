@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { generateRoomCode, isValidRoomCode, normalizeRoomCode } from '@shared/room';
 import { sanitizeDisplayName } from '@/lib/identity';
 import '@/styles/phase27-secondary.css';
@@ -8,16 +8,19 @@ interface HomeScreenProps {
   /** True when the platform fixes the room (Discord Activity voice channel). */
   lockedRoom?: boolean;
   onEnterRoom(displayName: string, roomCode: string): void;
+  onOpenParties?(): void;
 }
 
 export function HomeScreen({
   initialName,
   lockedRoom = false,
   onEnterRoom,
+  onOpenParties,
 }: HomeScreenProps): JSX.Element {
   const [name, setName] = useState(initialName);
   const [joinCode, setJoinCode] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  const joinCodeRef = useRef<HTMLInputElement>(null);
 
   function validateName(): string | null {
     const clean = sanitizeDisplayName(name);
@@ -51,12 +54,30 @@ export function HomeScreen({
 
   return (
     <section className="lobby p27-lobby fade-up" aria-labelledby="home-title">
+      <header className="lobby-page-heading">
+        <div>
+          <span className="eyebrow">Watch</span>
+          <h1 id="home-title">One room. Everyone on the same frame.</h1>
+          <p>Create a private watch room or jump back in with an invite. Playback, queue choices and reactions stay together.</p>
+        </div>
+        <div className="lobby-page-actions">
+          <button type="button" className="button button-primary" onClick={handleCreate}>
+            {lockedRoom ? 'Join room' : 'Create room'}
+          </button>
+          {!lockedRoom && (
+            <button type="button" className="button" onClick={() => joinCodeRef.current?.focus()}>
+              Enter invite code
+            </button>
+          )}
+        </div>
+      </header>
+
       <div className="lobby-story">
         <span className="eyebrow hero-eyebrow">Your private screening room</span>
-        <h1 id="home-title" className="hero-title">Tonight is better together.</h1>
+        <h2 className="hero-title">Tonight is better together.</h2>
         <p className="hero-support">Open a room, invite your people, and keep every play, pause, queue pick, and reaction on the same beat.</p>
         <div className="lobby-features" aria-label="NightWatch room features">
-          <span><b>Live</b> playback sync</span><span><b>Shared</b> queue and voting</span><span><b>Private</b> room codes</span>
+          <span><b>Live</b> playback sync</span><span><b>Shared</b> queue and voting</span><span><b>Private</b> room codes</span><span><b>Room</b> history</span>
         </div>
       </div>
 
@@ -88,6 +109,7 @@ export function HomeScreen({
 
             <form className="join-form" onSubmit={handleJoin}>
               <input
+                ref={joinCodeRef}
                 className="input input-code"
                 aria-label="Six-character room code"
                 aria-describedby={formError !== null ? 'home-form-error' : undefined}
@@ -104,6 +126,12 @@ export function HomeScreen({
               </button>
             </form>
           </>
+        )}
+
+        {!lockedRoom && onOpenParties !== undefined && (
+          <button type="button" className="button lobby-persistent-action" onClick={onOpenParties}>
+            Open persistent parties
+          </button>
         )}
 
         {formError !== null && (

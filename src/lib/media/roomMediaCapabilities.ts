@@ -30,6 +30,12 @@ const pending = new Map<string, Promise<RoomMediaCapabilities>>();
 let turnDeployed = false;
 let lastServer: ServerCapabilities | null = null;
 let lastSignedIn = false;
+let manifestUnavailable = false;
+
+runtimeCapabilities.onDiagnostic((diagnostic) => {
+  if (diagnostic.feature !== 'capabilities.manifest') return;
+  manifestUnavailable = diagnostic.outcome === 'offline' || diagnostic.outcome === 'failed';
+});
 
 /** Auth/room errors prove a configured function; 404/5xx fail closed. */
 async function probeTurnFunction(): Promise<boolean> {
@@ -52,7 +58,10 @@ async function detect(platform: PlatformMediaSupport): Promise<RoomMediaCapabili
   // feature RPCs. This is the same production-safe path used by Friends and
   // Messages, so Movie Watch cannot be permanently disabled on cold launch.
   await runtimeCapabilities.whenSessionSettled();
-  const manifest = await runtimeCapabilities.refresh('room-media.capabilities');
+  // A room-media retry is user initiated and must not be satisfied by the
+  // manifest service's short debounce window. Force one real reachability
+  // check whenever this module's own cache has been cleared.
+  const manifest = await runtimeCapabilities.refresh('capabilities.manifest', true);
   lastSignedIn = manifest.authenticated;
   if (!manifest.authenticated) {
     turnDeployed = false;
@@ -117,6 +126,7 @@ export function resetRoomMediaCapabilities(): void {
   turnDeployed = false;
   lastServer = null;
   lastSignedIn = false;
+  manifestUnavailable = false;
 }
 
 // Auth refreshes, reconnects, and app resumes are all represented by a new
@@ -137,6 +147,7 @@ runtimeCapabilities.subscribe(() => {
 export type CapabilityDisabledReason =
   | 'available'
   | 'signed-out'
+  | 'service-unavailable'
   | 'not-deployed'
   | 'unsupported-platform'
   | 'relay-not-configured';
@@ -159,6 +170,9 @@ export function explainRoomMediaCapabilities(
     platformOk: boolean,
     needsTurn: boolean,
   ): CapabilityDisabledReason => {
+    if (manifestUnavailable) {
+      return 'service-unavailable';
+    }
     if (!lastSignedIn) {
       return 'signed-out';
     }

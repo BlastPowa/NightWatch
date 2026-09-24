@@ -64,6 +64,11 @@ export class SyncEngine {
 
   public start(): void {
     this.unsubscribes.push(
+      this.room.onReconnect(() => {
+        if (!this.isHost()) {
+          this.beginHostRecovery();
+        }
+      }),
       this.room.on('playback:load', ({ data }) => {
         if (!this.isHost() && typeof data.videoId === 'string' && isValidVideoId(data.videoId)) {
           this.applyLoad(data.videoId);
@@ -97,17 +102,7 @@ export class SyncEngine {
     );
 
     this.driftTimer = window.setInterval(() => this.correctDrift(), DRIFT_CHECK_INTERVAL_MS);
-
-    // Ask the host for state until an answer arrives (join/reconnect).
-    this.syncRequestTimer = window.setInterval(() => {
-      if (this.isHost() || this.hasHostSnapshot) {
-        this.stopSyncRequests();
-        return;
-      }
-      this.room.send('sync:request', {}).catch(() => {
-        // Channel not ready yet — next tick retries.
-      });
-    }, SYNC_REQUEST_INTERVAL_MS);
+    this.beginHostRecovery();
   }
 
   public stop(): void {
@@ -288,6 +283,30 @@ export class SyncEngine {
       window.clearInterval(this.syncRequestTimer);
       this.syncRequestTimer = null;
     }
+  }
+
+  private beginHostRecovery(): void {
+    this.hasHostSnapshot = false;
+    this.expected = null;
+    this.pendingSnapshot = null;
+    this.stopSyncRequests();
+
+    if (this.isHost()) {
+      return;
+    }
+
+    const request = (): void => {
+      if (this.isHost() || this.hasHostSnapshot) {
+        this.stopSyncRequests();
+        return;
+      }
+      this.room.send('sync:request', {}).catch(() => {
+        // Channel/presence may still be settling — the next tick retries.
+      });
+    };
+
+    request();
+    this.syncRequestTimer = window.setInterval(request, SYNC_REQUEST_INTERVAL_MS);
   }
 
   private suppress(): void {

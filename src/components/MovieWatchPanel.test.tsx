@@ -26,7 +26,10 @@ vi.mock('@/lib/media/RoomMediaService', () => ({
 
 import { MovieWatchPanel } from '@/components/MovieWatchPanel';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
+});
 
 const source = {
   schemaVersion: 1 as const,
@@ -56,6 +59,14 @@ function bridge(): MediaPlatformBridge {
 }
 
 describe('MovieWatchPanel', () => {
+  it('does not probe the protected room-media RPC in a browser or before capability readiness', async () => {
+    render(<MovieWatchPanel roomCode="ABC234" service={service()} selfId="viewer" hostId="host" isHost={false} bridge={null} htmlMediaAvailable={false} active onModeChange={vi.fn()} onHasMediaChange={vi.fn()} />);
+
+    expect(await screen.findByRole('heading', { name: 'Movie Watch' })).toBeTruthy();
+    expect(mocks.getCapabilities).not.toHaveBeenCalled();
+    expect(mocks.getDescriptor).not.toHaveBeenCalled();
+  });
+
   it('only presents real desktop media choices after the deployed capability is ready', async () => {
     mocks.getCapabilities.mockResolvedValue({ fileWatch: true });
     mocks.getDescriptor.mockResolvedValue({ ok: true, value: null });

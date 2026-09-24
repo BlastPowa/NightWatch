@@ -61,6 +61,9 @@ export class YouTubePlayer {
       playerVars: {
         playsinline: 1,
         rel: 0,
+        // Keep the official player control available. The iframe itself is
+        // given the matching permission below once the API creates it.
+        fs: 1,
         cc_load_policy:
           this.preferences.captionMode === 'always-on'
             ? (1 as YT.ClosedCaptionsLoadPolicy)
@@ -74,6 +77,7 @@ export class YouTubePlayer {
       events: {
         onReady: () => {
           this.isReady = true;
+          this.enableFullscreen();
           if (this.pendingVideoId !== null) {
             const videoId = this.pendingVideoId;
             this.pendingVideoId = null;
@@ -174,5 +178,26 @@ export class YouTubePlayer {
     if (modules.includes('captions')) {
       player.setOption?.('captions', 'fontSize', this.captionFontSize);
     }
+  }
+
+  /**
+   * The IFrame API owns the player markup, but it exposes the generated
+   * iframe. Explicitly retain the official fullscreen permission so Electron
+   * and browser hosts behave consistently. No NightWatch control is placed
+   * over the iframe; viewers use YouTube's own fullscreen control.
+   */
+  private enableFullscreen(): void {
+    const iframe = (this.player as unknown as {
+      getIframe?: () => HTMLIFrameElement;
+    } | null)?.getIframe?.();
+    if (iframe === undefined) {
+      return;
+    }
+    iframe.allowFullscreen = true;
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute(
+      'allow',
+      'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen',
+    );
   }
 }

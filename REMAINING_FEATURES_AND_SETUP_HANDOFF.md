@@ -1,7 +1,7 @@
 # NightWatch — Remaining Features and Setup Handoff
 
 Updated: 2026-07-20
-Repository: `C:\Users\Blast\source\repos\NightWatch-fable`
+Repository: `C:\Users\Blast\source\repos\NightWatch`
 Baseline: `main` at `v0.1.26`; Phase 32 merged through PRs #51 and #52.
 
 ## Instructions for Claude/Fable
@@ -223,8 +223,9 @@ detail: `PHASE_33_COMPLETION_REPORT.md`.
   typed disabled reasons (Priority 4)
 - `STATUS.md`, `TASKS.md`, `CHANGELOG.md`, and this file
 
-Untouched: React components, shared visual CSS, `NightWatch-acceptance`, Git,
-and every already-merged Phase 32 contract.
+Untouched during that historical backend pass: React components, shared visual
+CSS, the then-separate frontend acceptance worktree, Git, and every
+already-merged Phase 32 contract.
 
 ## SQL the owner must run
 

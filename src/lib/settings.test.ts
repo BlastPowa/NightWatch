@@ -38,6 +38,8 @@ describe('settings custom atmosphere migration', () => {
       cardStyle: 'glass',
       customBackgroundImage: null,
       customBackgroundEnabled: false,
+      customBackgroundVideoName: null,
+      customBackgroundVideoEnabled: false,
       profileBackgroundEnabled: false,
     });
   });
@@ -73,6 +75,8 @@ describe('settings custom atmosphere migration', () => {
         },
         customBackgroundImage: 'data:image/png;base64,aGVsbG8=',
         customBackgroundEnabled: true,
+        customBackgroundVideoName: 'cinema-loop.mp4',
+        customBackgroundVideoEnabled: true,
         profileBackgroundEnabled: true,
       }),
     }));
@@ -96,6 +100,8 @@ describe('settings custom atmosphere migration', () => {
       },
       customBackgroundImage: 'data:image/png;base64,aGVsbG8=',
       customBackgroundEnabled: true,
+      customBackgroundVideoName: 'cinema-loop.mp4',
+      customBackgroundVideoEnabled: true,
       profileBackgroundEnabled: true,
     });
   });
@@ -115,6 +121,8 @@ describe('settings custom atmosphere migration', () => {
         customAtmosphere: { primaryGlow: 'red', secondaryGlow: 'javascript:alert(1)' },
         customBackgroundImage: 'https://tracking.example/background.jpg',
         customBackgroundEnabled: 'yes',
+        customBackgroundVideoName: '',
+        customBackgroundVideoEnabled: true,
         profileBackgroundEnabled: 1,
       }),
     }));
@@ -132,6 +140,8 @@ describe('settings custom atmosphere migration', () => {
       customAtmosphere: DEFAULT_SETTINGS.customAtmosphere,
       customBackgroundImage: null,
       customBackgroundEnabled: false,
+      customBackgroundVideoName: null,
+      customBackgroundVideoEnabled: false,
       profileBackgroundEnabled: false,
     });
   });

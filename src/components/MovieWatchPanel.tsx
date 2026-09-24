@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } f
 import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { deriveSourceKey } from '@shared/media';
 import {
+  isFresherRevision,
   parseMediaLoadEvent,
   parsePlaybackSnapshot,
   type PlaybackSnapshotV1,
@@ -113,6 +114,14 @@ export function MovieWatchPanel({
   }, [bridge, htmlMediaAvailable]);
 
   useEffect(() => {
+    // The descriptor RPC is authenticated desktop-only functionality. Calling
+    // it from the browser/Activity fallback (or before the capability manifest
+    // has settled) produces a predictable PostgREST 400 and used to retry on
+    // every room event. Keep the UI in its explicit unavailable state until
+    // both the platform bridge and verified server capability are present.
+    if (bridge === null || !capable) {
+      return;
+    }
     void loadPersistedMode();
     const unlistenLoad = service.on('media:v1:load', (envelope) => {
       if (hostId !== null && envelope.senderId !== hostId) return;
@@ -131,7 +140,7 @@ export function MovieWatchPanel({
       unlistenLoad();
       unlistenSnapshotRequest();
     };
-  }, [hostId, isHost, loadPersistedMode, selfId, service]);
+  }, [bridge, capable, hostId, isHost, loadPersistedMode, selfId, service]);
 
   useEffect(() => {
     if (snapshot?.mode.mode !== 'file-watch' || source === null || bridge === null || !capable) return;
@@ -382,6 +391,9 @@ function FileWatchPlayer({ lease, service, isHost, hostId, sessionId, sourceKey,
     const apply = (incoming: unknown): void => {
       const parsed = parsePlaybackSnapshot(incoming);
       if (!parsed.ok || parsed.value.sessionId !== sessionId || parsed.value.sourceKey !== sourceKey) return;
+      if (!isFresherRevision(revisionRef.current, parsed.value.revision)) return;
+      revisionRef.current = parsed.value.revision;
+      onSnapshot(parsed.value);
       if (hostId !== null && !isHost) {
         const video = videoRef.current;
         if (video === null) return;
@@ -399,7 +411,16 @@ function FileWatchPlayer({ lease, service, isHost, hostId, sessionId, sourceKey,
       apply(envelope.data);
     }));
     return () => off.forEach((unsubscribe) => unsubscribe());
-  }, [hostId, isHost, service, sessionId, sourceKey]);
+  }, [hostId, isHost, onSnapshot, service, sessionId, sourceKey]);
+
+  useEffect(() => {
+    if (!isHost) return;
+    // Host succession is deterministic from presence ordering. When this
+    // participant becomes host, publish from the locally applied state using
+    // a revision higher than the last snapshot it observed as a viewer.
+    const timer = window.setTimeout(() => sendSnapshot('media:v1:snapshot'), 0);
+    return () => window.clearTimeout(timer);
+  }, [isHost, sendSnapshot]);
 
   function seek(delta: number): void {
     if (!isHost || videoRef.current === null) return;

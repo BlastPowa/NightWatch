@@ -118,8 +118,9 @@ export function UserCard({ displayName, user }: UserCardProps): JSX.Element {
             <ProfileAvatar src={user?.avatarUrl ?? null} name={safeName} className="user-avatar" />
           </span>
           <div className="profile-banner-copy">
-            <span className="eyebrow">NightWatch profile</span>
+            <span className="eyebrow">Profile</span>
             <h1 id="profile-title">{safeName}</h1>
+            <strong className="profile-purpose">Your NightWatch identity and history.</strong>
             <p>{snapshot.unlockedIds.length}/{ACHIEVEMENTS.length} achievements · {cloud ? 'Synced across devices' : 'Stored on this device'}</p>
           </div>
           <div className="profile-banner-meta">
