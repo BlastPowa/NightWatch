@@ -43,6 +43,7 @@ jobs:
       - run: npm test
       - run: npm run build:activity
       - run: npm run smoke:web
+      - run: npm run smoke:runtime
       - name: Build unpublished release candidate
         run: npm run build -- --publish never
         env:

@@ -4,6 +4,12 @@
 
 ### Phase 44 — reliability and interaction hardening
 
+- Made the public repository genuinely open source under the MIT License and
+  surfaced that status on the GitHub-connected installer page.
+- Added `npm run smoke:runtime`, a production DNS/capability/TURN preflight,
+  and made it a required release-workflow gate. The 2026-09-24 probe correctly
+  blocks because the configured production Supabase hostname is currently
+  NXDOMAIN rather than silently treating stale deployment evidence as healthy.
 - Added CI-safe, non-secret Supabase/Discord validation configuration so
   renderer tests initialize consistently on GitHub Actions.
 - Fixed Search focus styling, Settings inner scrolling, backdrop visibility,

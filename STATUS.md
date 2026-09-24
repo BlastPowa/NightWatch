@@ -46,6 +46,12 @@ Last updated: 2026-09-24.
   until `turn-credentials` is deployed/configured and the packaged two-client
   acceptance matrix passes. Passing local tests/builds does not enable the
   server capability flag by itself.
+- A fresh production-runtime probe on 2026-09-24 found that the configured
+  Supabase project hostname is now NXDOMAIN, so the live backend is currently
+  unreachable before TURN deployment can even be attempted. `npm run
+  smoke:runtime` now makes DNS, the runtime capability RPC and the authenticated
+  TURN function surface an explicit release gate instead of relying on a stale
+  historical probe.
 - The page-wide revamp is committed on `fix/phase-44-reliability` on top of the
   reliability/installer work. External TURN deployment and two-client packaged
   acceptance remain the release gate rather than visual implementation.

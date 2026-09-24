@@ -59,7 +59,7 @@ The page uses a dark cinema palette, lavender primary action, mint accents, shar
 
 Accessibility includes a skip link, semantic landmarks and headings, native keyboard-operated disclosures, visible focus across interactive elements, a polite release-status announcement, responsive layouts, text enlargement, reduced-motion support, and stronger-contrast/forced-colors adaptations. The illustration contains no fake interactive controls. There are no continuously animated backgrounds or remote assets.
 
-The [published v0.1.27 notes](https://github.com/BlastPowa/NightWatch/releases/tag/v0.1.27) say voice, live screen sharing, and synchronized shared-file room playback remain capability-gated. The copy directs users to release availability rather than promising these features are enabled. Installer guidance reflects the unsigned build configuration, replacing the old claim of a signed installer. No open-source license or signing status is invented.
+The [published v0.1.27 notes](https://github.com/BlastPowa/NightWatch/releases/tag/v0.1.27) say voice, live screen sharing, and synchronized shared-file room playback remain capability-gated. The copy directs users to release availability rather than promising these features are enabled. Installer guidance reflects the unsigned build configuration, replacing the old claim of a signed installer. The repository is now MIT licensed, so the site may accurately describe NightWatch as free and open-source software.
 
 ### Reference trail
 

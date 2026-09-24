@@ -4,6 +4,8 @@ NightWatch is a desktop and Discord Activity watch-party application for
 synchronized YouTube viewing, authorized local/Google Drive playback, room
 chat, reactions, queues, and social features.
 
+NightWatch is free and open-source software released under the MIT License.
+
 ## One working folder
 
 All frontend, backend, Supabase, Electron, web, installer, documentation, and
@@ -72,3 +74,7 @@ npm run smoke:web
 Current delivery status is maintained in `STATUS.md` and `TASKS.md`. Historical
 branches remain recoverable from Git; the pre-consolidation Movie Watch
 worktree is preserved at `origin/archive/phase-31-movie-watch-snapshot`.
+
+## License
+
+NightWatch is licensed under the MIT License. See `LICENSE`.

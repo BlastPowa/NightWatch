@@ -6,7 +6,7 @@
   "private": true,
   "main": "dist-electron/main.js",
   "author": "BlastPowa",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "npm run typecheck && vite build && electron-builder",
@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "smoke:packaged": "powershell -ExecutionPolicy Bypass -File scripts/smoke/run-packaged-smoke.ps1",
+    "smoke:runtime": "powershell -ExecutionPolicy Bypass -File scripts/smoke/check-production-runtime.ps1",
     "smoke:web": "npm run build:web && powershell -ExecutionPolicy Bypass -File scripts/smoke/check-web-build.ps1",
     "preview": "vite preview",
     "lanes": "powershell -ExecutionPolicy Bypass -File scripts/git/lane-status.ps1",

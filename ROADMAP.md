@@ -33,6 +33,10 @@ release-quality gaps rather than restarting the application.
   smoke, full Electron/NSIS build, packaged smoke, installer 20/20 deterministic
   checks and live hidden-Chromium installer QA all pass. TURN deployment and
   real two-client/two-network acceptance remain external release gates.
+- Production backend preflight now has a dedicated `npm run smoke:runtime`
+  command. On 2026-09-24 it correctly blocks because the configured Supabase
+  hostname no longer resolves; restore/update that deployment before continuing
+  TURN and two-network acceptance.
 
 ## Phase 34 — Production reliability and v0.1.28 recovery
 
