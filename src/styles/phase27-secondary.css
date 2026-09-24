@@ -63,6 +63,8 @@
 
 .p27-about-page { width: min(1120px, 100%); margin: 0 auto; }
 .p27-about-hero { position: relative; display: grid; min-height: 290px; align-content: end; gap: 1.35rem; padding: clamp(1.5rem, 4vw, 3.25rem); overflow: hidden; border-color: color-mix(in srgb, var(--nw-accent) 28%, var(--nw-border)); background: linear-gradient(120deg, color-mix(in srgb, var(--nw-bg-sunken) 96%, transparent), color-mix(in srgb, var(--nw-accent) 9%, var(--nw-bg-raised))); box-shadow: 0 30px 90px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.06); }
+.p27-about-identity .page-title { max-width: 16ch; line-height: .98; text-wrap: balance; }
+.p27-about-purpose { max-width: 62ch; margin: .45rem 0 0; line-height: 1.55; }
 .p27-about-glow { position: absolute; top: -52%; right: -10%; width: min(520px, 62vw); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--nw-accent) 28%, transparent), transparent 67%); filter: blur(4px); pointer-events: none; }
 .p27-about-identity { z-index: 1; display: grid; grid-template-columns: auto minmax(0,1fr); align-items: center; gap: 1.2rem; }
 .p27-about-mark-wrap { display: grid; width: 92px; height: 92px; place-items: center; border: 1px solid color-mix(in srgb, var(--nw-accent) 38%, var(--nw-border)); border-radius: 28px; background: color-mix(in srgb, var(--nw-accent) 10%, var(--nw-bg-sunken)); box-shadow: 0 0 42px color-mix(in srgb, var(--nw-accent) 22%, transparent), inset 0 1px rgba(255,255,255,.08); }

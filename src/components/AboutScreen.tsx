@@ -50,8 +50,9 @@ export function AboutScreen(): JSX.Element {
         <div className="about-header p27-about-identity">
           <span className="p27-about-mark-wrap"><BrandMark className="about-mark" /></span>
           <div>
-            <span className="eyebrow">NightWatch desktop</span>
-            <h1 className="page-title">Watch together, stay in sync.</h1>
+            <span className="eyebrow">About NightWatch</span>
+            <h1 className="page-title">NightWatch, build status and release notes.</h1>
+            <p className="user-sub p27-about-purpose">A free/open-source watch-party desktop app built around synchronized official playback, authorized personal media, and explicit collaboration controls.</p>
             <p className="user-sub p27-about-version">
               {appInfo !== null
                 ? `Version ${appInfo.version} | Electron ${appInfo.electronVersion} | ${appInfo.platform}`

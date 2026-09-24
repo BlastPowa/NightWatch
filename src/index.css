@@ -2009,6 +2009,7 @@ input {
 
 .settings-rail-heading { padding: 0.3rem 0.55rem 0.7rem; }
 .settings-rail-heading .page-title { margin: 0.25rem 0 0; font-size: 1.7rem; }
+.settings-rail-purpose { max-width: 18ch; margin: .35rem 0 0; color: var(--nw-text-muted); font-size: .66rem; line-height: 1.45; }
 .settings-nav { display: flex; flex-direction: column; gap: 0.25rem; }
 .settings-nav-item {
   display: flex; align-items: center; gap: 0.7rem; min-height: 44px; padding: 0.65rem 0.75rem;

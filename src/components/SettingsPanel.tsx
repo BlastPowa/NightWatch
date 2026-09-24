@@ -241,8 +241,9 @@ export function SettingsPanel({
     <div className="settings-workspace fade-up">
       <aside className="settings-rail" aria-label="Settings categories">
         <div className="settings-rail-heading">
-          <span className="eyebrow">Control room</span>
+          <span className="eyebrow">Settings</span>
           <h1 className="page-title">Settings</h1>
+          <p className="settings-rail-purpose">Tune NightWatch without digging through menus.</p>
         </div>
         <nav className="settings-nav">
           {SECTIONS.map((item) => (

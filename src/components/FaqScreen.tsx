@@ -133,9 +133,9 @@ export function FaqScreen(): JSX.Element {
     <section className="faq-page fade-up">
       <header className="faq-hero">
         <div>
-          <span className="eyebrow">NightWatch guide</span>
-          <h1>How can we help?</h1>
-          <p>Clear answers about watch rooms, media permissions, privacy, captions, and the controls throughout the app.</p>
+          <span className="eyebrow">FAQ</span>
+          <h1>Answers without leaving the app.</h1>
+          <p>Search-first help for rooms, playback, media permissions, privacy, captions, accounts, and the recovery paths that matter during a watch night.</p>
         </div>
         <button type="button" className="button button-primary faq-tour-button" onClick={startOnboardingTour}>
           <Icon name="compass" />
@@ -149,7 +149,7 @@ export function FaqScreen(): JSX.Element {
           type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search how NightWatch works"
+          placeholder="Search rooms, playback, privacy, Drive, sharing…"
         />
         {query !== '' && (
           <button type="button" onClick={() => setQuery('')} aria-label="Clear FAQ search">
