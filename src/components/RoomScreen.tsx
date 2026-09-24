@@ -12,6 +12,7 @@ import { copyText } from '@/lib/clipboard';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { MovieWatchPanel } from '@/components/MovieWatchPanel';
 import { ScreenWatchPanel } from '@/components/ScreenWatchPanel';
+import { VoicePanel } from '@/components/VoicePanel';
 import type { MediaPlatformBridge } from '@shared/mediaBridge';
 import type { HtmlMediaSourceDescriptor } from '@shared/media';
 import { buildInviteTokenLink, mintRoomInvite, revokeRoomInvite, type RoomInviteToken } from '@/lib/room/InviteTokenService';
@@ -19,6 +20,7 @@ import { getRoomPeople, type PublicPerson } from '@/lib/people/PeopleService';
 import { sendFriendRequest } from '@/lib/social/FriendService';
 import { listLiveRoomCoWatchers } from '@/lib/social/LiveRoomSocialService';
 import type { SocialResult } from '@/lib/social/types';
+import { commsLifecycle } from '@/lib/rtc/CommsLifecycle';
 
 interface RoomScreenProps {
   room: RoomState;
@@ -95,6 +97,15 @@ export function RoomScreen({
   const [roomPeopleLoading, setRoomPeopleLoading] = useState(false);
   const [friendActionId, setFriendActionId] = useState<string | null>(null);
   const [friendActionMessage, setFriendActionMessage] = useState<string | null>(null);
+  const previousHostStateRef = useRef(selfIsHost);
+
+  useEffect(() => {
+    const wasHost = previousHostStateRef.current;
+    previousHostStateRef.current = selfIsHost;
+    if (wasHost && !selfIsHost && room.status !== 'left') {
+      commsLifecycle.endAll('host-migration');
+    }
+  }, [room.status, selfIsHost]);
 
   useEffect(() => {
     const currentIds = new Set(room.members.map((member) => member.id));
@@ -459,6 +470,8 @@ export function RoomScreen({
             <div><span className="eyebrow">Watch party</span><h2>Room lounge</h2></div>
             <span className="member-count" aria-label={`${room.members.length} watching`}>{room.members.length}</span>
           </div>
+
+          <VoicePanel roomCode={room.code} selfId={selfId} members={room.members} onOpenAccount={onOpenAccount} />
 
           <div
             className="room-dock-tabs"

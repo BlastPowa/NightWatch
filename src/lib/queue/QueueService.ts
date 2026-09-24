@@ -47,6 +47,9 @@ export class QueueService {
 
   public start(): void {
     this.unsubscribes.push(
+      this.room.onReconnect(() => {
+        this.reconcileState();
+      }),
       this.room.on('queue:add', ({ senderId, data }) => {
         if (this.isHost()) {
           this.applyAdd(senderId, data.videoId, data.title, data.addedByName);
@@ -78,6 +81,7 @@ export class QueueService {
         }
       }),
     );
+    this.reconcileState();
   }
 
   public stop(): void {
@@ -128,6 +132,11 @@ export class QueueService {
       this.commit();
     }
     return next;
+  }
+
+  /** Re-announce the local canonical snapshot when this client becomes host. */
+  public announceHostState(): void {
+    if (this.isHost()) this.broadcastState();
   }
 
   private applyAdd(
@@ -196,5 +205,15 @@ export class QueueService {
 
   private broadcastState(): void {
     this.room.send('queue:state', { entries: this.entries }).catch(() => {});
+  }
+
+  private reconcileState(): void {
+    if (this.isHost()) {
+      this.broadcastState();
+      return;
+    }
+    // Reuse the room-wide sync request so one request refreshes playback and
+    // queue state. This also works when the YouTube player failed to mount.
+    this.room.send('sync:request', {}).catch(() => {});
   }
 }

@@ -1,6 +1,47 @@
 # NightWatch current status
 
-Last updated: 2026-08-09.
+Last updated: 2026-09-24.
+
+## NightWatch Entertainment Revamp & Completion (started 2026-09-24)
+
+- New active product goal: consolidate the shipped app into one Pandora/Reel-
+  inspired cinematic experience while completing the remaining reliability,
+  recovery, responsive and release-quality work.
+- Visual concept coverage is complete in `docs/revamp-concepts/`: Browse,
+  Watch lobby, active Watch Room, Parties, Friends, Messages, Creator Club,
+  Library, Profile, Settings, FAQ and About. Rendered desktop previews and a
+  contact sheet live in `docs/revamp-concepts/previews/`.
+- Batch 1 implementation has started in the real renderer: shared cinema/glass
+  tokens and a non-interactive, accessibility-safe ambient shell layer are
+  wired through `AppShell`/`index.css`; existing reduced-transparency behavior
+  is preserved.
+- Reliability/collaboration batch now adds device-local MP4/WebM app backgrounds
+  backed by IndexedDB (never large blobs in localStorage), reduced-motion/
+  transparency fallbacks, bounded/retryable YouTube IFrame API startup,
+  shared-policy enforcement for host-authoritative custom-media events,
+  custom-media revision inheritance on host succession, and independent queue
+  reconciliation on reconnect/host change.
+- ScreenWatch now honours explicit viewer consent, tears down capture/viewing on
+  lifecycle exits or source changes, restores the previous YouTube room mode
+  when a host share stops, and clears stale live-share authority during host
+  migration when a fallback source exists.
+- The existing WebRTC voice engine is now exposed in the Room Lounge with join,
+  mute, deafen, leave, speaking/device state, remote-audio playback, actionable
+  capability diagnostics and central teardown registration. Offer glare is
+  handled deterministically and duplicate peer dials are suppressed.
+- Current validation on 2026-09-24: all 513 Vitest tests across 65 files pass;
+  strict TypeScript passes; `git diff --check` has no whitespace errors; browser
+  build smoke passes; the full Windows Electron/NSIS build passes; packaged
+  smoke passes and verifies `NightWatch-Setup-0.1.27.exe` (81.9 MB). Installer
+  release logic passes 20/20 deterministic checks, and hidden Chromium QA
+  resolves the live v0.1.27 GitHub installer with no console/layout errors at
+  320/390/768/1024/1440 px plus 200% zoom/text and reduced motion.
+- TURN-backed voice and ScreenWatch remain **capability gated in deployment**
+  until `turn-credentials` is deployed/configured and the packaged two-client
+  acceptance matrix passes. Passing local tests/builds does not enable the
+  server capability flag by itself.
+- The branch still contains the reliability/installer edits that were already
+  in progress; the revamp work is being layered on top without discarding them.
 
 ## Workspace consolidation (2026-09-06)
 
@@ -237,7 +278,7 @@ Last updated: 2026-08-09.
 
 ## Release baseline
 
-- Current public release: `v0.1.25`.
+- Current public release: `v0.1.27`.
 - Phase 24 frontend merged through PR #35, Phase 24 backend support merged through PR #34, and the complete Phase 25–28 frontend overhaul merged through PR #36.
 - Migration `0021`, privacy-safe media presence, canonical Discord avatars, deeper Browse paging, and `search-youtube` details mode are present on `main`; database/function deployment still requires the owner environment.
 - Releases remain intentional GitHub Actions runs after reviewed feature PRs; no direct push to `main`.

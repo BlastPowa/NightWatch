@@ -1,5 +1,37 @@
 # NightWatch Development Roadmap
 
+## NightWatch Entertainment Revamp & Completion
+
+Status: **In progress — concept set complete; shell, reliability, local video background and room collaboration implementation underway.**
+
+Goal: consolidate the shipped NightWatch feature set into one Pandora/Reel-inspired
+cinematic product language while finishing reliability, recovery, responsive and
+release-quality gaps rather than restarting the application.
+
+- Visual concepts: `docs/revamp-concepts/` covers Browse, Watch lobby, active
+  Watch Room, Parties, Friends, Messages, Creator Club, Library, FAQ, Settings,
+  Profile and About.
+- Batch 1: shared shell/tokens/backdrop/navigation, then Browse + lobby. Mobile
+  destination/navigation hardening and the shared ambient cinema layer are in.
+- Batch 2: player-first room layout, queue/chat/people/moments/discovery dock.
+  Reliability work now includes YouTube startup retry/timeout, custom-media
+  host-authority enforcement, queue/host-migration reconciliation, explicit
+  ScreenWatch consent/recovery and the Room Lounge voice controls.
+- Batch 3: Parties + Library, preserving capability gating and authorized-media
+  boundaries.
+- Batch 4: Friends + Messages + Creator Club.
+- Batch 5: Profile + Settings + FAQ + About, including custom background/video
+  treatment that respects reduced motion/transparency. Device-local MP4/WebM
+  background storage/presentation is implemented; remaining work is visual
+  consolidation across the secondary screens rather than media persistence.
+- Completion gate: reconnect/host-migration/queue recovery, focused tests,
+  `npm test`, `npm run typecheck`, web build/smoke, Windows packaged smoke and
+  final diff review before release/version work.
+- Latest automated gate (2026-09-24): 513/513 tests, strict TypeScript, web
+  smoke, full Electron/NSIS build, packaged smoke, installer 20/20 deterministic
+  checks and live hidden-Chromium installer QA all pass. TURN deployment and
+  real two-client/two-network acceptance remain external release gates.
+
 ## Phase 34 — Production reliability and v0.1.28 recovery
 
 Status: **Code and build validated from public v0.1.27; owner acceptance remains.**

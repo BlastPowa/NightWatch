@@ -9,7 +9,7 @@ export type IconName =
   | 'sports' | 'news' | 'education' | 'technology' | 'travel' | 'tools'
   | 'pets' | 'autos' | 'sparkle' | 'chevron-left' | 'chevron-right' | 'chevron-up'
   | 'plus' | 'check' | 'send' | 'clock' | 'lock' | 'users' | 'maximize' | 'refresh'
-  | 'pause' | 'sound' | 'monitor';
+  | 'pause' | 'sound' | 'monitor' | 'mic' | 'headphones';
 
 interface IconProps {
   name: IconName;
@@ -81,5 +81,7 @@ function glyph(name: IconName): JSX.Element {
     case 'pause': return <><rect x="7" y="5" width="3" height="14" rx="1" /><rect x="14" y="5" width="3" height="14" rx="1" /></>;
     case 'sound': return <><path d="M5 10v4h3l4 4V6l-4 4H5Z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7 7 0 0 1 0 11" /></>;
     case 'monitor': return <><rect x="3" y="4" width="18" height="13" rx="2" /><path d="M8 21h8M12 17v4" /></>;
+    case 'mic': return <><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" /></>;
+    case 'headphones': return <><path d="M4 14v-2a8 8 0 0 1 16 0v2" /><rect x="3" y="13" width="4" height="7" rx="2" /><rect x="17" y="13" width="4" height="7" rx="2" /></>;
   }
 }

@@ -147,6 +147,19 @@ export class VoiceSession {
     if (this.disposed || userId === this.selfId || !this.core.addPeer(userId)) {
       return;
     }
+    const existing = this.peers.get(userId);
+    if (
+      existing !== undefined &&
+      (existing.connectionState === 'new' ||
+        existing.connectionState === 'connecting' ||
+        existing.connectionState === 'connected')
+    ) {
+      return;
+    }
+    if (existing !== undefined) {
+      existing.close();
+      this.peers.delete(userId);
+    }
     const connection = this.ensurePeer(userId);
     const offer = await connection.createOffer();
     await connection.setLocalDescription(offer);
@@ -262,6 +275,14 @@ export class VoiceSession {
       }
       const connection = this.ensurePeer(senderId);
       if (kind === 'offer') {
+        const offerCollision = connection.signalingState !== 'stable';
+        const polite = this.selfId.localeCompare(senderId) > 0;
+        if (offerCollision && !polite) {
+          return;
+        }
+        if (offerCollision) {
+          await connection.setLocalDescription({ type: 'rollback' });
+        }
         await connection.setRemoteDescription(
           JSON.parse(payload) as RTCSessionDescriptionInit,
         );

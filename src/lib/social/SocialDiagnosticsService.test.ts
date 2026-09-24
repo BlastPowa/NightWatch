@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const rpc = vi.fn();
 const getSession = vi.fn();
 vi.mock('@/lib/supabase', () => ({
+  supabaseConfigured: true,
   supabase: {
     rpc: (...args: unknown[]) => rpc(...args),
     auth: { getSession: (...args: unknown[]) => getSession(...args) },

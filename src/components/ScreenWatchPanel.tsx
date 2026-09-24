@@ -4,6 +4,8 @@ import { Icon } from '@/components/Icon';
 import { explainRoomMediaCapabilities, getRoomMediaCapabilities, resetRoomMediaCapabilities, type CapabilityDisabledReason } from '@/lib/media/roomMediaCapabilities';
 import { getRoomMediaDescriptor, publishRoomMediaDescriptor } from '@/lib/media/RoomMediaService';
 import { ShareSession } from '@/lib/rtc/ShareSession';
+import { commsLifecycle } from '@/lib/rtc/CommsLifecycle';
+import type { ShareEndReason } from '@shared/rtc';
 
 interface ScreenWatchPanelProps {
   roomCode: string;
@@ -37,9 +39,27 @@ export function ScreenWatchPanel({
   const [viewerCount, setViewerCount] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const sessionRef = useRef<ShareSession | null>(null);
+  const unregisterLifecycleRef = useRef<(() => void) | null>(null);
   const startedViewingRef = useRef<string | null>(null);
   const previousYoutubeRef = useRef<Extract<RoomMediaMode, { mode: 'youtube' }> | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const snapshotRef = useRef<RoomMediaSnapshot | null>(snapshot);
+  const isHostRef = useRef(isHost);
+  const youtubeVideoIdRef = useRef(youtubeVideoId);
+  const restoreRoomAfterShareRef = useRef<() => Promise<void>>(async () => {});
+  snapshotRef.current = snapshot;
+  isHostRef.current = isHost;
+  youtubeVideoIdRef.current = youtubeVideoId;
+
+  const endCurrentSession = useCallback((reason: ShareEndReason): void => {
+    const current = sessionRef.current;
+    sessionRef.current = null;
+    unregisterLifecycleRef.current?.();
+    unregisterLifecycleRef.current = null;
+    startedViewingRef.current = null;
+    setRemoteStream(null);
+    current?.end(reason);
+  }, []);
 
   const createSession = useCallback((): ShareSession => {
     const existing = sessionRef.current;
@@ -48,12 +68,29 @@ export function ScreenWatchPanel({
       onPhase: (nextPhase, reason) => {
         setPhase(nextPhase);
         if (reason === 'permission-denied') setMessage('Screen sharing permission was declined.');
-        if (reason === 'source-closed') setMessage('The shared window or desktop was closed.');
+        if (reason === 'source-closed') {
+          setMessage('The shared window or desktop was closed.');
+          if (
+            isHostRef.current &&
+            snapshotRef.current?.mode.mode === 'live-share' &&
+            snapshotRef.current.mode.sharerId === selfId
+          ) {
+            void restoreRoomAfterShareRef.current();
+          }
+        }
+        if (nextPhase === 'ended') {
+          sessionRef.current = null;
+          unregisterLifecycleRef.current?.();
+          unregisterLifecycleRef.current = null;
+          startedViewingRef.current = null;
+          setRemoteStream(null);
+        }
       },
       onRemoteStream: setRemoteStream,
       onViewerCount: setViewerCount,
     });
     sessionRef.current = next;
+    unregisterLifecycleRef.current = commsLifecycle.registerShare(next);
     return next;
   }, [roomCode, selfId]);
 
@@ -66,15 +103,29 @@ export function ScreenWatchPanel({
     setSnapshot(result.value);
     const mode = result.value?.mode;
     if (mode?.mode === 'youtube') previousYoutubeRef.current = mode;
-    if (mode?.mode !== 'live-share' || mode.sharerId === selfId || startedViewingRef.current === mode.sessionId) return;
+    const activeViewerSession = startedViewingRef.current;
+    if (
+      activeViewerSession !== null &&
+      (mode?.mode !== 'live-share' || mode.sessionId !== activeViewerSession)
+    ) {
+      endCurrentSession('stopped');
+    }
+  }, [endCurrentSession, roomCode]);
+
+  async function joinShare(): Promise<void> {
+    const mode = snapshotRef.current?.mode;
+    if (mode?.mode !== 'live-share' || mode.sharerId === selfId) return;
+    if (startedViewingRef.current === mode.sessionId && sessionRef.current !== null) return;
+    if (sessionRef.current !== null) endCurrentSession('stopped');
+    setMessage(null);
     const session = createSession();
     startedViewingRef.current = mode.sessionId;
     const viewing = await session.startViewing(mode.sharerId, mode.sessionId);
     if (!viewing.ok) {
-      startedViewingRef.current = null;
+      endCurrentSession('error');
       setMessage(viewing.message);
     }
-  }, [createSession, roomCode, selfId]);
+  }
 
   useEffect(() => {
     if (!active) return;
@@ -112,10 +163,47 @@ export function ScreenWatchPanel({
     if (video !== null && video.srcObject !== remoteStream) video.srcObject = remoteStream;
   }, [remoteStream]);
 
-  useEffect(() => () => {
-    sessionRef.current?.end('stopped');
-    sessionRef.current = null;
-  }, []);
+  useEffect(() => () => endCurrentSession('stopped'), [endCurrentSession]);
+
+  restoreRoomAfterShareRef.current = async (): Promise<void> => {
+    const currentSnapshot = snapshotRef.current;
+    const lastYoutube = youtubeVideoIdRef.current;
+    const fallback = previousYoutubeRef.current ?? (lastYoutube !== null && /^[A-Za-z0-9_-]{11}$/.test(lastYoutube)
+      ? { modeVersion: 2 as const, mode: 'youtube' as const, descriptor: { schemaVersion: 1 as const, kind: 'youtube' as const, videoId: lastYoutube } }
+      : null);
+    if (!isHostRef.current) return;
+    if (fallback === null) {
+      setMessage('Screen sharing stopped. Load a YouTube video to return the room to YouTube Watch.');
+      return;
+    }
+    const restored = await publishRoomMediaDescriptor(roomCode, currentSnapshot?.revision ?? null, fallback);
+    if (!restored.ok) setMessage(restored.message);
+    else setSnapshot(restored.value);
+  };
+
+  useEffect(() => {
+    if (active || sessionRef.current === null) return;
+    const wasHostShare =
+      isHostRef.current &&
+      snapshotRef.current?.mode.mode === 'live-share' &&
+      snapshotRef.current.mode.sharerId === selfId;
+    endCurrentSession('stopped');
+    setPhase('ended');
+    if (wasHostShare) void restoreRoomAfterShareRef.current();
+  }, [active, endCurrentSession, selfId]);
+
+  useEffect(() => {
+    if (
+      !isHost ||
+      snapshot?.mode.mode !== 'live-share' ||
+      snapshot.mode.sharerId === selfId
+    ) return;
+    // A viewer promoted to host must not leave the old host's now-dead share
+    // as the room's authoritative mode. Restore the last known YouTube source
+    // when one exists; otherwise the message guides the new host to load one.
+    setMessage('The previous host’s screen share ended during host migration.');
+    void restoreRoomAfterShareRef.current();
+  }, [isHost, selfId, snapshot]);
 
   async function startSharing(): Promise<void> {
     if (!capable || !isHost) return;
@@ -144,21 +232,9 @@ export function ScreenWatchPanel({
   }
 
   async function stopSharing(): Promise<void> {
-    sessionRef.current?.end('stopped');
-    sessionRef.current = null;
-    startedViewingRef.current = null;
-    setRemoteStream(null);
+    endCurrentSession('stopped');
     setPhase('ended');
-    const fallback = previousYoutubeRef.current ?? (youtubeVideoId !== null && /^[A-Za-z0-9_-]{11}$/.test(youtubeVideoId)
-      ? { modeVersion: 2 as const, mode: 'youtube' as const, descriptor: { schemaVersion: 1 as const, kind: 'youtube' as const, videoId: youtubeVideoId } }
-      : null);
-    if (isHost && fallback !== null) {
-      const restored = await publishRoomMediaDescriptor(roomCode, snapshot?.revision ?? null, fallback);
-      if (!restored.ok) setMessage(restored.message);
-      else setSnapshot(restored.value);
-    } else if (isHost) {
-      setMessage('Screen sharing stopped. Load a YouTube video to return the room to YouTube Watch.');
-    }
+    await restoreRoomAfterShareRef.current();
   }
 
   if (!active) return <div className="screen-watch-panel screen-watch-panel-hidden" aria-hidden="true" />;
@@ -188,7 +264,7 @@ export function ScreenWatchPanel({
         </div>
       </details>
       {!capable && <div className="screen-watch-state" role="status"><Icon name="lock" size={28} /><strong>ScreenWatch is not ready in this session</strong><p>{unavailableMessage}</p><div className="screen-watch-state-actions">{disabledReason === 'signed-out' && onOpenAccount !== undefined && <button type="button" className="button button-primary" onClick={onOpenAccount}><Icon name="profile" size={16} />Open account settings</button>}<button type="button" className="button" onClick={() => void retryCapabilities()} disabled={checking}><Icon name="refresh" size={16} />{checking ? 'Checking…' : 'Check again'}</button></div></div>}
-      {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream === null && <div className="screen-watch-state" role="status"><Icon name="monitor" size={28} /><strong>Waiting for the shared screen</strong><p>{snapshot.mode.sourceLabel} is being offered by the host. Choose “join share” to view it on this device.</p><button type="button" className="button button-primary" onClick={() => void loadSnapshot()}>Join share</button></div>}
+      {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream === null && <div className="screen-watch-state" role="status"><Icon name="monitor" size={28} /><strong>Waiting for the shared screen</strong><p>{snapshot.mode.sourceLabel} is being offered by the host. Choose “join share” to view it on this device.</p><button type="button" className="button button-primary" onClick={() => void joinShare()}>Join share</button></div>}
       {capable && snapshot?.mode.mode === 'live-share' && !isSharer && remoteStream !== null && <video ref={remoteVideoRef} className="screen-watch-video" autoPlay playsInline controls aria-label="Shared screen" />}
       {capable && (snapshot?.mode.mode !== 'live-share' || isSharer) && <div className="screen-watch-actions"><div className="screen-watch-prompt"><Icon name="monitor" size={30} /><strong>{isSharer ? 'You are sharing' : 'Share a window or desktop'}</strong><span>The browser/Electron picker lets you choose a specific window, tab, or entire display.</span></div>{isSharer ? <button type="button" className="button button-danger" onClick={() => void stopSharing()}>Stop sharing</button> : <button type="button" className="button button-primary" onClick={() => void startSharing()} disabled={!isHost}><Icon name="monitor" size={16} />{isHost ? 'Share screen' : 'Host chooses the share'}</button>}</div>}
       {isSharer && <p className="screen-watch-viewers" role="status">{viewerCount} viewer{viewerCount === 1 ? '' : 's'} connected</p>}

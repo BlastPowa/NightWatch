@@ -120,6 +120,9 @@ export interface Settings {
   /** Resized device-local image used only when the matching presentation flag is enabled. */
   customBackgroundImage: string | null;
   customBackgroundEnabled: boolean;
+  /** Small metadata only. The actual video Blob is stored in IndexedDB. */
+  customBackgroundVideoName: string | null;
+  customBackgroundVideoEnabled: boolean;
   profileBackgroundEnabled: boolean;
 }
 
@@ -157,6 +160,8 @@ export const DEFAULT_SETTINGS: Settings = {
   uiFont: 'system',
   customBackgroundImage: null,
   customBackgroundEnabled: false,
+  customBackgroundVideoName: null,
+  customBackgroundVideoEnabled: false,
   profileBackgroundEnabled: false,
 };
 
@@ -181,6 +186,12 @@ function safeBackgroundImage(value: unknown): string | null {
     return null;
   }
   return value;
+}
+
+function safeBackgroundVideoName(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const clean = value.trim();
+  return clean.length > 0 && clean.length <= 180 ? clean : null;
 }
 
 function sanitize(raw: unknown): Settings {
@@ -228,6 +239,7 @@ function sanitize(raw: unknown): Settings {
   )
     ? (partial.uiFont as UiFont)
     : DEFAULT_SETTINGS.uiFont;
+  const customBackgroundVideoName = safeBackgroundVideoName(partial.customBackgroundVideoName);
   return {
     theme,
     accent,
@@ -261,6 +273,11 @@ function sanitize(raw: unknown): Settings {
     customBackgroundEnabled:
       typeof partial.customBackgroundEnabled === 'boolean'
         ? partial.customBackgroundEnabled
+        : false,
+    customBackgroundVideoName,
+    customBackgroundVideoEnabled:
+      customBackgroundVideoName !== null && typeof partial.customBackgroundVideoEnabled === 'boolean'
+        ? partial.customBackgroundVideoEnabled
         : false,
     profileBackgroundEnabled:
       typeof partial.profileBackgroundEnabled === 'boolean'

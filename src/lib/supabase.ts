@@ -5,15 +5,24 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const url = (import.meta.env.VITE_SUPABASE_URL ?? '').trim();
 const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? '').trim();
 
-if (!url || !anonKey) {
-  throw new Error(
-    'Missing Supabase configuration. Copy .env.example to .env and set ' +
-      'VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the dev server.',
-  );
-}
+/**
+ * Backend configuration is optional at process start. NightWatch has useful
+ * local/solo functionality (local media, settings, ScreenWatch capture setup,
+ * discovery UI) that should remain available even when an install has not yet
+ * been connected to Supabase. Feature services use this flag to expose an
+ * offline/deployment state instead of crashing during module evaluation.
+ */
+export const supabaseConfigured = url.length > 0 && anonKey.length > 0;
+
+// @supabase/supabase-js requires a syntactically valid URL/key even when no
+// network-backed feature will be used. Keep one inert local client so legacy
+// service modules can still import the shared singleton safely; capability
+// gates prevent intentional requests while configuration is absent.
+const clientUrl = supabaseConfigured ? url : 'http://127.0.0.1:54321';
+const clientKey = supabaseConfigured ? anonKey : 'nightwatch-unconfigured';
 
 /** Single shared Supabase client for the entire renderer. */
-export const supabase: SupabaseClient = createClient(url, anonKey, {
+export const supabase: SupabaseClient = createClient(clientUrl, clientKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

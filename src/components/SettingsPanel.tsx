@@ -20,6 +20,11 @@ import {
   type UiFont,
 } from '@/lib/settings';
 import { useSettings } from '@/hooks/useSettings';
+import {
+  loadBackgroundVideo,
+  removeBackgroundVideo,
+  saveBackgroundVideo,
+} from '@/lib/backgroundVideoStore';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
 import { Icon, type IconName } from '@/components/Icon';
 import {
@@ -151,6 +156,8 @@ export function SettingsPanel({
   const [section, setSection] = useState<SettingsSection>(initialSection);
   useEffect(() => setSection(initialSection), [initialSection]);
   const [backgroundState, setBackgroundState] = useState<'idle' | 'processing' | 'error'>('idle');
+  const [backgroundVideoState, setBackgroundVideoState] = useState<'idle' | 'processing' | 'error'>('idle');
+  const [backgroundVideoPreviewUrl, setBackgroundVideoPreviewUrl] = useState<string | null>(null);
   const customPaletteStatus = getCustomPaletteStatus(settings.customAtmosphere);
   const previewStyle = {
     '--p27-preview-accent': settings.accent,
@@ -161,6 +168,29 @@ export function SettingsPanel({
     '--p27-preview-secondary': settings.theme === 'custom' ? settings.customAtmosphere.secondaryGlow : '#6d5dfc',
     '--p27-preview-theme': THEME_PREVIEW[settings.theme],
   } as CSSProperties;
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    if (settings.customBackgroundVideoName === null || typeof URL.createObjectURL !== 'function') {
+      setBackgroundVideoPreviewUrl(null);
+      return;
+    }
+    void loadBackgroundVideo().then(
+      (stored) => {
+        if (cancelled || stored === null) return;
+        objectUrl = URL.createObjectURL(stored.blob);
+        setBackgroundVideoPreviewUrl(objectUrl);
+      },
+      () => {
+        if (!cancelled) setBackgroundVideoPreviewUrl(null);
+      },
+    );
+    return () => {
+      cancelled = true;
+      if (objectUrl !== null) URL.revokeObjectURL(objectUrl);
+    };
+  }, [settings.customBackgroundVideoName]);
 
   async function chooseCustomBackground(file: File | undefined): Promise<void> {
     if (file === undefined) return;
@@ -176,6 +206,35 @@ export function SettingsPanel({
     } catch {
       setBackgroundState('error');
     }
+  }
+
+  async function chooseCustomBackgroundVideo(file: File | undefined): Promise<void> {
+    if (file === undefined) return;
+    setBackgroundVideoState('processing');
+    try {
+      const stored = await saveBackgroundVideo(file);
+      settingsStore.update({
+        customBackgroundVideoName: stored.name,
+        customBackgroundVideoEnabled: true,
+        customBackgroundEnabled: false,
+      });
+      setBackgroundVideoState('idle');
+    } catch {
+      setBackgroundVideoState('error');
+    }
+  }
+
+  async function clearCustomBackgroundVideo(): Promise<void> {
+    try {
+      await removeBackgroundVideo();
+    } catch {
+      // Settings metadata still needs clearing if IndexedDB was unavailable.
+    }
+    settingsStore.update({
+      customBackgroundVideoName: null,
+      customBackgroundVideoEnabled: false,
+    });
+    setBackgroundVideoState('idle');
   }
 
   return (
@@ -320,7 +379,12 @@ export function SettingsPanel({
                     description="Layer this image behind NightWatch screens."
                     checked={settings.customBackgroundEnabled}
                     disabled={settings.customBackgroundImage === null}
-                    onChange={(customBackgroundEnabled) => settingsStore.update({ customBackgroundEnabled })}
+                    onChange={(customBackgroundEnabled) => settingsStore.update({
+                      customBackgroundEnabled,
+                      customBackgroundVideoEnabled: customBackgroundEnabled
+                        ? false
+                        : settings.customBackgroundVideoEnabled,
+                    })}
                   />
                   <ToggleLine
                     title="Use on my profile"
@@ -329,6 +393,66 @@ export function SettingsPanel({
                     disabled={settings.customBackgroundImage === null}
                     onChange={(profileBackgroundEnabled) => settingsStore.update({ profileBackgroundEnabled })}
                   />
+                </div>
+              </div>
+              <div className="card settings-card settings-card-wide custom-background-card custom-video-background-card">
+                <div className="custom-background-copy">
+                  <span className="eyebrow">Ambient motion</span>
+                  <h2>Video background</h2>
+                  <p>Choose a local MP4 or WebM loop. NightWatch stores the video Blob in IndexedDB on this device instead of putting large media into localStorage, and it is never shared with a room.</p>
+                  <p className="settings-support-note">Video backgrounds automatically fall back to your selected backdrop when Reduce motion, Reduce transparency, or the system reduced-motion preference is active.</p>
+                  {backgroundVideoState === 'error' && <span className="custom-background-error" role="alert">That video could not be stored. Use an MP4 or WebM file up to 250 MB and make sure local app storage is available.</span>}
+                  <div className="custom-background-actions">
+                    <label className="button button-primary custom-background-upload">
+                      <Icon name="upload" size={16} />
+                      {backgroundVideoState === 'processing'
+                        ? 'Storing video…'
+                        : settings.customBackgroundVideoName === null
+                          ? 'Choose video'
+                          : 'Replace video'}
+                      <input
+                        type="file"
+                        accept="video/mp4,video/webm"
+                        disabled={backgroundVideoState === 'processing'}
+                        onChange={(event) => {
+                          void chooseCustomBackgroundVideo(event.target.files?.[0]);
+                          event.currentTarget.value = '';
+                        }}
+                      />
+                    </label>
+                    {settings.customBackgroundVideoName !== null && (
+                      <button
+                        type="button"
+                        className="button button-quiet"
+                        onClick={() => void clearCustomBackgroundVideo()}
+                      >
+                        <Icon name="close" size={15} />
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className={`custom-background-preview custom-video-background-preview${backgroundVideoPreviewUrl === null ? ' custom-background-preview-empty' : ''}`}>
+                  {backgroundVideoPreviewUrl === null ? (
+                    <><Icon name="play" size={28} /><span>{settings.customBackgroundVideoName ?? 'Your loop preview'}</span></>
+                  ) : (
+                    <video src={backgroundVideoPreviewUrl} muted loop autoPlay playsInline aria-label="Selected video background preview" />
+                  )}
+                </div>
+                <div className="custom-background-toggles">
+                  <ToggleLine
+                    title="Use video across the app"
+                    description="Play this muted loop behind NightWatch when motion preferences allow it."
+                    checked={settings.customBackgroundVideoEnabled}
+                    disabled={settings.customBackgroundVideoName === null}
+                    onChange={(customBackgroundVideoEnabled) => settingsStore.update({
+                      customBackgroundVideoEnabled,
+                      customBackgroundEnabled: customBackgroundVideoEnabled
+                        ? false
+                        : settings.customBackgroundEnabled,
+                    })}
+                  />
+                  <span className="settings-sync-state">Profile backgrounds remain image-only.</span>
                 </div>
               </div>
               <div className="card settings-card">
@@ -421,7 +545,56 @@ export function SettingsPanel({
         )}
 
         {section === 'data' && (
-          <><SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." /><section className="settings-grid"><div className="card settings-card"><h2>Reset appearance</h2><p>Restore the default theme, accent, font, glow, radius, density, card surface, background artwork, custom atmosphere, and accessibility presentation.</p><ConfirmResetButton label="Reset appearance" confirmLabel="Confirm appearance reset" onConfirm={() => settingsStore.update({ theme: DEFAULT_SETTINGS.theme, accent: DEFAULT_SETTINGS.accent, uiFont: DEFAULT_SETTINGS.uiFont, accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent, cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx, density: DEFAULT_SETTINGS.density, backgroundStyle: DEFAULT_SETTINGS.backgroundStyle, cardStyle: DEFAULT_SETTINGS.cardStyle, customAtmosphere: DEFAULT_SETTINGS.customAtmosphere, customBackgroundImage: DEFAULT_SETTINGS.customBackgroundImage, customBackgroundEnabled: DEFAULT_SETTINGS.customBackgroundEnabled, profileBackgroundEnabled: DEFAULT_SETTINGS.profileBackgroundEnabled, reduceMotion: DEFAULT_SETTINGS.reduceMotion, highContrast: DEFAULT_SETTINGS.highContrast, textScalePercent: DEFAULT_SETTINGS.textScalePercent, reduceTransparency: DEFAULT_SETTINGS.reduceTransparency, enhancedFocus: DEFAULT_SETTINGS.enhancedFocus })} /></div><div className="card settings-card"><h2>Reset every setting</h2><p>Restore playback, browsing, social, and appearance preferences to NightWatch defaults.</p><ConfirmResetButton label="Reset all settings" confirmLabel="Confirm full reset" danger onConfirm={() => settingsStore.update(DEFAULT_SETTINGS)} /></div></section></>
+          <>
+            <SettingsHeader title="Local data" description="NightWatch settings remain in local storage on this device." />
+            <section className="settings-grid">
+              <div className="card settings-card">
+                <h2>Reset appearance</h2>
+                <p>Restore the default theme, accent, font, glow, radius, density, card surface, background artwork, custom atmosphere, and accessibility presentation.</p>
+                <ConfirmResetButton
+                  label="Reset appearance"
+                  confirmLabel="Confirm appearance reset"
+                  onConfirm={() => {
+                    void removeBackgroundVideo().catch(() => undefined);
+                    settingsStore.update({
+                      theme: DEFAULT_SETTINGS.theme,
+                      accent: DEFAULT_SETTINGS.accent,
+                      uiFont: DEFAULT_SETTINGS.uiFont,
+                      accentGlowPercent: DEFAULT_SETTINGS.accentGlowPercent,
+                      cornerRadiusPx: DEFAULT_SETTINGS.cornerRadiusPx,
+                      density: DEFAULT_SETTINGS.density,
+                      backgroundStyle: DEFAULT_SETTINGS.backgroundStyle,
+                      cardStyle: DEFAULT_SETTINGS.cardStyle,
+                      customAtmosphere: DEFAULT_SETTINGS.customAtmosphere,
+                      customBackgroundImage: DEFAULT_SETTINGS.customBackgroundImage,
+                      customBackgroundEnabled: DEFAULT_SETTINGS.customBackgroundEnabled,
+                      customBackgroundVideoName: DEFAULT_SETTINGS.customBackgroundVideoName,
+                      customBackgroundVideoEnabled: DEFAULT_SETTINGS.customBackgroundVideoEnabled,
+                      profileBackgroundEnabled: DEFAULT_SETTINGS.profileBackgroundEnabled,
+                      reduceMotion: DEFAULT_SETTINGS.reduceMotion,
+                      highContrast: DEFAULT_SETTINGS.highContrast,
+                      textScalePercent: DEFAULT_SETTINGS.textScalePercent,
+                      reduceTransparency: DEFAULT_SETTINGS.reduceTransparency,
+                      enhancedFocus: DEFAULT_SETTINGS.enhancedFocus,
+                    });
+                  }}
+                />
+              </div>
+              <div className="card settings-card">
+                <h2>Reset every setting</h2>
+                <p>Restore playback, browsing, social, and appearance preferences to NightWatch defaults.</p>
+                <ConfirmResetButton
+                  label="Reset all settings"
+                  confirmLabel="Confirm full reset"
+                  danger
+                  onConfirm={() => {
+                    void removeBackgroundVideo().catch(() => undefined);
+                    settingsStore.update(DEFAULT_SETTINGS);
+                  }}
+                />
+              </div>
+            </section>
+          </>
         )}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppInfo } from '@shared/ipc';
 import { generateRoomCode } from '@shared/room';
 import { AboutScreen } from '@/components/AboutScreen';
@@ -46,6 +46,8 @@ import { Icon } from '@/components/Icon';
 import { redeemRoomInvite } from '@/lib/room/InviteTokenService';
 import { subscribeToFriendRequests } from '@/lib/social/SocialRealtime';
 import { ProfileAvatar } from '@/components/ProfileAvatar';
+import { loadBackgroundVideo } from '@/lib/backgroundVideoStore';
+import { commsLifecycle } from '@/lib/rtc/CommsLifecycle';
 
 interface PendingVideo {
   videoId: string;
@@ -78,6 +80,13 @@ export function App(): JSX.Element {
   const authUser = useAuth();
   const session = useRoom(roomCode, identity);
   const settings = useSettings();
+  const [backgroundVideoUrl, setBackgroundVideoUrl] = useState<string | null>(null);
+  const [backgroundVideoFailed, setBackgroundVideoFailed] = useState(false);
+  const [systemReducedMotion, setSystemReducedMotion] = useState(
+    () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false,
+  );
   const [unlockToast, setUnlockToast] = useState<AchievementDef | null>(null);
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
   const [mediaCapabilities, setMediaCapabilities] = useState<MediaCapabilities | null>(null);
@@ -85,6 +94,88 @@ export function App(): JSX.Element {
   const [socialDiagnosis, setSocialDiagnosis] = useState<SocialDiagnosis>({ status: 'account-required' });
   const [friendRequestNotice, setFriendRequestNotice] = useState<Relation | null>(null);
   const [friendRequestBusy, setFriendRequestBusy] = useState(false);
+  const hadAuthenticatedSessionRef = useRef(authUser !== null);
+
+  useEffect(() => {
+    commsLifecycle.attachWindowHooks(window);
+    return () => commsLifecycle.detachWindowHooks();
+  }, []);
+
+  useEffect(() => {
+    if (authUser !== null) {
+      hadAuthenticatedSessionRef.current = true;
+      return;
+    }
+    if (hadAuthenticatedSessionRef.current) {
+      hadAuthenticatedSessionRef.current = false;
+      commsLifecycle.endAll('signed-out');
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = (): void => setSystemReducedMotion(query.matches);
+    update();
+    query.addEventListener?.('change', update);
+    return () => query.removeEventListener?.('change', update);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    setBackgroundVideoFailed(false);
+    setBackgroundVideoUrl(null);
+
+    const presentationBlocksVideo =
+      settings.reduceMotion || settings.reduceTransparency || systemReducedMotion;
+    if (
+      !settings.customBackgroundVideoEnabled ||
+      settings.customBackgroundVideoName === null ||
+      presentationBlocksVideo ||
+      typeof URL.createObjectURL !== 'function'
+    ) {
+      return;
+    }
+
+    void loadBackgroundVideo().then(
+      (stored) => {
+        if (cancelled) return;
+        if (stored === null) {
+          setBackgroundVideoFailed(true);
+          return;
+        }
+        objectUrl = URL.createObjectURL(stored.blob);
+        setBackgroundVideoUrl(objectUrl);
+      },
+      () => {
+        if (!cancelled) setBackgroundVideoFailed(true);
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      if (objectUrl !== null) URL.revokeObjectURL(objectUrl);
+    };
+  }, [
+    settings.customBackgroundVideoEnabled,
+    settings.customBackgroundVideoName,
+    settings.reduceMotion,
+    settings.reduceTransparency,
+    systemReducedMotion,
+  ]);
+
+  const customBackgroundVideoActive =
+    backgroundVideoUrl !== null &&
+    !backgroundVideoFailed &&
+    settings.customBackgroundVideoEnabled &&
+    !settings.reduceMotion &&
+    !settings.reduceTransparency &&
+    !systemReducedMotion;
+
+  useEffect(() => {
+    document.documentElement.dataset['customBackgroundVideo'] = String(customBackgroundVideoActive);
+  }, [customBackgroundVideoActive]);
 
   useEffect(() => {
     return achievementTracker.onUnlock((achievement) => {
@@ -318,25 +409,36 @@ export function App(): JSX.Element {
       return;
     }
     let active = true;
-    let retryTimer: number | null = null;
+    let heartbeatTimer: number | null = null;
+    let failureCount = 0;
+    const schedule = (delayMs: number): void => {
+      if (!active) return;
+      if (heartbeatTimer !== null) window.clearTimeout(heartbeatTimer);
+      heartbeatTimer = window.setTimeout(() => {
+        heartbeatTimer = null;
+        void publish();
+      }, delayMs);
+    };
     const publish = async (): Promise<void> => {
       const result = await heartbeatLiveRoomSocial(roomCode, identity.id);
       if (!active) return;
       setLiveRoomPresenceStatus(result.status);
-      // Auth/session restoration and short-lived RPC deployment/network
-      // failures should recover without requiring the user to leave/rejoin.
-      // Do not retry a server rate-limit response; the regular heartbeat will
-      // resume at the safe cadence below.
-      if (result.status !== 'ok' && result.status !== 'rate-limited') {
-        retryTimer = window.setTimeout(() => { void publish(); }, 3_000);
+      if (result.status === 'ok' || result.status === 'rate-limited') {
+        failureCount = 0;
+        schedule(60_000);
+        return;
       }
+      // Keep exactly one retry pending and back off transient failures. A
+      // successful heartbeat (or a server rate limit) returns to the normal
+      // 60-second cadence.
+      const delayMs = Math.min(30_000, 3_000 * (2 ** failureCount));
+      failureCount += 1;
+      schedule(delayMs);
     };
     void publish();
-    const timer = window.setInterval(publish, 60_000);
     return () => {
       active = false;
-      window.clearInterval(timer);
-      if (retryTimer !== null) window.clearTimeout(retryTimer);
+      if (heartbeatTimer !== null) window.clearTimeout(heartbeatTimer);
       void leaveLiveRoomSocial(roomCode);
     };
   }, [authUser, identity, roomCode]);
@@ -401,6 +503,7 @@ export function App(): JSX.Element {
   );
 
   const handleLeaveRoom = useCallback((): void => {
+    commsLifecycle.endAll('room-leave');
     setRoomHasVideo(false);
     setRoomCode(null);
   }, []);
@@ -505,7 +608,20 @@ export function App(): JSX.Element {
   }, []);
 
   return (
-    <AppShell
+    <>
+      {customBackgroundVideoActive && backgroundVideoUrl !== null && (
+        <div className="app-background-video-layer" aria-hidden="true">
+          <video
+            src={backgroundVideoUrl}
+            muted
+            loop
+            autoPlay
+            playsInline
+            onError={() => setBackgroundVideoFailed(true)}
+          />
+        </div>
+      )}
+      <AppShell
       view={view}
       onNavigate={handleNavigate}
       isElectron={isElectron}
@@ -630,7 +746,8 @@ export function App(): JSX.Element {
             </div>
           </div>
         )}
-    </AppShell>
+      </AppShell>
+    </>
   );
 }
 

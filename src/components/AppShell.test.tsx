@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,8 +41,9 @@ describe('AppShell', () => {
   it('routes working navigation and profile actions', async () => {
     const user = userEvent.setup();
     const { onNavigate } = renderShell();
+    const desktopNav = screen.getByRole('navigation', { name: 'NightWatch' });
 
-    await user.click(screen.getByRole('button', { name: 'Friends' }));
+    await user.click(within(desktopNav).getByRole('button', { name: 'Friends' }));
     await user.click(screen.getByRole('button', { name: 'Open your profile' }));
 
     expect(onNavigate).toHaveBeenNthCalledWith(1, 'friends');
@@ -126,5 +127,18 @@ describe('AppShell', () => {
     const { onNavigate } = renderShell();
     await user.click(screen.getByRole('button', { name: 'Quick navigation: Friends' }));
     expect(onNavigate).toHaveBeenCalledWith('friends');
+  });
+
+  it('keeps four primary mobile destinations and makes Settings reachable from More', async () => {
+    const user = userEvent.setup();
+    const { onNavigate } = renderShell();
+    const mobileNav = screen.getByRole('navigation', { name: 'Primary mobile navigation' });
+
+    expect(within(mobileNav).getAllByRole('button')).toHaveLength(5);
+    await user.click(within(mobileNav).getByRole('button', { name: 'More navigation options' }));
+
+    const moreMenu = within(mobileNav).getByRole('menu', { name: 'More navigation' });
+    await user.click(within(moreMenu).getByRole('menuitem', { name: 'Settings' }));
+    expect(onNavigate).toHaveBeenCalledWith('settings');
   });
 });

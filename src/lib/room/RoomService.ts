@@ -9,6 +9,7 @@ import {
   type PresenceMeta,
   type RoomMember,
 } from '@shared/room';
+import { isHostAuthoritativeMediaEvent } from '@shared/mediaPlayback';
 import { achievementTracker } from '@/lib/engagement/AchievementTracker';
 import type { GuestIdentity } from '@/lib/identity';
 import type { ChannelHandle, RealtimeService } from '@/lib/realtime/RealtimeService';
@@ -24,6 +25,15 @@ export interface RoomState {
 }
 
 export type RoomStateListener = (state: RoomState) => void;
+export type RoomReconnectListener = () => void;
+
+const HOST_AUTHORITATIVE_EVENTS = new Set<RealtimeEventName>([
+  'playback:load',
+  'playback:play',
+  'playback:pause',
+  'queue:state',
+  'sync:state',
+]);
 
 /**
  * Derive the member list and host from raw presence state.
@@ -67,6 +77,7 @@ export class RoomService {
   private hasJoinedOnce = false;
   private readonly joinedAt = Date.now();
   private readonly eventListeners = new Map<string, Set<(envelope: unknown) => void>>();
+  private readonly reconnectListeners = new Set<RoomReconnectListener>();
 
   public constructor(
     private readonly realtime: RealtimeService,
@@ -95,6 +106,13 @@ export class RoomService {
               typeof (envelope as { sentAt?: unknown }).sentAt !== 'number' ||
               typeof (envelope as { data?: unknown }).data !== 'object' ||
               (envelope as { data?: unknown }).data === null
+            ) {
+              return;
+            }
+            const senderId = (envelope as { senderId: string }).senderId;
+            if (
+              (HOST_AUTHORITATIVE_EVENTS.has(event) || isHostAuthoritativeMediaEvent(event)) &&
+              (this.state.hostId === null || senderId !== this.state.hostId)
             ) {
               return;
             }
@@ -132,6 +150,14 @@ export class RoomService {
     };
   }
 
+  /** Run after a previously joined realtime channel becomes connected again. */
+  public onReconnect(listener: RoomReconnectListener): () => void {
+    this.reconnectListeners.add(listener);
+    return () => {
+      this.reconnectListeners.delete(listener);
+    };
+  }
+
   /** Broadcast a typed room event to other members. */
   public async send<E extends RealtimeEventName>(
     event: E,
@@ -160,6 +186,7 @@ export class RoomService {
   private handleConnectionStatus(status: ConnectionStatus): void {
     switch (status) {
       case 'connected': {
+        const reconnected = this.hasJoinedOnce;
         this.hasJoinedOnce = true;
         this.update({ status: 'joined' });
         // Publish only a validated avatar, and omit the field entirely when
@@ -174,6 +201,11 @@ export class RoomService {
           ...(avatarUrl !== null ? { avatarUrl } : {}),
         };
         void this.handle?.track({ ...meta });
+        if (reconnected) {
+          for (const listener of this.reconnectListeners) {
+            listener();
+          }
+        }
         break;
       }
       case 'connecting':

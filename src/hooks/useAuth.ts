@@ -8,7 +8,7 @@ import {
   type AuthUser,
 } from '@/lib/auth';
 import { log } from '@/lib/log';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 
 /**
  * Live auth state. Also wires the OAuth deep-link callback (Electron only;
@@ -18,6 +18,11 @@ export function useAuth(): AuthUser | null {
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
+    if (!supabaseConfigured) {
+      setUser(null);
+      return;
+    }
+
     void supabase.auth.getSession().then(({ data }) => {
       setUser(mapSessionToUser(data.session));
     });

@@ -2,7 +2,7 @@ import {
   parseRuntimeManifest,
   type RuntimeCapabilityManifestV2,
 } from '@shared/runtimeCapabilities';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseConfigured } from '@/lib/supabase';
 
 export type { RuntimeCapabilityManifestV2 } from '@shared/runtimeCapabilities';
 
@@ -78,6 +78,7 @@ function resultFromError(error: { code?: string | null; message?: string | null 
 
 /** Loads one read-only manifest instead of executing feature RPCs as probes. */
 export async function getRuntimeCapabilityManifest(): Promise<RuntimeCapabilityResult> {
+  if (!supabaseConfigured) return { status: 'deployment-missing' };
   const { data, error } = await supabase.rpc('runtime_capabilities_v2');
   if (error === null) {
     const parsed = parseV2(data);

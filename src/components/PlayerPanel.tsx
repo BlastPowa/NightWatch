@@ -75,6 +75,7 @@ export function PlayerPanel({
 
   const [url, setUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [playerMountNonce, setPlayerMountNonce] = useState(0);
   const [videoId, setVideoId] = useState<string | null>(null);
   const [videoTitle, setVideoTitle] = useState<string | null>(null);
   const [mediaDetails, setMediaDetails] = useState<VideoDetails | null>(null);
@@ -190,7 +191,7 @@ export function PlayerPanel({
       setVideoId(null);
       setDurationSeconds(0);
     };
-  }, [service]);
+  }, [service, playerMountNonce]);
 
   // Apply persisted/changed volume through the official API.
   useEffect(() => {
@@ -422,6 +423,18 @@ export function PlayerPanel({
         {error !== null && (
           <div className="player-error" role="status">
             <p className="form-error">{error}</p>
+            {error === 'Could not load the YouTube player. Check your connection.' && (
+              <button
+                type="button"
+                className="button player-error-link"
+                onClick={() => {
+                  setError(null);
+                  setPlayerMountNonce((value) => value + 1);
+                }}
+              >
+                Retry player
+              </button>
+            )}
             {error === 'The video owner does not allow embedding.' && videoId !== null && (
               <a
                 className="player-error-link"

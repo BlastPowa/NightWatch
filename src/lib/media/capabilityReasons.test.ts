@@ -7,6 +7,7 @@ const getSessionMock = vi.fn();
 const invokeMock = vi.fn();
 
 vi.mock('@/lib/supabase', () => ({
+  supabaseConfigured: true,
   supabase: {
     rpc: (...args: unknown[]) => rpcMock(...args),
     auth: { getSession: () => getSessionMock() },
