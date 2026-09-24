@@ -78,6 +78,47 @@ describe('room media capability detection', () => {
     expect(mocks.whenSessionSettled).toHaveBeenCalledTimes(1);
   });
 
+  it.each([404, 503])('keeps RTC capabilities off when TURN returns HTTP %i', async (status) => {
+    mocks.refresh.mockResolvedValue({
+      schemaGeneration: 2,
+      authenticated: true,
+      functions: {
+        send_rtc_signal: true,
+        fetch_rtc_signals: true,
+      },
+      realtimeTables: [],
+    });
+    mocks.invoke.mockResolvedValue({
+      data: null,
+      error: { context: { status } },
+    });
+
+    const result = await getRoomMediaCapabilities({ htmlMedia: true, googleDrive: true });
+
+    expect(result.liveShare).toBe(false);
+    expect(result.voiceChat).toBe(false);
+    expect(isTurnDeployed()).toBe(false);
+  });
+
+  it('keeps RTC capabilities off when the TURN probe fails at the network layer', async () => {
+    mocks.refresh.mockResolvedValue({
+      schemaGeneration: 2,
+      authenticated: true,
+      functions: {
+        send_rtc_signal: true,
+        fetch_rtc_signals: true,
+      },
+      realtimeTables: [],
+    });
+    mocks.invoke.mockRejectedValue(new TypeError('network unavailable'));
+
+    const result = await getRoomMediaCapabilities({ htmlMedia: true, googleDrive: true });
+
+    expect(result.liveShare).toBe(false);
+    expect(result.voiceChat).toBe(false);
+    expect(isTurnDeployed()).toBe(false);
+  });
+
   it('fails closed for a manifest without room-media contracts', async () => {
     mocks.refresh.mockResolvedValue({ schemaGeneration: 2, authenticated: true, functions: {}, realtimeTables: [] });
     const result = await getRoomMediaCapabilities({ htmlMedia: true, googleDrive: true });

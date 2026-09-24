@@ -60,6 +60,16 @@ Last updated: 2026-09-24.
   smoke:runtime` now makes DNS, the runtime capability RPC and the authenticated
   TURN function surface an explicit release gate instead of relying on a stale
   historical probe.
+- Follow-up platform inspection on 2026-09-24 confirmed the existing Supabase
+  project `eiachttvgojmzvcecszz` still exists but is reported by Supabase as
+  `INACTIVE`. Its management plane is reachable, but an authenticated CLI
+  deploy of `turn-credentials` is rejected because inactive projects have no
+  retrievable function service. The project must be resumed in Supabase before
+  the public hostname, runtime RPC, or Edge Function deployment can recover.
+- The remote Edge Function inventory currently contains `search-youtube`,
+  `discord-token`, and `log-session`; `turn-credentials` is not deployed. The
+  project secret inventory also has no Cloudflare TURN or coturn secret names,
+  so one supported TURN provider still needs to be configured after resume.
 - Room-media capability detection now maps an offline/failed runtime manifest
   probe to `service-unavailable` and forces a real manifest fetch when the user
   chooses Retry/Check again, avoiding misleading signed-out guidance during a
@@ -99,9 +109,9 @@ Last updated: 2026-09-24.
   `runtime_capabilities_v2()` reported schema generation 34 and all current
   social, room-media, and RTC function flags. The anonymous probe correctly
   reported `authenticated: false`; repeat it while signed in during owner
-  acceptance. The `turn-credentials` Edge Function currently returns HTTP 404,
-  so ScreenWatch/voice remain gated until that function is deployed with its
-  provider secrets and Verify JWT enabled.
+  acceptance. That historical backend is now paused/inactive as documented
+  above; ScreenWatch/voice remain gated until the project is resumed and
+  `turn-credentials` is deployed with provider secrets and Verify JWT enabled.
 - Browser Discord OAuth callback support is now in this branch. Add
   `http://localhost:5173/auth/callback` and
   `http://127.0.0.1:5173/auth/callback` to Supabase Auth redirect URLs before
