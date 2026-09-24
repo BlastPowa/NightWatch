@@ -11,10 +11,16 @@ Last updated: 2026-09-24.
   Watch lobby, active Watch Room, Parties, Friends, Messages, Creator Club,
   Library, Profile, Settings, FAQ and About. Rendered desktop previews and a
   contact sheet live in `docs/revamp-concepts/previews/`.
-- Batch 1 implementation has started in the real renderer: shared cinema/glass
-  tokens and a non-interactive, accessibility-safe ambient shell layer are
-  wired through `AppShell`/`index.css`; existing reduced-transparency behavior
-  is preserved.
+- Page-wide renderer alignment is now implemented across Browse, Watch lobby,
+  active Watch Room, Parties, Library, Friends, Messages, Creator Club,
+  Profile, Settings, FAQ and About. The concept pack is no longer mock-up-only:
+  its page headings, action hierarchy and cinematic glass language are wired to
+  the existing real flows without replacing their capability gates.
+- Browse links directly into room creation and Library; the lobby exposes
+  persistent Parties; Parties adds direct join-by-code/create entry points;
+  Library exposes the real local-file/Drive actions; Friends surfaces live
+  presence; and the room header keeps secure invites, status and premiere
+  controls beside the theatre-first player workspace.
 - Reliability/collaboration batch now adds device-local MP4/WebM app backgrounds
   backed by IndexedDB (never large blobs in localStorage), reduced-motion/
   transparency fallbacks, bounded/retryable YouTube IFrame API startup,
@@ -29,7 +35,7 @@ Last updated: 2026-09-24.
   mute, deafen, leave, speaking/device state, remote-audio playback, actionable
   capability diagnostics and central teardown registration. Offer glare is
   handled deterministically and duplicate peer dials are suppressed.
-- Current validation on 2026-09-24: all 513 Vitest tests across 65 files pass;
+- Current validation on 2026-09-24 after the page-wide visual pass: all 513 Vitest tests across 65 files pass;
   strict TypeScript passes; `git diff --check` has no whitespace errors; browser
   build smoke passes; the full Windows Electron/NSIS build passes; packaged
   smoke passes and verifies `NightWatch-Setup-0.1.27.exe` (81.9 MB). Installer
@@ -40,8 +46,9 @@ Last updated: 2026-09-24.
   until `turn-credentials` is deployed/configured and the packaged two-client
   acceptance matrix passes. Passing local tests/builds does not enable the
   server capability flag by itself.
-- The branch still contains the reliability/installer edits that were already
-  in progress; the revamp work is being layered on top without discarding them.
+- The page-wide revamp is committed on `fix/phase-44-reliability` on top of the
+  reliability/installer work. External TURN deployment and two-client packaged
+  acceptance remain the release gate rather than visual implementation.
 
 ## Workspace consolidation (2026-09-06)
 

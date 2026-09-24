@@ -2,7 +2,7 @@
 
 ## NightWatch Entertainment Revamp & Completion
 
-Status: **In progress — concept set complete; shell, reliability, local video background and room collaboration implementation underway.**
+Status: **In progress — concept set and page-wide renderer revamp complete; external TURN/two-client acceptance remains.**
 
 Goal: consolidate the shipped NightWatch feature set into one Pandora/Reel-inspired
 cinematic product language while finishing reliability, recovery, responsive and
@@ -11,22 +11,24 @@ release-quality gaps rather than restarting the application.
 - Visual concepts: `docs/revamp-concepts/` covers Browse, Watch lobby, active
   Watch Room, Parties, Friends, Messages, Creator Club, Library, FAQ, Settings,
   Profile and About.
-- Batch 1: shared shell/tokens/backdrop/navigation, then Browse + lobby. Mobile
-  destination/navigation hardening and the shared ambient cinema layer are in.
+- Batch 1: shared shell/tokens/backdrop/navigation plus Browse + lobby are in.
+  Browse now has direct room/Library entry points and the lobby exposes Parties.
 - Batch 2: player-first room layout, queue/chat/people/moments/discovery dock.
   Reliability work now includes YouTube startup retry/timeout, custom-media
   host-authority enforcement, queue/host-migration reconciliation, explicit
   ScreenWatch consent/recovery and the Room Lounge voice controls.
-- Batch 3: Parties + Library, preserving capability gating and authorized-media
-  boundaries.
-- Batch 4: Friends + Messages + Creator Club.
-- Batch 5: Profile + Settings + FAQ + About, including custom background/video
-  treatment that respects reduced motion/transparency. Device-local MP4/WebM
-  background storage/presentation is implemented; remaining work is visual
-  consolidation across the secondary screens rather than media persistence.
-- Completion gate: reconnect/host-migration/queue recovery, focused tests,
-  `npm test`, `npm run typecheck`, web build/smoke, Windows packaged smoke and
-  final diff review before release/version work.
+- Batch 3: Parties + Library are implemented, preserving capability gating and
+  authorized-media boundaries while adding direct create/join/local/Drive entry points.
+- Batch 4: Friends + Messages + Creator Club are implemented with presence-aware
+  friend summary, watch-party messaging context and studio-style creator hierarchy.
+- Batch 5: Profile + Settings + FAQ + About are implemented, including custom
+  background/video treatment that respects reduced motion/transparency and the
+  concept pack's page hierarchy/copy.
+- Local completion gate now passes: reconnect/host-migration/queue recovery
+  tests, focused page tests, `npm test`, strict TypeScript, web build/smoke,
+  Windows Electron/NSIS build, packaged smoke, installer deterministic tests and
+  final diff review. Release remains blocked on the external packaged acceptance
+  matrix below rather than code/build verification.
 - Latest automated gate (2026-09-24): 513/513 tests, strict TypeScript, web
   smoke, full Electron/NSIS build, packaged smoke, installer 20/20 deterministic
   checks and live hidden-Chromium installer QA all pass. TURN deployment and
