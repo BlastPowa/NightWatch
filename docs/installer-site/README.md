@@ -12,7 +12,7 @@ python -m http.server 4178 --bind 127.0.0.1 --directory docs/installer-site
 
 Open [the local preview](http://127.0.0.1:4178/). Opening `index.html` directly also retains static download links; browser security rules may restrict live fetching or storage on `file://`.
 
-The existing browser build also copies this directory to `/installer/` as a fallback route. The dedicated production site is the GitHub-connected Vercel project `night-watch-installer`, rooted at `docs/installer-site`, and is public at [night-watch-installer.vercel.app](https://night-watch-installer.vercel.app/). Keep Vercel's **Include source files outside of the Root Directory** option disabled for this project so the repository-level Vite build configuration cannot override the static installer deployment. Only the four production files listed above are required at runtime; do not publish `tests/` or `.qa/`.
+The existing browser build also copies this directory to `/installer/` as a fallback route. The dedicated production site is the GitHub-connected Vercel project `night-watch-installer`, rooted at `docs/installer-site`, and is public at [night-watch-installer.vercel.app](https://night-watch-installer.vercel.app/). Keep Vercel's **Include source files outside of the Root Directory** option disabled for this project. The local `vercel.json` deliberately skips dependency installation and copies only the four production assets into `public/`, preventing the repository-level Vite/Electron configuration from leaking into this static deployment. Do not publish `tests/` or `.qa/`.
 
 ## Release integration
 

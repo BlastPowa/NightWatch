@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "mkdir -p public/assets && cp index.html styles.css releases.js public/ && cp assets/nightwatch-mark.svg public/assets/",
+  "installCommand": "echo 'NightWatch installer site has no dependencies'",
+  "outputDirectory": "public"
+}
