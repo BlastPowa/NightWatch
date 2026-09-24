@@ -100,6 +100,28 @@
   backdrop-filter: blur(18px);
 }
 
+.phase26-social-hero h1 {
+  max-width: 18ch;
+  line-height: .98;
+  text-wrap: balance;
+}
+
+.friend-summary-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(78px, 1fr));
+  gap: .45rem;
+  min-width: 190px;
+  text-align: left;
+}
+
+.friend-summary-split > span {
+  display: grid;
+  gap: .18rem;
+}
+
+.friend-summary-split strong { color: var(--nw-accent); font-size: 1.35rem; line-height: 1; }
+.friend-summary-split small { color: var(--nw-text-muted); font-size: .62rem; text-transform: uppercase; letter-spacing: .07em; }
+
 .friend-search {
   width: min(100%, 680px);
   min-height: 52px;
@@ -201,6 +223,14 @@
   border: 1px solid color-mix(in srgb, var(--nw-border) 84%, transparent);
   border-radius: 16px;
   background: color-mix(in srgb, var(--nw-bg-sunken) 71%, transparent);
+}
+
+.conversation-rail-tagline {
+  max-width: 24ch;
+  margin: .2rem 0 0;
+  color: var(--nw-text-muted);
+  font-size: .66rem;
+  line-height: 1.45;
 }
 
 .conversation-item {

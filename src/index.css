@@ -2511,7 +2511,7 @@ input {
 .creator-hero { position: relative; display: flex; min-height: 170px; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 1rem; padding: clamp(1.4rem,3vw,2.4rem); overflow: hidden; border: 1px solid color-mix(in srgb, var(--nw-accent) 24%, var(--nw-border)); border-radius: var(--nw-radius-lg); background: radial-gradient(circle at 82% 25%, color-mix(in srgb, var(--nw-accent) 22%, transparent), transparent 32%), linear-gradient(125deg, color-mix(in srgb, var(--nw-bg-raised) 90%, #07040f), var(--nw-bg-sunken)); box-shadow: 0 24px 70px rgba(0,0,0,.3); }
 .creator-hero::after { position: absolute; right: 8%; bottom: -90px; width: 280px; height: 280px; border: 1px solid color-mix(in srgb, var(--nw-accent) 30%, transparent); border-radius: 50%; content: ''; box-shadow: 0 0 0 34px color-mix(in srgb, var(--nw-accent) 4%, transparent), 0 0 0 70px color-mix(in srgb, var(--nw-accent) 3%, transparent); pointer-events: none; }
 .creator-hero > * { position: relative; z-index: 1; }
-.creator-hero h1 { margin: .3rem 0; font-size: clamp(2.2rem,5vw,4.4rem); letter-spacing: -.055em; }
+.creator-hero h1 { max-width: 16ch; margin: .3rem 0; font-size: clamp(2.2rem,5vw,4.4rem); line-height: .98; letter-spacing: -.055em; text-wrap: balance; }
 .creator-hero p { max-width: 680px; margin: 0; color: var(--nw-text-muted); line-height: 1.55; }
 .creator-hero-actions { display: flex; flex-wrap: wrap; gap: .55rem; }
 .club-directory { margin: 0; padding: clamp(1rem,2vw,1.5rem); }
