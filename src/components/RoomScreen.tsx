@@ -348,73 +348,79 @@ export function RoomScreen({
       aria-hidden={presentation === 'hidden' ? true : undefined}
     >
       <header className="room-header card">
-        <div className="room-heading">
-          <span className="eyebrow">Watch party</span>
-          <button
-            type="button"
-            className="room-code"
-            onClick={copyCode}
-            title="Copy room code"
-            aria-label={`Copy room code ${room.code}`}
-          >
-            {room.code}
-            <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
-          </button>
-        </div>
-        {meta !== null && (
-          <span className="room-persistent">
-            {meta.name}
-            {countdownMinutes !== null && (
-              <span className="room-schedule">
-                {' '}
-                · Premiere in{' '}
-                {countdownMinutes >= 60
-                  ? `${Math.floor(countdownMinutes / 60)}h ${countdownMinutes % 60}m`
-                  : `${countdownMinutes}m`}
-              </span>
-            )}
-            {countdownMinutes === null && meta.scheduledAt !== null && !premiereReady && (
-              <span className="room-schedule">
-                {' '}
-                · Scheduled {formatScheduleBanner(meta.scheduledAt)}
-              </span>
-            )}
-            {meta.insightsEnabled && (
-              <span className="room-insights-note" title="The room owner enabled session insights (anonymous counts only — never chat content)">
-                {' '}
-                · Session insights on
-              </span>
-            )}
-          </span>
-        )}
-        {premiereReady && selfIsHost && meta?.premiereVideoId != null && (
-          <button
-            type="button"
-            className="button button-glow"
-            onClick={() => loadVideoRef.current?.(meta.premiereVideoId as string)}
-          >
-            <Icon name="play" size={16} /> Start the premiere
-          </button>
-        )}
-        {selfIsHost && room.status === 'joined' && (
-          <div className="room-invite-control">
-            <button type="button" className="button" disabled={inviting} onClick={() => void copySecureInvite()}>
-              <Icon name="send" size={15} /> {inviting ? 'Preparingâ€¦' : roomInvite === null ? 'Copy secure invite' : 'Copy invite again'}
+        <div className="room-heading-copy">
+          <div className="room-heading">
+            <span className="eyebrow">Watch room</span>
+            <button
+              type="button"
+              className="room-code"
+              onClick={copyCode}
+              title="Copy room code"
+              aria-label={`Copy room code ${room.code}`}
+            >
+              {room.code}
+              <span className="room-code-hint">{copied ? 'Copied!' : 'copy'}</span>
             </button>
-            {roomInvite !== null && <button type="button" className="button button-quiet" disabled={inviting} onClick={() => void revokeSecureInvite()}>Revoke</button>}
-            {inviteStatus !== null && <span className="room-invite-status" role="status">{inviteStatus}</span>}
           </div>
-        )}
-        <span className={`room-status room-status-${room.status}`}>
-          <span className="status-dot" aria-hidden="true" />
-          {STATUS_TEXT[room.status]}
-        </span>
+          <h1 className="room-page-title">Theatre first. Everything else one move away.</h1>
+          <p className="room-page-support">Keep the synchronized player in focus while queue, chat, people, voice and moments stay in the lounge beside it.</p>
+          {meta !== null && (
+            <span className="room-persistent">
+              {meta.name}
+              {countdownMinutes !== null && (
+                <span className="room-schedule">
+                  {' '}
+                  · Premiere in{' '}
+                  {countdownMinutes >= 60
+                    ? `${Math.floor(countdownMinutes / 60)}h ${countdownMinutes % 60}m`
+                    : `${countdownMinutes}m`}
+                </span>
+              )}
+              {countdownMinutes === null && meta.scheduledAt !== null && !premiereReady && (
+                <span className="room-schedule">
+                  {' '}
+                  · Scheduled {formatScheduleBanner(meta.scheduledAt)}
+                </span>
+              )}
+              {meta.insightsEnabled && (
+                <span className="room-insights-note" title="The room owner enabled session insights (anonymous counts only — never chat content)">
+                  {' '}
+                  · Session insights on
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+        <div className="room-header-actions">
+          {premiereReady && selfIsHost && meta?.premiereVideoId != null && (
+            <button
+              type="button"
+              className="button button-glow"
+              onClick={() => loadVideoRef.current?.(meta.premiereVideoId as string)}
+            >
+              <Icon name="play" size={16} /> Start the premiere
+            </button>
+          )}
+          {selfIsHost && room.status === 'joined' && (
+            <div className="room-invite-control">
+              <button type="button" className="button" disabled={inviting} onClick={() => void copySecureInvite()}>
+                <Icon name="send" size={15} /> {inviting ? 'Preparingâ€¦' : roomInvite === null ? 'Copy secure invite' : 'Copy invite again'}
+              </button>
+              {roomInvite !== null && <button type="button" className="button button-quiet" disabled={inviting} onClick={() => void revokeSecureInvite()}>Revoke</button>}
+              {inviteStatus !== null && <span className="room-invite-status" role="status">{inviteStatus}</span>}
+            </div>
+          )}
+          <span className={`room-status room-status-${room.status}`}>
+            <span className="status-dot" aria-hidden="true" />
+            {STATUS_TEXT[room.status]}
+          </span>
+        </div>
       </header>
 
       <div className="room-body">
         <div className="room-main card">
           <div className="watch-stage-heading">
-            <div><span className="eyebrow">Now watching</span><h1>{meta?.name ?? 'Your watch party'}</h1></div>
+            <div><span className="eyebrow">Now watching</span><h2>{meta?.name ?? 'Your watch party'}</h2></div>
             <span className={`watch-role${selfIsHost ? ' watch-role-host' : ''}`}>{selfIsHost ? 'Host controls' : 'Watching in sync'}</span>
           </div>
           <div className="watch-mode-tabs" role="tablist" aria-label="Watch source">

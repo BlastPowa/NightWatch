@@ -654,6 +654,8 @@ export function App(): JSX.Element {
                 resetNonce={browseResetNonce}
                 friendMediaPresence={socialCapabilities.friendMediaPresence}
                 onSearchBusyChange={setBrowseSearching}
+                onStartRoom={() => setView('main')}
+                onOpenLibrary={() => setView('library')}
                 onPlayNow={(videoId, title) => handleDiscoverPick(videoId, title, 'play')}
                 onQueueAdd={(videoId, title) => {
                   handleDiscoverPick(videoId, title, 'queue');
@@ -725,6 +727,7 @@ export function App(): JSX.Element {
               initialName={identity?.displayName ?? ''}
               lockedRoom={fixedRoomCode !== null}
               onEnterRoom={handleEnterRoom}
+              onOpenParties={() => setView('rooms')}
             />
           )
         )}

@@ -16,6 +16,8 @@ interface DiscoveryPanelProps {
   resetNonce?: number;
   friendMediaPresence: boolean;
   onSearchBusyChange?(busy: boolean): void;
+  onStartRoom?(): void;
+  onOpenLibrary?(): void;
   onPlayNow(videoId: string, title: string): void;
   onQueueAdd(videoId: string, title: string): boolean;
 }
@@ -59,7 +61,7 @@ const OUTCOME_MESSAGE: Record<string, string> = {
   error: 'Videos could not be loaded. Check your connection and retry.',
 };
 
-export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, resetNonce = 0, friendMediaPresence, onSearchBusyChange, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
+export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, resetNonce = 0, friendMediaPresence, onSearchBusyChange, onStartRoom, onOpenLibrary, onPlayNow, onQueueAdd }: DiscoveryPanelProps): JSX.Element {
   const [mode, setMode] = useState<BrowseMode>('trending');
   const [activeQuery, setActiveQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -296,6 +298,20 @@ export function DiscoveryPanel({ callerId, isHost, roomCode, searchRequest, rese
 
   return (
     <div className="browse-hub">
+      <header className="browse-page-heading">
+        <div className="browse-page-heading-copy">
+          <span className="eyebrow">Browse</span>
+          <h1>Pick the vibe. NightWatch handles the sync.</h1>
+          <p>Find something worth sharing, resume a recent room, or jump from discovery straight into a synchronized watch party.</p>
+        </div>
+        {(onStartRoom !== undefined || onOpenLibrary !== undefined) && (
+          <div className="browse-page-actions">
+            {onStartRoom !== undefined && <button type="button" className="button button-primary" onClick={onStartRoom}><Icon name="play" size={16} />Start a room</button>}
+            {onOpenLibrary !== undefined && <button type="button" className="button" onClick={onOpenLibrary}><Icon name="library" size={16} />My library</button>}
+          </div>
+        )}
+      </header>
+
       <div className="browse-category-row">
         <button type="button" className="category-scroll category-scroll-left" disabled={!categoryEdges.left} onClick={() => moveCategories(-1)} aria-label="Scroll video categories left"><Icon name="chevron-left" /></button>
         <nav className="browse-categories" ref={categoryRef} aria-label="Video categories">
